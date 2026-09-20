@@ -1,16 +1,17 @@
 <!-- 此文件从 content/graphql/guards-interceptors.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:00:30.688Z -->
+<!-- 生成时间: 2026-09-13T11:45:26.418Z -->
 <!-- 源文件: content/graphql/guards-interceptors.md -->
+<!-- 源哈希: e6294c038aa9482154893535dc575563 -->
 
 ### 其他特性
 
-在 GraphQL 世界中，关于如何处理**认证**或操作的**副作用**等问题存在很多争论。我们应该在业务逻辑内部处理这些事情吗？我们应该使用高阶函数来增强查询和变更的授权逻辑吗？还是应该使用 [schema directives](https://www.apollographql.com/docs/apollo-server/schema/directives/)？这些问题没有放之四海而皆准的答案。
+在 GraphQL 世界中，关于如何处理**认证**或操作的**副作用**等问题存在大量争论。我们是否应该在业务逻辑内部处理这些事情？是否应该使用高阶函数来增强查询和变更的授权逻辑？还是应该使用[schema directives](https://www.apollographql.com/docs/apollo-server/schema/directives/)？这些问题没有放之四海而皆准的答案。
 
-Nest 通过其跨平台特性（如 [guards](/overview/guards) 和 [interceptors](/overview/interceptors)）帮助解决这些问题。其理念是减少冗余，并提供有助于构建结构良好、可读且一致的应用程序的工具。
+Nest 通过其跨平台特性（如[guards](/overview/guards)和[interceptors](/overview/interceptors)）帮助解决这些问题。其理念是减少冗余，并提供有助于创建结构良好、可读且一致的应用程序的工具。
 
 #### 概述
 
-您可以像使用任何 RESTful 应用程序一样，以相同的方式将标准的 [guards](/overview/guards)、[interceptors](/overview/interceptors)、[filters](/overview/exception-filters) 和 [pipes](/pipes) 与 GraphQL 一起使用。此外，您还可以利用 [custom decorators](/custom-decorators) 特性轻松创建自己的装饰器。让我们看一个示例 GraphQL 查询处理器。
+您可以像使用任何 RESTful 应用程序一样，以相同的方式使用标准的[guards](/overview/guards)、[interceptors](/overview/interceptors)、[filters](/overview/exception-filters)和[pipes](/pipes)。此外，您还可以利用[custom decorators](/custom-decorators)特性轻松创建自己的装饰器。让我们看一个示例 GraphQL 查询处理器。
 
 ```typescript
 @Query('author')
@@ -21,7 +22,7 @@ async getAuthor(@Args('id', ParseIntPipe) id: number) {
 
 ```
 
-如您所见，GraphQL 与守卫和管道的配合方式与 HTTP REST 处理器完全相同。因此，您可以将认证逻辑移至守卫中；甚至可以跨 REST 和 GraphQL API 接口复用同一个守卫类。类似地，拦截器在两种类型的应用程序中以相同的方式工作：
+如您所见，GraphQL 与守卫和管道的工作方式与 HTTP REST 处理器相同。因此，您可以将认证逻辑移至守卫中；甚至可以在 REST 和 GraphQL API 接口之间复用同一个守卫类。同样，拦截器在两种类型的应用程序中的工作方式也相同：
 
 ```typescript
 @Mutation()
@@ -34,7 +35,7 @@ async upvotePost(@Args('postId') postId: number) {
 
 #### 执行上下文
 
-由于 GraphQL 在传入请求中接收不同类型的数据，因此守卫和拦截器接收到的 [execution context](/fundamentals/execution-context) 在 GraphQL 与 REST 中有所不同。GraphQL 解析器具有一组不同的参数：`root`、`args`、`context` 和 `info`。因此，守卫和拦截器必须将通用的 `ExecutionContext` 转换为 `GqlExecutionContext`。这很简单：
+由于 GraphQL 在传入请求中接收不同类型的数据，因此守卫和拦截器接收到的[execution context](/fundamentals/execution-context)在 GraphQL 与 REST 中有所不同。GraphQL 解析器具有一组不同的参数：`root`、`args`、`context`和`info`。因此，守卫和拦截器必须将通用的`ExecutionContext`转换为`GqlExecutionContext`。这很简单：
 
 ```typescript
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
@@ -50,11 +51,11 @@ export class AuthGuard implements CanActivate {
 
 ```
 
-由 `GqlExecutionContext.create()` 返回的 GraphQL 上下文对象为每个 GraphQL 解析器参数暴露了一个 **get** 方法（例如，`getArgs()`、`getContext()` 等）。转换后，我们可以轻松地为当前请求挑选出任何 GraphQL 参数。
+由`GqlExecutionContext.create()`返回的 GraphQL 上下文对象为每个 GraphQL 解析器参数公开了一个 **get** 方法（例如，`getArgs()`、`getContext()`等）。转换后，我们可以轻松地为当前请求挑选出任何 GraphQL 参数。
 
 #### 异常过滤器
 
-Nest 标准的 [exception filters](/overview/exception-filters) 同样兼容 GraphQL 应用程序。与 `ExecutionContext` 一样，GraphQL 应用程序应将 `ArgumentsHost` 对象转换为 `GqlArgumentsHost` 对象。
+Nest 标准的[exception filters](/overview/exception-filters)同样兼容 GraphQL 应用程序。与`ExecutionContext`一样，GraphQL 应用程序应将`ArgumentsHost`对象转换为`GqlArgumentsHost`对象。
 
 ```typescript
 @Catch(HttpException)
@@ -67,13 +68,13 @@ export class HttpExceptionFilter implements GqlExceptionFilter {
 
 ```
 
-> info **提示** `GqlExceptionFilter` 和 `GqlArgumentsHost` 均从 `@nestjs/graphql` 包中导入。
+> 信息 **提示** 两者`GqlExceptionFilter`和`GqlArgumentsHost`均从`@nestjs/graphql`包中导入。
 
-请注意，与 REST 情况不同，您不使用原生的 `response` 对象来生成响应。
+请注意，与 REST 情况不同，您不使用原生的`response`对象来生成响应。
 
 #### 自定义装饰器
 
-如前所述，[custom decorators](/custom-decorators) 特性在 GraphQL 解析器中按预期工作。
+如前所述，[custom decorators](/custom-decorators)特性在 GraphQL 解析器中按预期工作。
 
 ```typescript
 export const User = createParamDecorator(
@@ -83,7 +84,7 @@ export const User = createParamDecorator(
 
 ```
 
-如下使用 `@User()` 自定义装饰器：
+使用`@User()`自定义装饰器如下：
 
 ```typescript
 @Mutation()
@@ -94,11 +95,11 @@ async upvotePost(
 
 ```
 
-> info **提示** 在上面的示例中，我们假设 `user` 对象已分配给您的 GraphQL 应用程序的上下文。
+> 信息 **提示** 在上面的示例中，我们假设`user`对象已分配给您的 GraphQL 应用程序的上下文。
 
 #### 在字段解析器级别执行增强器
 
-在 GraphQL 上下文中，Nest 不会在字段级别运行**增强器**（拦截器、守卫和过滤器的通用名称）[see this issue](https://github.com/nestjs/graphql/issues/320#issuecomment-511193229)：它们仅针对顶层 `@Query()`/`@Mutation()` 方法运行。您可以通过在 `GqlModuleOptions` 中设置 `fieldResolverEnhancers` 选项，告诉 Nest 为带有 `@ResolveField()` 注解的方法执行拦截器、守卫或过滤器。根据需要传入 `'interceptors'`、`'guards'` 和/或 `'filters'` 的列表：
+在 GraphQL 上下文中，Nest 不会在字段级别运行**增强器**（拦截器、守卫和过滤器的通用名称）[see this issue](https://github.com/nestjs/graphql/issues/320#issuecomment-511193229)：它们仅针对顶层`@Query()`/`@Mutation()`方法运行。您可以通过在`GqlModuleOptions`中设置`fieldResolverEnhancers`选项，告诉 Nest 为带有`@ResolveField()`注解的方法执行拦截器、守卫或过滤器。根据情况传递`'interceptors'`、`'guards'`和/或`'filters'`的列表：
 
 ```typescript
 GraphQLModule.forRoot({
@@ -107,7 +108,7 @@ GraphQLModule.forRoot({
 
 ```
 
-> **警告** 当您返回大量记录且字段解析器被执行数千次时，为字段解析器启用增强器可能会导致性能问题。因此，当您启用 `fieldResolverEnhancers` 时，我们建议您跳过对字段解析器并非严格必需的增强器的执行。您可以使用以下辅助函数来实现：
+> **警告** 为字段解析器启用增强器可能会导致性能问题，尤其是当您返回大量记录且字段解析器被执行数千次时。因此，当您启用`fieldResolverEnhancers`时，我们建议您跳过对字段解析器并非严格必需的增强器的执行。您可以使用以下辅助函数来实现：
 
 ```typescript
 export function isResolvingGraphQLField(context: ExecutionContext): boolean {
@@ -122,11 +123,11 @@ export function isResolvingGraphQLField(context: ExecutionContext): boolean {
 
 ```
 
-#### 创建自定义驱动
+#### 创建自定义驱动程序
 
-Nest 提供了两个开箱即用的官方驱动：`@nestjs/apollo` 和 `@nestjs/mercurius`，以及一个允许开发者构建新的**自定义驱动**的 API。使用自定义驱动，您可以集成任何 GraphQL 库或扩展现有集成，在其之上添加额外功能。
+Nest 提供了两个开箱即用的官方驱动程序：`@nestjs/apollo`和`@nestjs/mercurius`，以及允许开发人员构建新的**自定义驱动程序**的 API。使用自定义驱动程序，您可以集成任何 GraphQL 库或扩展现有集成，并在此基础上添加额外功能。
 
-例如，要集成 `express-graphql` 包，您可以创建以下驱动类：
+例如，要集成`express-graphql`包，您可以创建以下驱动程序类：
 
 ```typescript
 import { AbstractGraphQLDriver, GqlModuleOptions } from '@nestjs/graphql';

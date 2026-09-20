@@ -1,14 +1,15 @@
 <!-- 此文件从 content/graphql/interfaces.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:06:32.928Z -->
+<!-- 生成时间: 2026-09-13T11:44:54.020Z -->
 <!-- 源文件: content/graphql/interfaces.md -->
+<!-- 源哈希: 08faafe9c89bb15b7485b3a0303b3871 -->
 
 ### 接口
 
-与许多类型系统一样，GraphQL 支持接口。**接口**是一种抽象类型，包含类型必须包含的一组字段才能实现该接口（了解更多 [here](https://graphql.org/learn/schema/#interfaces)）。
+与许多类型系统一样，GraphQL 支持接口。**接口**是一种抽象类型，包含类型必须包含的一组字段才能实现该接口（更多信息请参阅 [here](https://graphql.org/learn/schema/#interfaces)）。
 
 #### 代码优先
 
-使用代码优先方法时，您可以通过创建带有从 `@nestjs/graphql` 导出的 `@InterfaceType()` 装饰器的抽象类来定义 GraphQL 接口。
+在使用代码优先方法时，您可以通过创建带有从 `@nestjs/graphql` 导出的 `@InterfaceType()` 装饰器注解的抽象类来定义 GraphQL 接口。
 
 ```typescript
 import { Field, ID, InterfaceType } from '@nestjs/graphql';
@@ -122,7 +123,7 @@ export interface Character {
 
 ```
 
-接口需要在解析器映射中有一个额外的 `__resolveType` 字段来确定接口应解析为哪种类型。让我们创建一个 `CharactersResolver` 类并定义 `__resolveType` 方法：
+接口在解析器映射中需要一个额外的 `__resolveType` 字段来确定接口应解析为哪种类型。让我们创建一个 `CharactersResolver` 类并定义 `__resolveType` 方法：
 
 ```typescript
 @Resolver('Character')
@@ -138,4 +139,4 @@ export class CharactersResolver {
 
 ```
 
-> info **提示** 所有装饰器都从 `@nestjs/graphql` 包中导出。
+> info **提示** 所有装饰器均从 `@nestjs/graphql` 包中导出。

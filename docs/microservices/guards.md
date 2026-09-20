@@ -1,6 +1,7 @@
 <!-- 此文件从 content/microservices/guards.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T10:41:12.067Z -->
+<!-- 生成时间: 2026-09-13T10:49:57.744Z -->
 <!-- 源文件: content/microservices/guards.md -->
+<!-- 源哈希: 95324a980eac2465bfc627c4ccb30dd8 -->
 
 ### 守卫
 

@@ -1,6 +1,7 @@
 <!-- 此文件从 content/techniques/caching.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:57:50.843Z -->
+<!-- 生成时间: 2026-09-13T09:17:43.327Z -->
 <!-- 源文件: content/techniques/caching.md -->
+<!-- 源哈希: 9985581542b35bde53ae4a4edfebf84f -->
 
 ### 缓存
 
@@ -15,7 +16,7 @@ $ npm install @nestjs/cache-manager cache-manager
 
 ```
 
-默认情况下，所有内容都存储在内存中；由于 `cache-manager` 底层使用 [Keyv](https://keyv.org/docs/)，你可以通过安装相应的包轻松切换到更高级的存储解决方案，例如 Redis。我们稍后会详细介绍这一点。
+默认情况下，所有内容都存储在内存中；由于 `cache-manager` 底层使用 [Keyv](https://keyv.org/docs/)，你可以通过安装相应的包轻松切换到更高级的存储解决方案，例如 Redis。我们稍后将更详细地介绍这一点。
 
 #### 内存缓存
 
@@ -47,21 +48,21 @@ constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {}
 
 > info **提示** `Cache` 类和 `CACHE_MANAGER` 令牌都从 `@nestjs/cache-manager` 包中导入。
 
-`get` 实例（来自 `Cache` 包）上的 `cache-manager` 方法用于从缓存中检索项目。如果缓存中不存在该项目，则返回 `undefined`（在 `cache-manager` v6 及更早版本中，返回的是 `null`）。迁移时将两者都视为假值。
+`Cache` 实例（来自 `cache-manager` 包）上的 `get` 方法用于从缓存中检索项目。如果缓存中不存在该项目，则返回 `undefined`（在 `cache-manager` v6 及更早版本中，返回的是 `null`）。迁移时将两者都视为假值。
 
 ```typescript
 const value = await this.cacheManager.get('key');
 
 ```
 
-要向缓存添加项目，请使用 `set` 方法：
+要向缓存中添加项目，请使用 `set` 方法：
 
 ```typescript
 await this.cacheManager.set('key', 'value');
 
 ```
 
-> warning **注意** 内存缓存存储只能存储 [the structured clone algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm#javascript_types) 支持类型的值。
+> warning **注意** 内存缓存存储只能存储 [the structured clone algorithm](https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm#javascript_types) 支持的类型值。
 
 你可以为此特定键手动指定 TTL（以毫秒为单位的过期时间），如下所示：
 
@@ -70,7 +71,7 @@ await this.cacheManager.set('key', 'value', 1000);
 
 ```
 
-其中 `1000` 是以毫秒为单位的 TTL —— 在这种情况下，缓存项将在一秒后过期。
+其中 `1000` 是以毫秒为单位的 TTL - 在这种情况下，缓存项将在一秒后过期。
 
 要禁用缓存过期，请将 `ttl` 配置属性设置为 `0`：
 
@@ -111,10 +112,10 @@ export class AppController {
 
 ```
 
-> warning **警告** 只有 `GET` 端点会被缓存。此外，注入了原生响应对象（`@Res()`）的 HTTP 服务器路由不能使用缓存拦截器。更多详情请参阅
+> warning **警告** 只有 `GET` 端点会被缓存。此外，注入原生响应对象（`@Res()`）的 HTTP 服务器路由不能使用缓存拦截器。有关更多详细信息，请参阅
 > <a href="/interceptors#响应映射">响应映射</a>。
 
-为了减少所需的样板代码，你可以将 `CacheInterceptor` 全局绑定到所有端点：
+为了减少所需的样板代码量，你可以将 `CacheInterceptor` 全局绑定到所有端点：
 
 ```typescript
 import { Module } from '@nestjs/common';
@@ -138,7 +139,7 @@ export class AppModule {}
 
 #### 生存时间（TTL）
 
-`ttl` 的默认值是 `0`，这意味着缓存永不过期。要指定自定义的 [TTL](https://en.wikipedia.org/wiki/Time_to_live)，你可以在 `ttl` 方法中提供 `register()` 选项，如下所示：
+`ttl` 的默认值是 `0`，这意味着缓存永不过期。要指定自定义的 [TTL](https://en.wikipedia.org/wiki/Time_to_live)，你可以在 `register()` 方法中提供 `ttl` 选项，如下所示：
 
 ```typescript
 CacheModule.register({
@@ -149,7 +150,7 @@ CacheModule.register({
 
 #### 全局使用模块
 
-当你想要在其他模块中使用 `CacheModule` 时，你需要导入它（这与任何 Nest 模块的标准做法相同）。或者，通过将选项对象的 `isGlobal` 属性设置为 `true` 来将其声明为 [global module](/modules#全局模块)，如下所示。在这种情况下，一旦它在根模块（例如 `AppModule`）中被加载，你就不需要在其他模块中导入 `CacheModule`。
+当你想在其他模块中使用 `CacheModule` 时，你需要导入它（与任何标准 Nest 模块一样）。或者，通过将选项对象的 `isGlobal` 属性设置为 `true` 来将其声明为 [global module](/modules#全局模块)，如下所示。在这种情况下，一旦它在根模块（例如 `AppModule`）中加载，你就不需要在其他模块中导入 `CacheModule`。
 
 ```typescript
 CacheModule.register({
@@ -160,9 +161,9 @@ CacheModule.register({
 
 #### 全局缓存覆盖
 
-当全局缓存启用时，缓存条目存储在一个基于路由路径自动生成的 `CacheKey` 下。你可以基于每个方法覆盖某些缓存设置（`@CacheKey()` 和 `@CacheTTL()`），从而为各个控制器方法定制缓存策略。这在使用 [different cache stores.](/techniques/caching#使用其他缓存存储方案) 时可能最为相关。
+当全局缓存启用时，缓存条目存储在一个基于路由路径自动生成的 `CacheKey` 下。你可以按方法覆盖某些缓存设置（`@CacheKey()` 和 `@CacheTTL()`），从而为各个控制器方法定制缓存策略。在使用 [different cache stores.](/techniques/caching#使用其他缓存存储方案) 时，这可能最为相关。
 
-你可以基于每个控制器应用 `@CacheTTL()` 装饰器，为整个控制器设置缓存 TTL。在同时定义了控制器级别和方法级别缓存 TTL 设置的情况下，方法级别指定的缓存 TTL 设置将优先于控制器级别设置的 TTL。
+你可以在每个控制器的基础上应用 `@CacheTTL()` 装饰器来为整个控制器设置缓存 TTL。在同时定义了控制器级别和方法级别缓存 TTL 设置的情况下，方法级别指定的缓存 TTL 设置将优先于控制器级别的设置。
 
 ```typescript
 @Controller()
@@ -179,11 +180,11 @@ export class AppController {
 
 > info **提示** `@CacheKey()` 和 `@CacheTTL()` 装饰器从 `@nestjs/cache-manager` 包中导入。
 
-`@CacheKey()` 装饰器可以带或不带相应的 `@CacheTTL()` 装饰器使用，反之亦然。你可以选择仅覆盖 `@CacheKey()` 或仅覆盖 `@CacheTTL()`。未使用装饰器覆盖的设置将使用全局注册的默认值（参见 [Customize caching](/techniques/caching#自定义缓存)）。
+`@CacheKey()` 装饰器可以带或不带相应的 `@CacheTTL()` 装饰器使用，反之亦然。你可以选择只覆盖 `@CacheKey()` 或只覆盖 `@CacheTTL()`。未通过装饰器覆盖的设置将使用全局注册的默认值（参见 [Customize caching](/techniques/caching#自定义缓存)）。
 
 #### WebSockets 和微服务
 
-你也可以将 `CacheInterceptor` 应用于 WebSocket 订阅者以及微服务的消息模式（无论使用何种传输方法）。
+你也可以将 `CacheInterceptor` 应用于 WebSocket 订阅者以及微服务的模式（无论使用何种传输方法）。
 
 ```typescript
 @CacheKey('events')
@@ -211,11 +212,11 @@ handleEvent(client: Client, data: string[]): Observable<string[]> {
 
 > info **提示** `@CacheTTL()` 装饰器可以带或不带相应的 `@CacheKey()` 装饰器使用。
 
-#### 调整跟踪
+#### 调整追踪
 
-默认情况下，Nest 使用请求 URL（在 HTTP 应用中）或缓存键（在 WebSocket 和微服务应用中，通过 `@CacheKey()` 装饰器设置）将缓存记录与你的端点关联起来。然而，有时你可能希望基于其他因素来设置跟踪，例如使用 HTTP 头（如 `Authorization` 来正确识别 `profile` 端点）。
+默认情况下，Nest 使用请求 URL（在 HTTP 应用中）或缓存键（在 WebSockets 和微服务应用中，通过 `@CacheKey()` 装饰器设置）将缓存记录与端点关联。然而，有时你可能希望基于不同因素来设置追踪，例如使用 HTTP 头（如 `Authorization` 来正确识别 `profile` 端点）。
 
-为了实现这一点，创建 `CacheInterceptor` 的子类并覆盖 `trackBy()` 方法。
+为此，请创建 `CacheInterceptor` 的子类并重写 `trackBy()` 方法。
 
 ```typescript
 @Injectable()
@@ -229,14 +230,14 @@ class HttpCacheInterceptor extends CacheInterceptor {
 
 #### 使用替代缓存存储
 
-切换到不同的缓存存储很简单。首先，安装相应的包。例如，要使用 Redis，请安装 `@keyv/redis` 包：
+切换到不同的缓存存储非常简单。首先，安装相应的包。例如，要使用 Redis，请安装 `@keyv/redis` 包：
 
 ```bash
 $ npm install @keyv/redis
 
 ```
 
-完成此操作后，你可以像下面这样将 `CacheModule` 注册为多个存储：
+完成此操作后，你可以注册包含多个存储的 `CacheModule`，如下所示：
 
 ```typescript
 import { Module } from '@nestjs/common';
@@ -267,13 +268,13 @@ export class AppModule {}
 
 ```
 
-在此示例中，我们注册了两个存储：`CacheableMemory` 和一个 Redis 存储。`CacheableMemory` 存储是一个简单的内存存储，通过 `KeyvCacheableMemory` 存储适配器创建，而 Redis 存储则通过 `createKeyv` 辅助函数从 `@keyv/redis` 创建。`stores` 数组用于指定你想要使用的存储。数组中的第一个存储是默认存储，其余的是备用存储。
+在此示例中，我们注册了两个存储：`CacheableMemory` 和一个 Redis 存储。`CacheableMemory` 存储是一个简单的内存存储，通过 `KeyvCacheableMemory` 存储适配器创建，而 Redis 存储通过 `createKeyv` 辅助函数从 `@keyv/redis` 创建。`stores` 数组用于指定你要使用的存储。数组中的第一个存储是默认存储，其余为备用存储。
 
 查看 [Keyv documentation](https://keyv.org/docs/) 以获取有关可用存储的更多信息。
 
 #### 异步配置
 
-你可能希望异步传入模块选项，而不是在编译时静态传入。在这种情况下，使用 `registerAsync()` 方法，它提供了几种处理异步配置的方式。
+你可能希望异步传入模块选项，而不是在编译时静态传入。在这种情况下，请使用 `registerAsync()` 方法，它提供了多种处理异步配置的方式。
 
 一种方法是使用工厂函数：
 
@@ -286,7 +287,7 @@ CacheModule.registerAsync({
 
 ```
 
-我们的工厂函数与其他异步模块工厂函数的行为相同（它可以是 `async`，并且能够通过 `inject` 注入依赖）。
+我们的工厂函数与其他异步模块工厂的行为相同（它可以是 `async`，并且能够通过 `inject` 注入依赖）。
 
 ```typescript
 CacheModule.registerAsync({
@@ -336,7 +337,7 @@ CacheModule.registerAsync({
 
 > info **提示** `CacheModule#register`、`CacheModule#registerAsync` 和 `CacheOptionsFactory` 具有可选的泛型（类型参数）来缩小存储特定的配置选项，使其类型安全。
 
-你还可以向 `registerAsync()` 方法传递所谓的 `extraProviders`。这些提供者将与模块提供者合并。
+你还可以将所谓的 `extraProviders` 传递给 `registerAsync()` 方法。这些提供者将与模块提供者合并。
 
 ```typescript
 CacheModule.registerAsync({
@@ -347,8 +348,8 @@ CacheModule.registerAsync({
 
 ```
 
-当你想要向工厂函数或类构造函数提供额外的依赖时，这非常有用。
+当你想要为工厂函数或类构造函数提供额外的依赖时，这非常有用。
 
 #### 示例
 
-一个可用的示例位于 [here](https://github.com/nestjs/nest/tree/master/sample/20-cache)。
+可用的工作示例位于 [here](https://github.com/nestjs/nest/tree/master/sample/20-cache)。

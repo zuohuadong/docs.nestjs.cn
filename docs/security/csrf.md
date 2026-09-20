@@ -1,10 +1,11 @@
 <!-- 此文件从 content/security/csrf.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:12:13.275Z -->
+<!-- 生成时间: 2026-09-13T08:02:34.382Z -->
 <!-- 源文件: content/security/csrf.md -->
+<!-- 源哈希: 6e21a26dd1a75f8963bba1a71f816e91 -->
 
 ### CSRF 保护
 
-跨站请求伪造（CSRF 或 XSRF）是一种攻击类型，其中**未经授权的**命令从受信任的用户发送到 Web 应用程序。为帮助防止这种情况，您可以使用 [csrf-csrf](https://github.com/Psifi-Solutions/csrf-csrf) 包。
+跨站请求伪造（CSRF 或 XSRF）是一种攻击类型，其中**未经授权**的命令从受信任的用户发送到 Web 应用程序。为了帮助防止这种情况，您可以使用 [csrf-csrf](https://github.com/Psifi-Solutions/csrf-csrf) 包。
 
 #### 与 Express 一起使用（默认）
 
@@ -15,7 +16,7 @@ $ npm i csrf-csrf
 
 ```
 
-> warning **警告** 如 [csrf-csrf documentation](https://github.com/Psifi-Solutions/csrf-csrf?tab=readme-ov-file#入门) 中所述，此中间件需要预先初始化会话中间件或 `cookie-parser`。请参阅文档以了解更多详情。
+> warning **警告** 如 [csrf-csrf documentation](https://github.com/Psifi-Solutions/csrf-csrf?tab=readme-ov-file#入门) 中所述，此中间件需要先初始化会话中间件或 `cookie-parser`。请参阅文档以获取更多详细信息。
 
 安装完成后，将 `csrf-csrf` 中间件注册为全局中间件。
 

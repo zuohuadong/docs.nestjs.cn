@@ -1,10 +1,11 @@
 <!-- 此文件从 content/graphql/unions-and-enums.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:03:53.934Z -->
+<!-- 生成时间: 2026-09-13T11:31:08.320Z -->
 <!-- 源文件: content/graphql/unions-and-enums.md -->
+<!-- 源哈希: be1cc0635952e4334d67819903b8ab0f -->
 
 ### 联合类型
 
-联合类型与接口非常相似，但它们不能指定类型之间的任何公共字段（了解更多 [here](https://graphql.org/learn/schema/#union-types)）。联合类型对于从单个字段返回不相交的数据类型非常有用。
+联合类型与接口非常相似，但它们不需要在类型之间指定任何公共字段（了解更多 [here](https://graphql.org/learn/schema/#union-types)）。联合类型对于从单个字段返回不相交的数据类型非常有用。
 
 #### 代码优先
 
@@ -56,7 +57,7 @@ search(): Array<typeof ResultUnion> {
 
 ```
 
-这将生成 SDL 中 GraphQL 模式的以下部分：
+这将生成 GraphQL 模式中以下 SDL 部分：
 
 ```graphql
 type Author {
@@ -128,7 +129,7 @@ export type ResultUnion = Author | Book;
 
 ```
 
-联合类型在解析器映射中需要一个额外的 `__resolveType` 字段来确定联合类型应解析为哪种类型。另外，请注意 `ResultUnionResolver` 类必须作为提供者注册到某个模块中。让我们创建一个 `ResultUnionResolver` 类并定义 `__resolveType` 方法。
+联合类型需要在解析器映射中额外添加一个 `__resolveType` 字段，以确定联合类型应解析为哪种类型。另外，请注意 `ResultUnionResolver` 类必须在某个模块中注册为提供者。让我们创建一个 `ResultUnionResolver` 类并定义 `__resolveType` 方法。
 
 ```typescript
 @Resolver('ResultUnion')
@@ -147,18 +148,18 @@ export class ResultUnionResolver {
 
 ```
 
-> info **提示** 所有装饰器都从 `@nestjs/graphql` 包导出。
+> info **提示** 所有装饰器均从 `@nestjs/graphql` 包导出。
 
 ### 枚举类型
 
 枚举类型是一种特殊的标量，仅限于一组特定的允许值（了解更多 [here](https://graphql.org/learn/schema/#enumeration-types)）。这允许您：
 
 - 验证此类型的任何参数是否为允许值之一
-- 通过类型系统传达字段将始终是有限值集合之一
+- 通过类型系统传达字段始终是有限值集合中的一个
 
 #### 代码优先
 
-使用代码优先方法时，您只需创建 TypeScript 枚举即可定义 GraphQL 枚举类型。
+使用代码优先方法时，只需创建 TypeScript 枚举即可定义 GraphQL 枚举类型。
 
 ```typescript
 export enum AllowedColor {
@@ -186,7 +187,7 @@ favoriteColor: AllowedColor;
 
 ```
 
-这将生成 SDL 中 GraphQL 模式的以下部分：
+这将生成 GraphQL 模式中以下 SDL 部分：
 
 ```graphql
 enum AllowedColor {
@@ -225,7 +226,7 @@ registerEnumType(AllowedColor, {
 
 ```
 
-这将生成以下 SDL 中的 GraphQL 模式：
+这将生成以下 GraphQL 模式（SDL）：
 
 ```graphql
 """
@@ -244,7 +245,7 @@ enum AllowedColor {
 
 #### 模式优先
 
-在模式优先方法中定义枚举器，只需使用 SDL 创建 GraphQL 枚举。
+在模式优先方法中定义枚举，只需使用 SDL 创建 GraphQL 枚举。
 
 ```graphql
 enum AllowedColor {
@@ -266,7 +267,7 @@ export enum AllowedColor {
 
 ```
 
-有时后端在内部强制枚举使用与公共 API 不同的值。在此示例中，API 包含 `RED`，但在解析器中我们可能使用 `#f00` 代替（了解更多 [here](https://www.apollographql.com/docs/apollo-server/schema/scalars-enums/#internal-values)）。为此，为 `AllowedColor` 枚举声明一个解析器对象：
+有时后端在内部强制使用与公共 API 不同的枚举值。在此示例中，API 包含 `RED`，但在解析器中我们可能使用 `#f00` 代替（了解更多 [here](https://www.apollographql.com/docs/apollo-server/schema/scalars-enums/#internal-values)）。为此，为 `AllowedColor` 枚举声明一个解析器对象：
 
 ```typescript
 export const allowedColorResolver: Record<keyof typeof AllowedColor, any> = {
@@ -275,7 +276,7 @@ export const allowedColorResolver: Record<keyof typeof AllowedColor, any> = {
 
 ```
 
-> info **提示** 所有装饰器都从 `@nestjs/graphql` 包导出。
+> info **提示** 所有装饰器均从 `@nestjs/graphql` 包导出。
 
 然后将此解析器对象与 `GraphQLModule#forRoot()` 方法的 `resolvers` 属性一起使用，如下所示：
 

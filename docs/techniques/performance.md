@@ -1,16 +1,17 @@
 <!-- 此文件从 content/techniques/performance.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:46:24.986Z -->
+<!-- 生成时间: 2026-09-13T09:12:07.951Z -->
 <!-- 源文件: content/techniques/performance.md -->
+<!-- 源哈希: 95169cad6aa1de044f83a85c2b8a9ee9 -->
 
 ### 性能（Fastify）
 
-默认情况下，Nest 使用 [Express](https://expressjs.com/) 框架。如前所述，Nest 还提供了与其他库的兼容性，例如 [Fastify](https://github.com/fastify/fastify)。Nest 通过实现框架适配器来实现这种框架独立性，其主要功能是将中间件和处理程序代理到相应的库特定实现。
+默认情况下，Nest 使用 [Express](https://expressjs.com/) 框架。如前所述，Nest 还提供与其他库的兼容性，例如 [Fastify](https://github.com/fastify/fastify)。Nest 通过实现框架适配器来实现这种框架独立性，其主要功能是将中间件和处理程序代理到相应的库特定实现。
 
-> info **提示** 请注意，要实现框架适配器，目标库必须提供与 Express 类似的请求/响应管道处理。
+> info **提示** 请注意，要实现框架适配器，目标库必须提供与 Express 中类似的请求/响应管道处理。
 
-[Fastify](https://github.com/fastify/fastify) 为 Nest 提供了一个很好的替代框架，因为它以与 Express 类似的方式解决设计问题。然而，Fastify 比 Express **快得多**，基准测试结果几乎是其两倍。那么，一个合理的问题是，为什么 Nest 使用 Express 作为默认的 HTTP 提供者。原因是 Express 被广泛使用、广为人知，并且拥有大量兼容的中间件，Nest 用户可以开箱即用。
+[Fastify](https://github.com/fastify/fastify) 为 Nest 提供了一个很好的替代框架，因为它以与 Express 类似的方式解决设计问题。然而，Fastify 比 Express **快得多**，基准测试结果几乎翻倍。那么，一个合理的问题是，为什么 Nest 使用 Express 作为默认的 HTTP 提供者。原因是 Express 被广泛使用、广为人知，并且拥有大量兼容的中间件，Nest 用户可以开箱即用。
 
-但由于 Nest 提供了框架独立性，您可以轻松地在两者之间迁移。当原始速度是优先考虑因素时，Fastify 可能是更好的选择。要使用 Fastify，只需选择内置的 `FastifyAdapter`，如本章所示。
+但由于 Nest 提供框架独立性，您可以轻松地在两者之间迁移。当原始速度是优先考虑时，Fastify 可能是更好的选择。要使用 Fastify，只需选择内置的 `FastifyAdapter`，如本章所示。
 
 #### 安装
 
@@ -25,7 +26,7 @@ $ npm i --save @nestjs/platform-fastify
 
 安装 Fastify 平台后，我们可以使用 `FastifyAdapter`。
 
-```typescript
+```typescript title="main.ts"
 import { NestFactory } from '@nestjs/core';
 import {
   FastifyAdapter,
@@ -59,7 +60,7 @@ async function bootstrap() {
 
 #### 平台特定包
 
-请记住，当您使用 `FastifyAdapter` 时，Nest 使用 Fastify 作为 **HTTP 提供者**。这意味着每个依赖 Express 的配方可能不再有效。您应该改用与 Fastify 等效的包。
+请记住，当您使用 `FastifyAdapter` 时，Nest 使用 Fastify 作为 **HTTP 提供者**。这意味着每个依赖 Express 的配方可能不再有效。您应该改用 Fastify 等效的包。
 
 #### 重定向响应
 
@@ -86,7 +87,7 @@ new FastifyAdapter({ logger: true });
 
 中间件函数获取原始的 `req` 和 `res` 对象，而不是 Fastify 的包装器。这就是 Fastify 在底层使用的 `middie` 包的工作方式 - 查看此 [page](https://fastify.dev/docs/latest/Reference/Middleware/) 以获取更多信息。
 
-```typescript
+```typescript title="logger.middleware.ts"
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { FastifyRequest, FastifyReply } from 'fastify';
 

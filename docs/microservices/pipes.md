@@ -1,12 +1,13 @@
 <!-- 此文件从 content/microservices/pipes.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T10:37:03.862Z -->
+<!-- 生成时间: 2026-09-13T10:27:24.170Z -->
 <!-- 源文件: content/microservices/pipes.md -->
+<!-- 源哈希: 705c977429c4b661c5c002efeefc8564 -->
 
 ### 管道
 
 [regular pipes](/pipes) 与微服务管道之间没有根本区别。唯一的区别是，你应该使用 `RpcException` 而不是抛出 `HttpException`。
 
-> info **提示** `RpcException` 类从 `@nestjs/microservices` 包中公开。
+> info **提示** `RpcException` 类从 `@nestjs/microservices` 包中暴露。
 
 #### 绑定管道
 

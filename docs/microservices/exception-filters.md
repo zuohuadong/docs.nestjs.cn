@@ -1,19 +1,20 @@
 <!-- 此文件从 content/microservices/exception-filters.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T10:39:34.913Z -->
+<!-- 生成时间: 2026-09-13T10:53:53.167Z -->
 <!-- 源文件: content/microservices/exception-filters.md -->
+<!-- 源哈希: 3d165b3b8be1411dfcbc4d6f945faf76 -->
 
 ### 异常过滤器
 
-HTTP [exception filter](/overview/exception-filters) 层与对应的微服务层之间唯一的区别在于，你应该使用 `RpcException` 而不是抛出 `HttpException`。
+HTTP [exception filter](/overview/exception-filters) 层与对应的微服务层之间唯一的区别在于，不再抛出 `HttpException`，而是应使用 `RpcException`。
 
 ```typescript
 throw new RpcException('Invalid credentials.');
 
 ```
 
-> info **提示** `RpcException` 类是从 `@nestjs/microservices` 包中导入的。
+> info **提示** `RpcException` 类从 `@nestjs/microservices` 包中导入。
 
-通过上面的示例，Nest 将处理抛出的异常并返回具有以下结构的 `error` 对象：
+使用上述示例，Nest 将处理抛出的异常，并返回具有以下结构的 `error` 对象：
 
 ```json
 {
@@ -27,7 +28,7 @@ throw new RpcException('Invalid credentials.');
 
 微服务异常过滤器的行为与 HTTP 异常过滤器类似，但有一个小区别。`catch()` 方法必须返回一个 `Observable`。
 
-```typescript
+```typescript title="rpc-exception.filter.ts"
 import { Catch, RpcExceptionFilter, ArgumentsHost } from '@nestjs/common';
 import { Observable, throwError } from 'rxjs';
 import { RpcException } from '@nestjs/microservices';
@@ -43,7 +44,7 @@ export class ExceptionFilter implements RpcExceptionFilter<RpcException> {
 
 > warning **警告** 使用 [hybrid application](/faq/hybrid-application) 时，全局微服务异常过滤器默认不会启用。
 
-以下示例使用了手动实例化的方法作用域过滤器。与基于 HTTP 的应用程序一样，你也可以使用控制器作用域的过滤器（即在控制器类前添加 `@UseFilters()` 装饰器）。
+以下示例使用了手动实例化的方法作用域过滤器。与基于 HTTP 的应用程序一样，您也可以使用控制器作用域的过滤器（即，在控制器类前加上 `@UseFilters()` 装饰器）。
 
 ```typescript
 @UseFilters(new ExceptionFilter())
@@ -56,9 +57,9 @@ accumulate(data: number[]): number {
 
 #### 继承
 
-通常，你会创建完全自定义的异常过滤器来满足应用程序的需求。然而，在某些用例中，你可能希望简单地扩展**核心异常过滤器**，并根据某些因素覆盖其行为。
+通常，您会创建完全自定义的异常过滤器，以满足应用程序的需求。然而，在某些用例中，您可能希望简单地扩展**核心异常过滤器**，并根据某些因素覆盖其行为。
 
-为了将异常处理委托给基础过滤器，你需要扩展 `BaseExceptionFilter` 并调用继承的 `catch()` 方法。
+为了将异常处理委托给基础过滤器，您需要扩展 `BaseExceptionFilter` 并调用继承的 `catch()` 方法。
 
 ```typescript
 import { Catch, ArgumentsHost } from '@nestjs/common';
@@ -73,4 +74,4 @@ export class AllExceptionsFilter extends BaseRpcExceptionFilter {
 
 ```
 
-上述实现只是一个演示该方法的框架。你的扩展异常过滤器实现将包含你量身定制的**业务逻辑**（例如，处理各种条件）。
+上述实现只是一个演示该方法的框架。您的扩展异常过滤器实现将包含您量身定制的**业务逻辑**（例如，处理各种条件）。
