@@ -1,6 +1,7 @@
 <!-- 此文件从 content/graphql/directives.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:01:06.207Z -->
+<!-- 生成时间: 2026-09-12T10:52:57.695Z -->
 <!-- 源文件: content/graphql/directives.md -->
+<!-- 源哈希: 7a006656a8e8acea47c297407e008c4f -->
 
 ### 指令
 
@@ -8,13 +9,13 @@
 
 - `@include(if: Boolean)` - 仅当参数为 true 时，才在结果中包含此字段
 - `@skip(if: Boolean)` - 如果参数为 true，则跳过此字段
-- `@deprecated(reason: String)` - 将字段标记为已弃用，并附带消息
+- `@deprecated(reason: String)` - 将字段标记为已弃用并附带消息
 
-指令是一个以 `@` 字符开头的标识符，可选后跟一组命名参数，它可以出现在 GraphQL 查询和模式语言中几乎任何元素之后。
+指令是一个以 `@` 字符开头的标识符，可选地后跟一组命名参数，它可以出现在 GraphQL 查询和模式语言中几乎任何元素之后。
 
 #### 自定义指令
 
-为了指示当 Apollo/Mercurius 遇到你的指令时应执行什么操作，你可以创建一个转换函数。该函数使用 `mapSchema` 函数遍历模式中的位置（字段定义、类型定义等）并执行相应的转换。
+为了指示当 Apollo/Mercurius 遇到你的指令时应该发生什么，你可以创建一个转换函数。该函数使用 `mapSchema` 函数遍历模式中的位置（字段定义、类型定义等）并执行相应的转换。
 
 ```typescript
 import { getDirective, MapperKind, mapSchema } from '@graphql-tools/utils';
@@ -62,7 +63,7 @@ GraphQLModule.forRoot({
 
 ```
 
-一旦注册，`@upper` 指令就可以在我们的模式中使用。但是，应用指令的方式将根据你使用的方法（代码优先或模式优先）而有所不同。
+一旦注册，`@upper` 指令就可以在我们的模式中使用。然而，应用指令的方式将根据你使用的方法（代码优先或模式优先）而有所不同。
 
 #### 代码优先
 
@@ -75,9 +76,9 @@ title: string;
 
 ```
 
-> info **提示** `@Directive()` 装饰器从 `@nestjs/graphql` 包中导出。
+> 信息 **提示** `@Directive()` 装饰器从 `@nestjs/graphql` 包中导出。
 
-指令可以应用于字段、字段解析器、输入和对象类型，以及查询、变更和订阅。以下是应用于查询处理程序级别的指令示例：
+指令可以应用于字段、字段解析器、输入和对象类型，以及查询、变更和订阅。以下是在查询处理器级别应用指令的示例：
 
 ```typescript
 @Directive('@deprecated(reason: "This query will be removed in the next version")')
@@ -88,7 +89,7 @@ async getAuthor(@Args({ name: 'id', type: () => Int }) id: number) {
 
 ```
 
-> warn **警告** 通过 `@Directive()` 装饰器应用的指令不会反映在生成的模式定义文件中。
+> 警告 **警告** 通过 `@Directive()` 装饰器应用的指令不会反映在生成的模式定义文件中。
 
 最后，确保在 `GraphQLModule` 中声明指令，如下所示：
 
@@ -108,7 +109,7 @@ GraphQLModule.forRoot({
 
 ```
 
-> info **提示** `GraphQLDirective` 和 `DirectiveLocation` 均从 `graphql` 包中导出。
+> 信息 **提示** `GraphQLDirective` 和 `DirectiveLocation` 都从 `graphql` 包中导出。
 
 #### 模式优先
 

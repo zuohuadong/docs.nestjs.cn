@@ -1,6 +1,7 @@
 <!-- 此文件从 content/graphql/schema-generator.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:05:59.561Z -->
+<!-- 生成时间: 2026-09-12T10:32:50.325Z -->
 <!-- 源文件: content/graphql/schema-generator.md -->
+<!-- 源哈希: 5c4db6f0ea11d3eace061dd8d6d0265a -->
 
 ### 生成 SDL
 
@@ -35,7 +36,7 @@ const schema = await gqlSchemaFactory.create([
 
 ```
 
-它还可以接受第二个可选参数，该参数为标量类数组：
+它还接受第二个可选参数，该参数是一个标量类数组：
 
 ```typescript
 const schema = await gqlSchemaFactory.create(
@@ -56,4 +57,4 @@ const schema = await gqlSchemaFactory.create([RecipesResolver], {
 ```
 
 - `skipCheck`：忽略模式验证；布尔值，默认为 `false`
-- `orphanedTypes`：需要生成的未被显式引用（不属于对象图的一部分）的类列表。通常，如果某个类被声明但未在图中被引用，则会被省略。该属性值为类引用数组。
+- `orphanedTypes`：要生成的未显式引用（不属于对象图）的类列表。通常，如果声明了一个类但在图中未被引用，则会被省略。该属性值是一个类引用数组。

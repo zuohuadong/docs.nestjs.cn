@@ -1,18 +1,19 @@
 <!-- 此文件从 content/openapi/mapped-types.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:28:57.833Z -->
+<!-- 生成时间: 2026-09-12T08:01:59.453Z -->
 <!-- 源文件: content/openapi/mapped-types.md -->
+<!-- 源哈希: 011822da3c0a9999c4b34ab41b67ca90 -->
 
 ### 映射类型
 
-在构建诸如 **CRUD**（创建/读取/更新/删除）等功能时，通常需要基于基础实体类型构造变体。Nest 提供了几个执行类型转换的工具函数，使这一任务更加便捷。
+在构建 **CRUD**（创建/读取/更新/删除）等功能时，通常需要在基础实体类型上构建变体。Nest 提供了几个执行类型转换的工具函数，使这一任务更加便捷。
 
 #### Partial
 
-在构建输入验证类型（也称为 DTO）时，通常需要为同一类型构建 **create** 和 **update** 变体。例如，**create** 变体可能需要所有字段，而 **update** 变体可能使所有字段变为可选。
+在构建输入验证类型（也称为 DTO）时，通常需要在同一类型上构建 **create** 和 **update** 变体。例如，**create** 变体可能需要所有字段，而 **update** 变体可能使所有字段变为可选。
 
-Nest 提供了 `PartialType()` 工具函数，使这一任务更简单并减少样板代码。
+Nest 提供了 `PartialType()` 工具函数来简化此任务并减少样板代码。
 
-`PartialType()` 函数返回一个类型（类），其输入类型的所有属性都变为可选。例如，假设我们有一个如下的 **create** 类型：
+`PartialType()` 函数返回一个类型（类），其中输入类型的所有属性都设置为可选。例如，假设我们有一个如下的 **create** 类型：
 
 ```typescript
 import { ApiProperty } from '@nestjs/swagger';
@@ -30,7 +31,7 @@ export class CreateCatDto {
 
 ```
 
-默认情况下，所有这些字段都是必填的。要创建一个具有相同字段但每个字段都可选的类型，请使用 `PartialType()` 并将类引用（`CreateCatDto`）作为参数传入：
+默认情况下，所有这些字段都是必需的。要创建一个具有相同字段但每个字段都可选的类型，请使用 `PartialType()` 并将类引用（`CreateCatDto`）作为参数传入：
 
 ```typescript
 export class UpdateCatDto extends PartialType(CreateCatDto) {}
@@ -41,7 +42,7 @@ export class UpdateCatDto extends PartialType(CreateCatDto) {}
 
 #### Pick
 
-`PickType()` 函数通过从输入类型中选取一组属性来构造一个新类型（类）。例如，假设我们从如下类型开始：
+`PickType()` 函数通过从输入类型中选取一组属性来构造一个新的类型（类）。例如，假设我们从如下类型开始：
 
 ```typescript
 import { ApiProperty } from '@nestjs/swagger';
@@ -88,7 +89,7 @@ export class CreateCatDto {
 
 ```
 
-我们可以生成一个派生类型，该类型拥有除 `name` 之外的所有属性，如下所示。在此构造中，`OmitType` 的第二个参数是属性名的数组。
+我们可以生成一个派生类型，该类型包含除 `name` 之外的所有属性，如下所示。在此构造中，`OmitType` 的第二个参数是属性名称的数组。
 
 ```typescript
 export class UpdateCatDto extends OmitType(CreateCatDto, ['name'] as const) {}
@@ -119,7 +120,7 @@ export class AdditionalCatInfo {
 
 ```
 
-我们可以生成一个新类型，该类型包含两个类型中的所有属性。
+我们可以生成一个包含两个类型中所有属性的新类型。
 
 ```typescript
 export class UpdateCatDto extends IntersectionType(
@@ -133,7 +134,7 @@ export class UpdateCatDto extends IntersectionType(
 
 #### 组合
 
-类型映射工具函数是可组合的。例如，以下代码将生成一个类型（类），该类型拥有 `CreateCatDto` 类型的所有属性，但排除 `name`，并且这些属性将被设置为可选：
+类型映射工具函数是可组合的。例如，以下代码将生成一个类型（类），该类型包含 `CreateCatDto` 类型中除 `name` 之外的所有属性，并且这些属性将被设置为可选：
 
 ```typescript
 export class UpdateCatDto extends PartialType(

@@ -1,22 +1,23 @@
 <!-- 此文件从 content/fundamentals/execution-context.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:23:03.659Z -->
+<!-- 生成时间: 2026-09-12T10:29:47.649Z -->
 <!-- 源文件: content/fundamentals/execution-context.md -->
+<!-- 源哈希: ad16061d1af21bbf047c31c08b918efd -->
 
 ### 执行上下文
 
-Nest 提供了几个工具类，帮助您轻松编写可在多种应用上下文（例如，基于 Nest HTTP 服务器的、微服务的和 WebSockets 的应用上下文）中运行的应用程序。这些工具提供有关当前执行上下文的信息，可用于构建通用的 [guards](/overview/guards)、[filters](/overview/exception-filters) 和 [interceptors](/overview/interceptors)，这些组件可跨广泛的控制器、方法和执行上下文工作。
+Nest 提供了几个工具类，帮助您轻松编写可在多种应用上下文（例如，基于 Nest HTTP 服务器、微服务和 WebSockets 应用上下文）中运行的应用程序。这些工具提供有关当前执行上下文的信息，可用于构建通用的 [guards](/overview/guards)、[filters](/overview/exception-filters) 和 [interceptors](/overview/interceptors)，它们能够跨广泛的控制器、方法和执行上下文工作。
 
 本章我们将介绍两个这样的类：`ArgumentsHost` 和 `ExecutionContext`。
 
 #### ArgumentsHost 类
 
-`ArgumentsHost` 类提供了检索传递给处理程序的参数的方法。它允许您选择适当的上下文（例如，HTTP、RPC（微服务）或 WebSockets）来检索参数。框架在您可能希望访问它的地方提供 `ArgumentsHost` 的实例，通常作为 `host` 参数引用。例如，[exception filter](/overview/exception-filters#参数主机) 的 `catch()` 方法会以 `ArgumentsHost` 实例调用。
+`ArgumentsHost` 类提供了检索传递给处理程序的参数的方法。它允许您选择合适的上下文（例如，HTTP、RPC（微服务）或 WebSockets）来检索参数。框架在您可能希望访问它的地方提供 `ArgumentsHost` 的实例，通常作为 `host` 参数引用。例如，[exception filter](/overview/exception-filters#参数主机) 的 `catch()` 方法会以 `ArgumentsHost` 实例作为参数被调用。
 
 `ArgumentsHost` 只是处理程序参数的抽象。例如，对于 HTTP 服务器应用程序（当使用 `@nestjs/platform-express` 时），`host` 对象封装了 Express 的 `[request, response, next]` 数组，其中 `request` 是请求对象，`response` 是响应对象，`next` 是控制应用程序请求-响应周期的函数。另一方面，对于 [GraphQL](/graphql/quick-start) 应用程序，`host` 对象包含 `[root, args, context, info]` 数组。
 
-#### 当前应用程序上下文
+#### 当前应用上下文
 
-在构建旨在跨多个应用程序上下文运行的通用 [guards](/overview/guards)、[filters](/overview/exception-filters) 和 [interceptors](/overview/interceptors) 时，我们需要一种方法来确定我们的方法当前运行的应用程序类型。使用 `ArgumentsHost` 的 `getType()` 方法来完成此操作：
+在构建旨在跨多个应用上下文运行的通用 [guards](/overview/guards)、[filters](/overview/exception-filters) 和 [interceptors](/overview/interceptors) 时，我们需要一种方法来确定我们的方法当前运行在哪种类型的应用程序中。使用 `ArgumentsHost` 的 `getType()` 方法即可实现：
 
 ```typescript
 if (host.getType() === 'http') {
@@ -33,9 +34,9 @@ if (host.getType() === 'http') {
 
 有了应用程序类型，我们就可以编写更通用的组件，如下所示。
 
-#### 主机处理程序参数
+#### 宿主处理程序参数
 
-要检索传递给处理程序的参数数组，一种方法是使用主机对象的 `getArgs()` 方法。
+要检索传递给处理程序的参数数组，一种方法是使用宿主对象的 `getArgs()` 方法。
 
 ```typescript
 const [req, res, next] = host.getArgs();
@@ -50,7 +51,7 @@ const response = host.getArgByIndex(1);
 
 ```
 
-在这些示例中，我们按索引检索了请求和响应对象，这通常不推荐，因为它将应用程序耦合到特定的执行上下文。相反，您可以通过使用 `host` 对象的实用方法之一切换到适合您应用程序的上下文，从而使代码更健壮、更可重用。上下文切换实用方法如下所示。
+在这些示例中，我们按索引检索了请求和响应对象，但这通常不推荐，因为它将应用程序耦合到特定的执行上下文。相反，您可以通过使用 `host` 对象的实用方法之一来切换到适合您应用程序的上下文，从而使代码更健壮、更可重用。上下文切换的实用方法如下所示。
 
 ```typescript
 /**
@@ -68,7 +69,7 @@ switchToWs(): WsArgumentsHost;
 
 ```
 
-让我们使用 `switchToHttp()` 方法重写前面的示例。`host.switchToHttp()` 辅助调用返回一个适用于 HTTP 应用程序上下文的 `HttpArgumentsHost` 对象。`HttpArgumentsHost` 对象有两个有用的方法，我们可以用来提取所需的对象。在这种情况下，我们还使用 Express 类型断言来返回原生 Express 类型化的对象：
+让我们使用 `switchToHttp()` 方法重写前面的示例。`host.switchToHttp()` 辅助调用返回一个适合 HTTP 应用上下文的 `HttpArgumentsHost` 对象。`HttpArgumentsHost` 对象有两个有用的方法，我们可以用来提取所需的对象。在这种情况下，我们还使用 Express 类型断言来返回原生 Express 类型化的对象：
 
 ```typescript
 const ctx = host.switchToHttp();
@@ -112,7 +113,7 @@ export interface RpcArgumentsHost {
 
 #### ExecutionContext 类
 
-`ExecutionContext` 扩展了 `ArgumentsHost`，提供了有关当前执行过程的更多详细信息。与 `ArgumentsHost` 一样，Nest 在您可能需要它的地方提供 `ExecutionContext` 的实例，例如在 [guard](/overview/guards#执行上下文) 的 `canActivate()` 方法和 [interceptor](/overview/interceptors#执行上下文) 的 `intercept()` 方法中。它提供了以下方法：
+`ExecutionContext` 扩展了 `ArgumentsHost`，提供了有关当前执行过程的更多细节。与 `ArgumentsHost` 一样，Nest 在您可能需要它的地方提供 `ExecutionContext` 的实例，例如在 [guard](/overview/guards#执行上下文) 的 `canActivate()` 方法和 [interceptor](/overview/interceptors#执行上下文) 的 `intercept()` 方法中。它提供了以下方法：
 
 ```typescript
 export interface ExecutionContext extends ArgumentsHost {
@@ -137,13 +138,13 @@ const className = ctx.getClass().name; // "CatsController"
 
 ```
 
-能够访问当前类和处理程序方法的引用提供了极大的灵活性。最重要的是，它使我们有机会从守卫或拦截器中访问通过 `Reflector#createDecorator` 创建的装饰器或内置的 `@SetMetadata()` 装饰器设置的元数据。我们将在下面介绍这个用例。
+能够访问当前类和处理程序方法的引用提供了极大的灵活性。最重要的是，它使我们有机会从守卫或拦截器内部访问通过 `Reflector#createDecorator` 创建的装饰器或内置的 `@SetMetadata()` 装饰器设置的元数据。我们将在下面介绍这个用例。
 
 <app-banner-enterprise></app-banner-enterprise>
 
 #### 反射与元数据
 
-Nest 提供了通过 `Reflector#createDecorator` 方法创建的装饰器和内置的 `@SetMetadata()` 装饰器将**自定义元数据**附加到路由处理程序的能力。在本节中，让我们比较这两种方法，并了解如何从守卫或拦截器中访问元数据。
+Nest 提供了通过 `Reflector#createDecorator` 方法创建的装饰器和内置的 `@SetMetadata()` 装饰器将**自定义元数据**附加到路由处理程序的能力。在本节中，让我们比较这两种方法，并了解如何从守卫或拦截器内部访问元数据。
 
 要使用 `Reflector#createDecorator` 创建强类型装饰器，我们需要指定类型参数。例如，让我们创建一个 `Roles` 装饰器，它接受一个字符串数组作为参数。
 
@@ -156,9 +157,9 @@ export const Roles = Reflector.createDecorator<string[]>();
 
 这里的 `Roles` 装饰器是一个函数，它接受一个类型为 `string[]` 的参数。
 
-现在，要使用这个装饰器，我们只需用它注释处理程序：
+现在，要使用这个装饰器，我们只需用它来注解处理程序：
 
-```typescript
+```typescript title="cats.controller.ts"
 @Post()
 @Roles(['admin'])
 async create(@Body() createCatDto: CreateCatDto) {
@@ -171,7 +172,7 @@ async create(@Body() createCatDto: CreateCatDto) {
 
 要访问路由的角色（自定义元数据），我们将再次使用 `Reflector` 辅助类。`Reflector` 可以以正常方式注入到类中：
 
-```typescript
+```typescript title="roles.guard.ts"
 @Injectable()
 export class RolesGuard {
   constructor(private reflector: Reflector) {}
@@ -188,11 +189,11 @@ const roles = this.reflector.get(Roles, context.getHandler());
 
 ```
 
-`Reflector#get` 方法允许我们通过传递两个参数轻松访问元数据：一个装饰器引用和一个**上下文**（装饰器目标）来检索元数据。在此示例中，指定的**装饰器**是 `Roles`（请参阅上面的 `roles.decorator.ts` 文件）。上下文由对 `context.getHandler()` 的调用提供，这导致提取当前处理的路由处理程序的元数据。请记住，`getHandler()` 为我们提供了路由处理程序函数的**引用**。
+`Reflector#get` 方法允许我们通过传递两个参数轻松访问元数据：装饰器引用和**上下文**（装饰器目标）以从中检索元数据。在此示例中，指定的**装饰器**是 `Roles`（请参阅上面的 `roles.decorator.ts` 文件）。上下文由对 `context.getHandler()` 的调用提供，该调用会提取当前处理的路由处理程序的元数据。请记住，`getHandler()` 为我们提供了路由处理程序函数的**引用**。
 
-或者，我们可以在控制器级别应用元数据来组织控制器，这将应用于控制器类中的所有路由。
+或者，我们可以在控制器级别应用元数据来组织我们的控制器，将其应用于控制器类中的所有路由。
 
-```typescript
+```typescript title="cats.controller.ts"
 @Roles(['admin'])
 @Controller('cats')
 export class CatsController {}
@@ -201,16 +202,16 @@ export class CatsController {}
 
 在这种情况下，要提取控制器元数据，我们传递 `context.getClass()` 作为第二个参数（以提供控制器类作为元数据提取的上下文），而不是 `context.getHandler()`：
 
-```typescript
+```typescript title="roles.guard.ts"
 const roles = this.reflector.get(Roles, context.getClass());
 
 ```
 
-鉴于可以在多个级别提供元数据，您可能需要从多个上下文中提取和合并元数据。`Reflector` 类提供了两个实用方法来帮助实现这一点。这些方法同时提取**控制器**和方法元数据，并以不同方式组合它们。
+鉴于可以在多个级别提供元数据，您可能需要从多个上下文中提取和合并元数据。`Reflector` 类提供了两个实用方法来帮助实现这一点。这些方法同时提取**控制器**和方法元数据，并以不同的方式组合它们。
 
 考虑以下场景，您已在两个级别提供了 `Roles` 元数据。
 
-```typescript
+```typescript title="cats.controller.ts"
 @Roles(['user'])
 @Controller('cats')
 export class CatsController {
@@ -232,7 +233,7 @@ const roles = this.reflector.getAllAndOverride(Roles, [context.getHandler(), con
 
 带有此代码的守卫，在上述元数据的 `create()` 方法上下文中运行，将导致 `roles` 包含 `['admin']`。
 
-要获取两者的元数据并合并（此方法合并数组和对象），请使用 `getAllAndMerge()` 方法：
+要获取两者的元数据并合并它（此方法合并数组和对象），请使用 `getAllAndMerge()` 方法：
 
 ```typescript
 const roles = this.reflector.getAllAndMerge(Roles, [context.getHandler(), context.getClass()]);
@@ -247,7 +248,7 @@ const roles = this.reflector.getAllAndMerge(Roles, [context.getHandler(), contex
 
 如前所述，除了使用 `Reflector#createDecorator` 之外，您还可以使用内置的 `@SetMetadata()` 装饰器将元数据附加到处理程序。
 
-```typescript
+```typescript title="cats.controller.ts"
 @Post()
 @SetMetadata('roles', ['admin'])
 async create(@Body() createCatDto: CreateCatDto) {
@@ -258,20 +259,20 @@ async create(@Body() createCatDto: CreateCatDto) {
 
 > info **提示** `@SetMetadata()` 装饰器从 `@nestjs/common` 包中导入。
 
-通过上述构造，我们将 `roles` 元数据（`roles` 是元数据键，`['admin']` 是关联值）附加到 `create()` 方法。虽然这可行，但直接在路由中使用 `@SetMetadata()` 并不是好的做法。相反，您可以创建自己的装饰器，如下所示：
+通过上述构造，我们将 `roles` 元数据（`roles` 是元数据键，`['admin']` 是关联值）附加到 `create()` 方法。虽然这可行，但在路由中直接使用 `@SetMetadata()` 并不是好的做法。相反，您可以创建自己的装饰器，如下所示：
 
-```typescript
+```typescript title="roles.decorator.ts"
 import { SetMetadata } from '@nestjs/common';
 
 export const Roles = (...roles: string[]) => SetMetadata('roles', roles);
 
 ```
 
-这种方法更简洁、更易读，并且有些类似于 `Reflector#createDecorator` 方法。区别在于，使用 `@SetMetadata` 您可以更好地控制元数据键和值，还可以创建接受多个参数的装饰器。
+这种方法更简洁、更易读，并且有些类似于 `Reflector#createDecorator` 方法。区别在于使用 `@SetMetadata` 您可以更好地控制元数据键和值，还可以创建接受多个参数的装饰器。
 
-现在我们有了自定义的 `@Roles()` 装饰器，可以使用它来装饰 `create()` 方法。
+现在我们有了自定义的 `@Roles()` 装饰器，我们可以使用它来装饰 `create()` 方法。
 
-```typescript
+```typescript title="cats.controller.ts"
 @Post()
 @Roles('admin')
 async create(@Body() createCatDto: CreateCatDto) {
@@ -282,7 +283,7 @@ async create(@Body() createCatDto: CreateCatDto) {
 
 要访问路由的角色（自定义元数据），我们将再次使用 `Reflector` 辅助类：
 
-```typescript
+```typescript title="roles.guard.ts"
 @Injectable()
 export class RolesGuard {
   constructor(private reflector: Reflector) {}
@@ -299,4 +300,4 @@ const roles = this.reflector.get<string[]>('roles', context.getHandler());
 
 ```
 
-这里我们不传递装饰器引用，而是将元数据**键**作为第一个参数传递（在我们的例子中是 `'roles'`）。其他一切与 `Reflector#createDecorator` 示例相同。
+这里我们不传递装饰器引用，而是将元数据**键**作为第一个参数传递（在我们的例子中是 `'roles'`）。其他所有内容与 `Reflector#createDecorator` 示例保持一致。

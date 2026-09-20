@@ -1,29 +1,30 @@
 <!-- 此文件从 content/graphql/cli-plugin.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:04:42.146Z -->
+<!-- 生成时间: 2026-09-12T10:47:26.625Z -->
 <!-- 源文件: content/graphql/cli-plugin.md -->
+<!-- 源哈希: 48471da674f3631f2e8aee3a0cdd1f3d -->
 
 ### CLI 插件
 
 > warning **警告** 本章仅适用于代码优先方法。
 
-TypeScript 的元数据反射系统存在一些限制，使得无法确定类的属性组成，也无法识别给定属性是可选的还是必需的。然而，其中一些约束可以在编译时解决。Nest 提供了一个插件来增强 TypeScript 编译过程，从而减少所需的样板代码量。
+TypeScript 的元数据反射系统存在一些限制，例如无法确定类包含哪些属性，也无法识别给定属性是可选的还是必需的。然而，其中一些限制可以在编译时解决。Nest 提供了一个插件来增强 TypeScript 编译过程，从而减少所需的样板代码量。
 
-> info **提示** 此插件是**可选启用**的。如果您愿意，可以手动声明所有装饰器，或者仅在需要的地方声明特定的装饰器。
+> info **提示** 此插件是**可选**的。如果您愿意，可以手动声明所有装饰器，或者仅在需要的地方声明特定的装饰器。
 
 #### 概述
 
 GraphQL 插件将自动：
 
 - 为所有输入对象、对象类型和参数类的属性添加 `@Field` 注解，除非使用了 `@HideField`
-- 根据问号设置 `nullable` 属性（例如，`name?: string` 将设置 `nullable: true`）
-- 根据类型设置 `type` 属性（也支持数组）
+- 根据问号设置 `nullable` 属性（例如 `name?: string` 将设置 `nullable: true`）
+- 根据类型设置 `type` 属性（支持数组）
 - 根据注释生成属性的描述（如果 `introspectComments` 设置为 `true`）
 
-请注意，您的文件名**必须**具有以下后缀之一才能被插件分析：`['.input.ts', '.args.ts', '.entity.ts', '.model.ts']`（例如，`author.entity.ts`）。如果您使用不同的后缀，可以通过指定 `typeFileNameSuffix` 选项来调整插件行为（见下文）。
+请注意，您的文件名**必须**具有以下后缀之一才能被插件分析：`['.input.ts', '.args.ts', '.entity.ts', '.model.ts']`（例如 `author.entity.ts`）。如果您使用不同的后缀，可以通过指定 `typeFileNameSuffix` 选项来调整插件的行为（见下文）。
 
-根据我们目前所学的内容，您必须复制大量代码才能让包知道您的类型应如何在 GraphQL 中声明。例如，您可以如下定义一个简单的 `Author` 类：
+根据我们目前所学的内容，您必须重复大量代码才能让包知道您的类型应如何在 GraphQL 中声明。例如，您可以如下定义一个简单的 `Author` 类：
 
-```typescript
+```typescript title="authors/models/author.model.ts"
 @ObjectType()
 export class Author {
   @Field(type => ID)
@@ -45,7 +46,7 @@ export class Author {
 
 通过启用 GraphQL 插件，上述类定义可以简单地声明为：
 
-```typescript
+```typescript title="authors/models/author.model.ts"
 @ObjectType()
 export class Author {
   @Field(type => ID)
@@ -59,7 +60,7 @@ export class Author {
 
 该插件基于**抽象语法树**自动添加适当的装饰器。因此，您不必再为散布在代码中的 `@Field` 装饰器而烦恼。
 
-> info **提示** 插件将自动生成任何缺失的 GraphQL 属性，但如果您需要覆盖它们，只需通过 `@Field()` 显式设置即可。
+> info **提示** 该插件将自动生成任何缺失的 GraphQL 属性，但如果您需要覆盖它们，只需通过 `@Field()` 显式设置即可。
 
 #### 注释内省
 
@@ -90,7 +91,7 @@ roles: string[];
 
 #### 使用 CLI 插件
 
-要启用插件，请打开 `nest-cli.json`（如果您使用 [Nest CLI](/cli/overview)）并添加以下 `plugins` 配置：
+要启用该插件，请打开 `nest-cli.json`（如果您使用 [Nest CLI](/cli/overview)）并添加以下 `plugins` 配置：
 
 ```javascript
 {
@@ -152,7 +153,7 @@ export interface PluginOptions {
   </tr>
 </table>
 
-如果您不使用 CLI，而是使用自定义的 `webpack` 配置，可以将此插件与 `ts-loader` 结合使用：
+如果您不使用 CLI，而是使用自定义的 `webpack` 配置，您可以结合 `ts-loader` 使用此插件：
 
 ```javascript
 getCustomTransformers: (program: any) => ({
@@ -170,7 +171,7 @@ $ nest start -b swc --type-check
 
 ```
 
-对于 monorepo 设置，请遵循 [here](/recipes/swc#monorepo-and-cli-plugins) 中的说明。
+对于 monorepo 设置，请按照 [here](/recipes/swc#monorepo-and-cli-plugins) 中的说明操作。
 
 ```bash
 $ npx ts-node src/generate-metadata.ts
@@ -192,7 +193,7 @@ GraphQLModule.forRoot<...>({
 
 #### 与 `ts-jest` 集成（e2e 测试）
 
-在启用此插件运行 e2e 测试时，您可能会遇到编译 schema 的问题。例如，最常见的错误之一是：
+在启用此插件运行 e2e 测试时，您可能会遇到编译模式的问题。例如，最常见的错误之一是：
 
 ```json
 Object type <name> must define one or more fields.
@@ -237,7 +238,7 @@ module.exports.factory = (cs) => {
 
 ```
 
-如果您使用 `jest@^29`，则使用下面的代码片段，因为之前的方法已被弃用。
+如果您使用 `jest@^29`，则请使用下面的代码片段，因为之前的方法已被弃用。
 
 ```json
 {

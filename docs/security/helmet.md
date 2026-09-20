@@ -1,14 +1,15 @@
 <!-- 此文件从 content/security/helmet.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:11:04.926Z -->
+<!-- 生成时间: 2026-09-12T07:46:07.991Z -->
 <!-- 源文件: content/security/helmet.md -->
+<!-- 源哈希: b83bd6268445d166f3f6c8fb5ae3ff97 -->
 
 ### Helmet
 
-[Helmet](https://github.com/helmetjs/helmet) 可以通过适当设置 HTTP 头来帮助保护你的应用免受一些已知的 Web 漏洞影响。通常，Helmet 只是一组较小的中间件函数的集合，用于设置与安全相关的 HTTP 头（阅读 [more](https://github.com/helmetjs/helmet#how-it-works)）。
+[Helmet](https://github.com/helmetjs/helmet) 可以通过适当设置 HTTP 头来帮助保护您的应用免受一些众所周知的 Web 漏洞的影响。通常，Helmet 只是一组设置安全相关 HTTP 头的较小中间件函数的集合（阅读 [more](https://github.com/helmetjs/helmet#how-it-works)）。
 
-> info **提示** 请注意，将 `helmet` 作为全局应用或注册它，必须在对 `app.use()` 的其他调用或可能调用 `app.use()` 的设置函数之前进行。这是因为底层平台（即 Express 或 Fastify）的工作方式，其中中间件/路由的定义顺序很重要。如果你在定义路由之后使用像 `helmet` 或 `cors` 这样的中间件，那么该中间件将不会应用于该路由，它只会应用于之后定义的路由。
+> info **提示** 请注意，将 `helmet` 作为全局应用或注册它必须在对 `app.use()` 的其他调用或可能调用 `app.use()` 的设置函数之前进行。这是因为底层平台（即 Express 或 Fastify）的工作方式，中间件/路由的定义顺序很重要。如果您在定义路由后使用像 `helmet` 或 `cors` 这样的中间件，那么该中间件将不会应用于该路由，它只会应用于中间件之后定义的路由。
 
-#### 使用 Express（默认）
+#### 与 Express 一起使用（默认）
 
 首先安装所需的包。
 
@@ -42,9 +43,9 @@ app.use(helmet());
 > }));
 > ```
 
-#### 使用 Fastify
+#### 与 Fastify 一起使用
 
-如果你使用的是 `FastifyAdapter`，请安装 [@fastify/helmet](https://github.com/fastify/fastify-helmet) 包：
+如果您使用 `FastifyAdapter`，请安装 [@fastify/helmet](https://github.com/fastify/fastify-helmet) 包：
 
 ```bash
 $ npm i --save @fastify/helmet

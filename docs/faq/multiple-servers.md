@@ -1,6 +1,7 @@
 <!-- 此文件从 content/faq/multiple-servers.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:36:49.521Z -->
+<!-- 生成时间: 2026-09-12T07:38:55.457Z -->
 <!-- 源文件: content/faq/multiple-servers.md -->
+<!-- 源哈希: 661549589cb03a0e0f0dd9b46eaf76e8 -->
 
 ### HTTPS
 
@@ -28,9 +29,9 @@ const app = await NestFactory.create<NestFastifyApplication>(
 
 ```
 
-#### 同时运行多个服务器
+#### 多服务器同时运行
 
-以下示例展示了如何实例化一个同时监听多个端口（例如，一个非 HTTPS 端口和一个 HTTPS 端口）的 Nest 应用程序。
+以下示例演示如何实例化一个同时监听多个端口（例如，一个非 HTTPS 端口和一个 HTTPS 端口）的 Nest 应用程序。
 
 ```typescript
 const httpsOptions = {
@@ -47,7 +48,7 @@ const httpsServer = https.createServer(httpsOptions, server).listen(443);
 
 ```
 
-因为我们自己调用了 `http.createServer` / `https.createServer`，NestJS 在调用 `app.close` / 终止信号时不会关闭它们。我们需要自己完成这一操作：
+因为我们自己调用了 `http.createServer` / `https.createServer`，NestJS 在调用 `app.close` / 终止信号时不会关闭它们。我们需要自己完成此操作：
 
 ```typescript
 @Injectable()

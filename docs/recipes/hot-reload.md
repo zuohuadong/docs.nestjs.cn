@@ -1,18 +1,19 @@
 <!-- 此文件从 content/recipes/hot-reload.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T12:11:48.915Z -->
+<!-- 生成时间: 2026-09-12T09:35:21.731Z -->
 <!-- 源文件: content/recipes/hot-reload.md -->
+<!-- 源哈希: eec6c1b5c3c11b710b9e09fa3c9234bf -->
 
 ### 热重载
 
-对应用程序引导过程影响最大的是 **TypeScript 编译**。幸运的是，借助 [webpack](https://github.com/webpack/webpack) HMR（热模块替换），我们无需在每次发生更改时重新编译整个项目。这大大减少了实例化应用程序所需的时间，并使迭代开发变得更加容易。
+对应用程序启动过程影响最大的是 **TypeScript 编译**。幸运的是，借助 [webpack](https://github.com/webpack/webpack) HMR（热模块替换），我们无需在每次发生更改时重新编译整个项目。这显著减少了实例化应用程序所需的时间，并使迭代开发变得更加容易。
 
-> warning **警告** 请注意，`webpack` 不会自动将你的资源文件（例如 `graphql` 文件）复制到 `dist` 文件夹。同样，`webpack` 也不兼容 glob 静态路径（例如，`TypeOrmModule` 中的 `entities` 属性）。
+> warning **警告** 请注意，`webpack` 不会自动将你的资源（例如 `graphql` 文件）复制到 `dist` 文件夹。类似地，`webpack` 与 glob 静态路径不兼容（例如 `TypeOrmModule` 中的 `entities` 属性）。
 
-> warning **警告** 自 NestJS v12 起，webpack 构建器已被**弃用**，Rspack 是 monorepo 的默认打包器。本教程针对基于 webpack 的 CommonJS 项目，因此下面的示例使用 `module.hot` 和普通的 `bootstrap()` 调用，而不是本文档其他地方使用的 ESM 顶层 `await`。对于新项目，请优先使用 `--builder rspack`。
+> warning **警告** 自 NestJS v12 起，webpack 构建器已被**弃用**，Rspack 是 monorepo 的默认打包器。本指南针对基于 webpack 的 CommonJS 项目，因此下面的示例使用 `module.hot` 和普通的 `bootstrap()` 调用，而不是本文档其他地方使用的 ESM 顶层 `await`。对于新项目，请优先使用 `--builder rspack`。
 
 ### 使用 CLI
 
-如果你使用的是 [Nest CLI](/cli/overview)，配置过程非常简单。CLI 封装了 `webpack`，它允许使用 `HotModuleReplacementPlugin`。
+如果你使用的是 [Nest CLI](/cli/overview)，配置过程非常简单。CLI 封装了 `webpack`，从而允许使用 `HotModuleReplacementPlugin`。
 
 #### 安装
 
@@ -23,7 +24,7 @@ $ npm i --save-dev webpack-node-externals run-script-webpack-plugin webpack
 
 ```
 
-> info **提示** 如果你使用 **Yarn Berry**（不是经典版 Yarn），请安装 `webpack-pnp-externals` 包而不是 `webpack-node-externals`。
+> info **提示** 如果你使用 **Yarn Berry**（不是经典 Yarn），请安装 `webpack-pnp-externals` 包而不是 `webpack-node-externals`。
 
 #### 配置
 
@@ -55,9 +56,9 @@ module.exports = function (options, webpack) {
 
 ```
 
-> info **提示** 使用 **Yarn Berry**（不是经典版 Yarn）时，不要在 `externals` 配置属性中使用 `nodeExternals`，而应使用 `webpack-pnp-externals` 包中的 `WebpackPnpExternals`：`WebpackPnpExternals({ exclude: ['webpack/hot/poll?100'] })`。
+> info **提示** 使用 **Yarn Berry**（不是经典 Yarn）时，不要使用 `externals` 配置属性中的 `nodeExternals`，而应使用来自 `webpack-pnp-externals` 包的 `WebpackPnpExternals`：`WebpackPnpExternals({ exclude: ['webpack/hot/poll?100'] })`。
 
-此函数将包含默认 webpack 配置的原始对象作为第一个参数，并将 Nest CLI 使用的底层 `webpack` 包的引用作为第二个参数。此外，它返回一个修改后的 webpack 配置，其中包含 `HotModuleReplacementPlugin`、`WatchIgnorePlugin` 和 `RunScriptWebpackPlugin` 插件。
+该函数将包含默认 webpack 配置的原始对象作为第一个参数，并将 Nest CLI 使用的底层 `webpack` 包的引用作为第二个参数。此外，它返回一个带有 `HotModuleReplacementPlugin`、`WatchIgnorePlugin` 和 `RunScriptWebpackPlugin` 插件的修改后的 webpack 配置。
 
 #### 热模块替换
 
@@ -88,9 +89,9 @@ bootstrap();
 
 ```
 
-> info **提示** `app.close()` 是异步的，但 webpack 不会等待 `dispose()` 回调。将返回的 Promise 存储在 `module.hot.data` 上，可以让下一个应用程序实例在重新绑定端口之前等待它，这（连同 `forceCloseConnections`）可以防止重载时出现 `EADDRINUSE` 错误。
+> info **提示** `app.close()` 是异步的，但 webpack 不会等待 `dispose()` 回调。将返回的 promise 存储在 `module.hot.data` 上，可以让下一个应用程序实例在再次绑定端口之前等待它，这（与 `forceCloseConnections` 一起）可防止重新加载时出现 `EADDRINUSE` 错误。
 
-为简化执行过程，请在你的 `package.json` 文件中添加一个脚本。
+为了简化执行过程，请将脚本添加到你的 `package.json` 文件中。
 
 ```json
 "start:dev": "nest build --webpack --webpackPath webpack-hmr.config.js --watch"
@@ -106,7 +107,7 @@ $ npm run start:dev
 
 ### 不使用 CLI
 
-如果你没有使用 [Nest CLI](/cli/overview)，配置会稍微复杂一些（需要更多手动步骤）。
+如果你不使用 [Nest CLI](/cli/overview)，配置会稍微复杂一些（需要更多手动步骤）。
 
 #### 安装
 
@@ -117,7 +118,7 @@ $ npm i --save-dev webpack webpack-cli webpack-node-externals ts-loader run-scri
 
 ```
 
-> info **提示** 如果你使用 **Yarn Berry**（不是经典版 Yarn），请安装 `webpack-pnp-externals` 包而不是 `webpack-node-externals`。
+> info **提示** 如果你使用 **Yarn Berry**（不是经典 Yarn），请安装 `webpack-pnp-externals` 包而不是 `webpack-node-externals`。
 
 #### 配置
 
@@ -159,9 +160,9 @@ module.exports = {
 
 ```
 
-> info **提示** 使用 **Yarn Berry**（不是经典版 Yarn）时，不要在 `externals` 配置属性中使用 `nodeExternals`，而应使用 `webpack-pnp-externals` 包中的 `WebpackPnpExternals`：`WebpackPnpExternals({ exclude: ['webpack/hot/poll?100'] })`。
+> info **提示** 使用 **Yarn Berry**（不是经典 Yarn）时，不要使用 `externals` 配置属性中的 `nodeExternals`，而应使用来自 `webpack-pnp-externals` 包的 `WebpackPnpExternals`：`WebpackPnpExternals({ exclude: ['webpack/hot/poll?100'] })`。
 
-此配置告诉 webpack 关于应用程序的一些基本事项：入口文件的位置、哪个目录用于存放**编译后**的文件，以及我们想要使用哪种加载器来编译源文件。通常，即使你不完全理解所有选项，也应该可以直接使用此文件。
+此配置告诉 webpack 关于应用程序的一些基本事项：入口文件的位置、用于存放**编译后**文件的目录，以及我们想要用来编译源文件的加载器类型。通常，即使你不完全理解所有选项，也可以直接使用此文件。
 
 #### 热模块替换
 
@@ -192,9 +193,9 @@ bootstrap();
 
 ```
 
-> info **提示** `app.close()` 是异步的，但 webpack 不会等待 `dispose()` 回调。将返回的 Promise 存储在 `module.hot.data` 上，可以让下一个应用程序实例在重新绑定端口之前等待它，这（连同 `forceCloseConnections`）可以防止重载时出现 `EADDRINUSE` 错误。
+> info **提示** `app.close()` 是异步的，但 webpack 不会等待 `dispose()` 回调。将返回的 promise 存储在 `module.hot.data` 上，可以让下一个应用程序实例在再次绑定端口之前等待它，这（与 `forceCloseConnections` 一起）可防止重新加载时出现 `EADDRINUSE` 错误。
 
-为简化执行过程，请在你的 `package.json` 文件中添加一个脚本。
+为了简化执行过程，请将脚本添加到你的 `package.json` 文件中。
 
 ```json
 "start:dev": "webpack --config webpack.config.js --watch"
@@ -210,4 +211,4 @@ $ npm run start:dev
 
 #### 示例
 
-一个可用的示例可在 [here](https://github.com/nestjs/nest/tree/master/sample/08-webpack) 获取。
+一个可用的示例位于 [here](https://github.com/nestjs/nest/tree/master/sample/08-webpack)。
