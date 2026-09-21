@@ -37,6 +37,18 @@ The Node.js requirement differs depending on whether you are **running** an appl
 
 `@nestjs/core` itself still declares `>= 20`, but the v12 packages are ESM-only, and consuming them from a CommonJS application relies on `require(esm)` - which is unflagged only in Node.js 20.19 and 22.12 onwards. The 21.x line never received it and is not supported. `nest upgrade` enforces exactly this and refuses to run on an older release.
 
+AWS Lambda disables `require(esm)` by default on its Node.js 20, 22, and 24 runtimes, even when
+the corresponding upstream Node.js release enables it. When running a CommonJS Nest 12 application
+on these Lambda runtimes, enable it through the function's `NODE_OPTIONS` environment variable:
+
+```text
+NODE_OPTIONS=--experimental-require-module
+```
+
+If `NODE_OPTIONS` already contains other flags, append this flag to the existing value. See the
+[AWS Lambda documentation](https://docs.aws.amazon.com/lambda/latest/dg/lambda-nodejs.html#nodejs-experimental)
+for details and the support limitations of experimental features.
+
 The CLI's schematics have a higher floor of their own: `@nestjs/schematics` requires **Node.js v22.22.3+, v24.15+, or v26+**, inherited from the Angular devkit it builds on. Scaffolding and upgrading therefore need a newer runtime than merely running the framework does - and note that the 23.x and 25.x lines, plus early 24.x releases, are excluded.
 
 > info **Hint** The simplest way to satisfy everything is to run the latest active LTS. Pick the bare minimum only if you have a specific reason to stay there - and if you do, note that Node 20.19 is enough to run your application but not to use the CLI's generators.
@@ -188,6 +200,21 @@ Lifecycle hooks are now called by component hierarchy level. This can change the
 
 If your application relies on a specific hook ordering between related providers, review that flow during the upgrade and update any assumptions in initialization logic, teardown logic, or tests.
 
+#### `@Optional()` is no longer inherited
+
+Nest reads optional constructor parameters with `Reflect.getOwnMetadata`, so a subclass no longer inherits the markers its parent declared. Parameter types are still inherited, so a subclass with no constructor of its own keeps its parent's parameters but loses their optional status, and Nest throws `UnknownDependenciesException` where v11 resolved the parameter as `undefined`.
+
+This is deliberate: a dependency that was genuinely missing used to resolve to `undefined` without a word. Give the subclass its own constructor and declare the marker again:
+
+```typescript
+@Injectable()
+class Child extends Base {
+  constructor(@Optional() options?: Options) {
+    super(options);
+  }
+}
+```
+
 #### class-validator and class-transformer
 
 The existing decorator-based workflow still works in v12. `ValidationPipe` and `ClassSerializerInterceptor` remain supported and are still a good fit for class-based DTO projects.
@@ -240,6 +267,76 @@ validationOptions: {
 ```
 
 For Joi schemas, `@nestjs/config` keeps its historical defaults of `allowUnknown: true` and `abortEarly: false`, and merges anything you pass on top of them.
+
+#### Terminus module
+
+The legacy health indicator API, which was deprecated in version 11, has been removed. If your custom health indicators still extend `HealthIndicator` or throw a `HealthCheckError`, they must be migrated to the `HealthIndicatorService`.
+
+**Previous Approach**
+
+Before version 12, a custom health indicator could report an unhealthy state by throwing a `HealthCheckError`:
+
+```typescript
+@Injectable()
+export class DogHealthIndicator extends HealthIndicator {
+  constructor(private readonly dogService: DogService) {
+    super();
+  }
+
+  async isHealthy(key: string) {
+    const badboys = await this.dogService.getBadboys();
+    const isHealthy = badboys.length === 0;
+    const result = this.getStatus(key, isHealthy, { badboys: badboys.length });
+
+    if (!isHealthy) {
+      throw new HealthCheckError('Dog check failed', result);
+    }
+
+    return result;
+  }
+}
+```
+
+**Updated Approach (NestJS Terminus v12)**
+
+In version 12, the health indicator returns its result in both cases. Throwing is no longer a way to report an unhealthy state - the indicator either returns `up()` / `down()` explicitly, or hands the operation to `attempt()`, which marks the indicator as `'down'` when the operation throws:
+
+```typescript
+@Injectable()
+export class DogHealthIndicator {
+  constructor(
+    private readonly dogService: DogService,
+    // Inject the `HealthIndicatorService` provided by the `TerminusModule`
+    private readonly healthIndicatorService: HealthIndicatorService,
+  ) {}
+
+  async isHealthy(key: string) {
+    const indicator = this.healthIndicatorService.check(key);
+    const badboys = await this.dogService.getBadboys();
+
+    if (badboys.length > 0) {
+      // Mark the indicator as "down" and add additional info to the response
+      return indicator.down({ badboys: badboys.length });
+    }
+
+    // Mark the health indicator as "up"
+    return indicator.up();
+  }
+}
+```
+
+If the indicator only needs to know whether an operation succeeded (for example, that the dog service is reachable), `attempt()` is the shorter form:
+
+```typescript
+isHealthy(key: string) {
+  return this.healthIndicatorService
+    .check(key)
+    .attempt(() => {this.dogService.ping()})
+    .withTimeout(1000);
+}
+```
+
+The `timeout` option of the built-in database, microservice and gRPC indicators (e.g. `db.pingCheck('database', {{ '{' }} timeout: 1500 {{ '}' }})`) is deprecated. Chain `.withTimeout(1500)` on the returned attempt instead. See the [Terminus chapter](/recipes/terminus#timeouts-and-caching) for details.
 
 #### Webpack deprecation in CLI workflows
 
