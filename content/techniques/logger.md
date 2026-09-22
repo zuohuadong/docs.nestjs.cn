@@ -12,7 +12,9 @@ Nest comes with a built-in text-based logger which is used during application bo
 
 You can also make use of the built-in logger, or create your own custom implementation, to log your own application-level events and messages.
 
-If your application requires integration with external logging systems, automatic file-based logging, or forwarding logs to a centralized logging service, you can implement a fully custom logging solution using a Node.js logging library. One popular choice is [Pino](https://github.com/pinojs/pino), known for its high performance and flexibility.
+The built-in logger is not only a development convenience. Combined with [JSON output](#json-logging), [structured logging params](#structured-logging-params) and the trace id that [NestJS Observe](#correlating-logs-with-requests) attaches to every line, it covers what most production applications need from a logger: one machine-readable record per line on stdout, queryable fields, log levels, and a way to tie each line back to the request that wrote it. Container platforms and log aggregators (CloudWatch, Cloud Logging, Datadog, Loki, Elasticsearch, and so on) ingest that output as-is, with no extra dependency in your application. The [Logging in production](#logging-in-production) section below shows the full setup.
+
+Reach for a dedicated library such as [Pino](https://github.com/pinojs/pino) or [Winston](https://github.com/winstonjs/winston) when you need something the built-in logger deliberately leaves out - writing to files or other transports from inside the process, field redaction, or the last bit of throughput on very log-heavy services. See [Use external logger](#use-external-logger).
 
 #### Basic customization
 
@@ -174,6 +176,43 @@ The relevant `ConsoleLogger` options are:
 | `flattenParams`    | If enabled, params are spread into the root of the JSON record instead of nested under `params`. JSON mode only. | `false` |
 
 > info **Hint** Only **plain objects** are treated as params. Arrays, strings, numbers, class instances, and `null` continue to be logged as separate messages, and a plain object passed as the *first* argument is still treated as the message itself. Set `structuredParams: false` to restore the pre-v12 behavior.
+
+#### Logging in production
+
+Put together, JSON output and structured params give you production-grade logs from the built-in logger alone:
+
+```typescript
+// main.ts
+const app = await NestFactory.create(AppModule, {
+  logger: new ConsoleLogger({
+    json: true,
+    logLevels: ['log', 'warn', 'error', 'fatal'],
+  }),
+});
+```
+
+```typescript
+// orders.service.ts
+@Injectable()
+export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
+  async capture(order: Order) {
+    // ...
+    this.logger.log('Payment captured', { orderId: order.id, amount: order.total });
+  }
+}
+```
+
+With [NestJS Observe](#correlating-logs-with-requests) installed, each line written during a request also carries that request's trace id - you do not change a single log call:
+
+```json
+{"level":"log","pid":66803,"timestamp":1789978166281,"message":"Payment captured","context":"OrdersService","params":{"orderId":"ord_8f2a","amount":4200},"traceId":"0199a3f2-7c1e-7b40-9d2a-5e8f1c3b7a64"}
+```
+
+That single line is filterable by level and context, queryable by `orderId`, and joinable to every other line from the same request - which is the job most teams install a third-party logger to do. Write logs to stdout like this and let the platform (Docker, Kubernetes, ECS, Cloud Run, and so on) collect and ship them; that keeps rotation, buffering and delivery out of your application process.
+
+> info **Hint** Set `flattenParams: true` if your aggregator indexes top-level fields only, so `orderId` becomes a root-level field instead of `params.orderId`.
 
 #### Using the logger for application logging
 
@@ -434,8 +473,16 @@ You keep calling `this.logger.log()` with an `orderId` param exactly as before -
 
 Structured logging params carry through as well, so `orderId` stays a queryable field rather than being flattened into the message text. Log lines are also alertable in their own right - "tell me when `payment declined` appears more than 10 times in 15 minutes".
 
-If you would rather keep log content in your own aggregator, you do not have to forward anything: with `forwardLogs` off, the SDK still augments `ConsoleLogger` so every line carries its trace id, which is enough to jump from a line in your existing stack to the full trace in the dashboard. See the [SDK reference](/observability/sdk) for both options and their redaction settings.
+If you would rather keep log content in your own aggregator, you do not have to forward anything. Even with `forwardLogs` off, the SDK augments `ConsoleLogger` so every line written during a request carries that request's trace id - on a line of its own beneath the message in the default format, and as a `traceId` field with [JSON logging](#json-logging) enabled:
+
+```json
+{"level":"log","pid":66803,"timestamp":1789978166281,"message":"Payment captured","context":"OrdersService","traceId":"0199a3f2-7c1e-7b40-9d2a-5e8f1c3b7a64"}
+```
+
+That id is enough to jump from a line in your existing stack to the full trace in the dashboard. It is on by default and controlled by the `attachTraceIdToLogs` option (see [Trace correlation](/observability/sdk#trace-correlation)); lines written outside a request - during bootstrap, for example - are left as they are. The augmentation applies to Nest's built-in `ConsoleLogger` only, so if you replace it with an [external logger](#use-external-logger), read the id yourself with `TracerService.currentTraceId()`. See the [SDK reference](/observability/sdk#logs) for forwarding and its redaction settings.
+
+The trace id is not the only thing that lives for the length of a request. The SDK keeps an `AsyncLocalStorage` store for every request, job, and message it instruments, and `TracerService` exposes it through `setAttribute()` and `getAttribute()` - the natural place for the user or tenant a request is acting for, readable from anywhere downstream without threading it through every call. See [Request-scoped attributes](/observability/manual-instrumentation#request-scoped-attributes), and the [Async local storage](/recipes/async-local-storage) recipe for how it compares to a store you set up yourself.
 
 #### Use external logger
 
-Production applications often have specific logging requirements, including advanced filtering, formatting and centralized logging. Nest's built-in logger is used for monitoring Nest system behavior, and can also be useful for basic formatted text logging in your feature modules while in development, but production applications often take advantage of dedicated logging modules like [Winston](https://github.com/winstonjs/winston). As with any standard Node.js application, you can take full advantage of such modules in Nest.
+As [Logging in production](#logging-in-production) shows, the built-in logger already covers structured, centralized logging for most applications. Some requirements still call for a dedicated library such as [Pino](https://github.com/pinojs/pino) or [Winston](https://github.com/winstonjs/winston): multiple in-process transports (files, syslog, HTTP), redaction of sensitive fields, custom serializers, or the lowest possible overhead on services that log at very high volume. As with any standard Node.js application, you can take full advantage of such modules in Nest - implement the `LoggerService` interface as described in [Custom implementation](#custom-implementation), or use a community integration.
