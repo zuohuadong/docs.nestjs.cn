@@ -226,6 +226,7 @@ export class UsersController {
   @Get('me') // 永远不会被执行：`:id` 会先匹配到 "me"
   findMe() {}
 }
+
 ```
 
 这个问题很容易被忽视，因为应用程序启动时不会发出任何警告，问题只会在运行时——当请求被分发给错误的处理器时——才显现出来。诸如 `ParseIntPipe` 之类的管道在这里无济于事——路由在选择处理器时*早于*任何管道的运行。
@@ -238,6 +239,7 @@ NestJS v12 在 `NestApplicationOptions` 上新增了两个可选选项来防范�
 const app = await NestFactory.create(AppModule, {
   routeConflictPolicy: { duplicate: 'error', shadow: 'warn' },
 });
+
 ```
 
 <table>
@@ -259,6 +261,7 @@ const app = await NestFactory.create(AppModule, {
 const app = await NestFactory.create(AppModule, {
   routeResolutionStrategy: 'specificity',
 });
+
 ```
 
 默认值为 `'declaration'`，即保留以往的行为。
@@ -523,6 +526,7 @@ const app = await NestFactory.create<NestFastifyApplication>(
 const app = await NestFactory.create(AppModule, {
   instrument: ObserveInstrument,
 });
+
 ```
 
 这就是全部的集成工作。从这里开始，排查一个缓慢的路由只需三次点击：按 p95 对路由列表排序，打开该操作查看回归是恒定的还是突发的、是否始于某次发布，然后打开一次缓慢的执行并阅读它的瀑布图——是哪个控制器、哪个服务方法、哪个查询占用了时间。耗时按**类和方法**归因，并扣除所有被 await 等待的部分，因此 `CatsService.findOne()` 自身耗时 800 毫秒，与它在数据库上等待了 800 毫秒，可以被立刻区分开。

@@ -13,18 +13,21 @@
 
 ```bash
 $ npm i -g @nestjs/cli@latest @nestjs/schematics@latest
+
 ```
 
 如果您的项目将 CLI 保留为本地开发依赖，也请一并更新：
 
 ```bash
 $ npm i -D @nestjs/cli@latest @nestjs/schematics@latest
+
 ```
 
 装好最新 CLI 后，在项目根目录运行 `nest upgrade`：
 
 ```bash
 $ nest upgrade
+
 ```
 
 该命令会将每个 `@nestjs/*` 包一次性迁移到其 v12 兼容的主版本，确保框架、平台适配器和配套包保持同步，然后安装它们。除此之外，它还会替您完成本指南中描述的迁移的机械化部分——`nest-cli.json` 的 webpack 选项、GraphQL `playground` / 订阅传输层的重命名、NATS 包的替换、`@nestjs/config` 的验证选项——并打印一份报告，列出它更改的所有内容，以及它无法替您迁移的行为变更说明。如果您想在不改动文件的情况下先查看这份报告，请先传入 `--dry-run`。完整的步骤和选项列表请参阅 [nest upgrade](/cli/usages#nest-upgrade)。
@@ -101,12 +104,14 @@ create(@Body({ schema: createUserSchema }) body: CreateUserDto) {
 findOne(@Param('id', { schema: z.coerce.number().int().positive() }) id: number) {
   return this.usersService.findOne(id);
 }
+
 ```
 
 就其本身而言，装饰器只是附加模式元数据。要据此进行验证，请注册内置的 `StandardSchemaValidationPipe`。
 
 ```typescript
 app.useGlobalPipes(new StandardSchemaValidationPipe());
+
 ```
 
 这是传统 `ValidationPipe` 加 `class-validator` 流程之外的一种模式优先（schema-first）替代方案。相同的模式还可以用于驱动 OpenAPI 生成——参见 [Standard Schema (Zod, Valibot)](/openapi/introduction#standard-schema-zod-valibot)。
@@ -124,6 +129,7 @@ Nest 还引入了 `StandardSchemaSerializerInterceptor`，让您可以使用同�
 findOne(@Param('id') id: string) {
   return this.usersService.findOne(id);
 }
+
 ```
 
 当您希望响应的塑形由模式而非 `class-transformer` 装饰器驱动时，请使用它。
@@ -144,6 +150,7 @@ GraphQLModule.forRoot<ApolloDriverConfig>({
     isHeadersEditorEnabled: true,
   },
 });
+
 ```
 
 这使您可以在保持 GraphiQL 启用的同时，自定义 IDE 端点和编辑器行为。
@@ -159,6 +166,7 @@ GraphQLModule.forRoot<ApolloDriverConfig>({
     'graphql-ws': true,
   },
 });
+
 ```
 
 如果您的应用程序仍在依赖 `subscriptions-transport-ws`，请把这项迁移纳入 GraphQL 包升级的计划中。
@@ -170,6 +178,7 @@ microservices 包现在面向 NATS v3，这次升级包含一个破坏性的依�
 ```bash
 $ npm uninstall nats
 $ npm install @nats-io/transport-node
+
 ```
 
 如果您的应用程序直接导入 NATS 辅助函数，也请更新这些导入。例如，header 辅助函数现在来自新的 NATS 包：
@@ -183,6 +192,7 @@ headers.set('x-version', '1.0.0');
 
 const record = new NatsRecordBuilder(payload).setHeaders(headers).build();
 return this.client.send('record-builder-duplex', record);
+
 ```
 
 同时请审查所有自定义序列化器或反序列化器。Nest 现在将 NATS 数据包序列化为 JSON 字符串，自定义的 NATS 反序列化器接收到的是完整的 NATS 消息对象，而不是原始的 `Uint8Array`。在实践中，这意味着自定义反序列化器应当从 `msg.json()` 读取负载，而不是手动解码字节。
@@ -219,6 +229,7 @@ ConfigModule.forRoot({
     PORT: z.coerce.number().default(3000),
   }),
 });
+
 ```
 
 由于验证不再绑定于单一库，我们现在建议新项目使用 Zod 这样的现代 Standard Schema 库，[配置章节](/techniques/configuration#模式验证)也已围绕它重写。
@@ -242,6 +253,7 @@ validationOptions: {
     abortEarly: true,
   },
 },
+
 ```
 
 对于 Joi 模式，`@nestjs/config` 保留了其历史默认值 `allowUnknown: true` 和 `abortEarly: false`，并将您传入的内容合并到它们之上。
@@ -258,6 +270,7 @@ CLI 新增了 `deploy` 命令，它转发到 [Mau](https://mau.nestjs.com/)，�
 
 ```bash
 $ nest deploy
+
 ```
 
 `nest build` 和 `nest start` 也新增了几个选项：
@@ -278,6 +291,7 @@ const app = await NestFactory.create(AppModule, {
   routeConflictPolicy: { duplicate: 'error', shadow: 'warn' },
   routeResolutionStrategy: 'specificity',
 });
+
 ```
 
 两者默认都保持以往的行为，因此除非您显式设置，现有应用程序不会有任何变化。完整描述请参阅[控制器章节](/controllers#路由冲突与解析顺序)。

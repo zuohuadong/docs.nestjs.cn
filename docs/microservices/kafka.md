@@ -186,6 +186,7 @@ KafkaJS 支持通过正则表达式订阅主题，从 NestJS v12 开始，您可
 handleHeroEvents(@Payload() data: any, @Ctx() context: KafkaContext) {
   console.log(`Topic: ${context.getTopic()}`);
 }
+
 ```
 
 这会将处理器订阅到匹配该表达式的每个主题——`hero.kill.dragon`、`hero.rescue.villager` 等等——而无需逐个显式注册。使用 `context.getTopic()` 可以查明实际投递消息的主题。

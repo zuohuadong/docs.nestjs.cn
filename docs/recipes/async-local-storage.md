@@ -96,6 +96,7 @@ export class AppService {
 
 ```bash
 $ npm i @nestjs/observe
+
 ```
 
 `ObserveModule` 导出了 `TracerService`，因此可以在应用程序的任何位置注入：
@@ -108,6 +109,7 @@ import { TracerService } from '@nestjs/observe';
 export class CatsService {
   constructor(private readonly tracerService: TracerService) {}
 }
+
 ```
 
 #### 读取和写入存储
@@ -120,6 +122,7 @@ findAll(@Req() req: Request) {
   this.tracerService.setAttribute('userId', req.headers['x-user-id']);
   return this.catsService.getCatForUser();
 }
+
 ```
 
 ```ts title="cats.service.ts"
@@ -135,6 +138,7 @@ export class CatsService {
     return this.catsRepository.getForUser(userId);
   }
 }
+
 ```
 
 `getAttribute()` 对从未设置过的键返回 `undefined`。在被追踪上下文之外调用这两个方法都会抛出异常，因为没有可供读写的存储——如果您需要的值可能在请求存在之前被合法地读取，请对调用做相应防护。
@@ -157,6 +161,7 @@ export class CatsService {
     this.tracerService.setAttribute('flags.betaCheckout', true);
   }
 }
+
 ```
 
 #### HTTP 之外
@@ -167,6 +172,7 @@ export class CatsService {
 
 ```ts
 const traceId = this.tracerService.currentTraceId();
+
 ```
 
 > info **提示** `ObserveModule` 同样导出了底层的 `AsyncLocalStorage` 实例。`setAttribute()`/`getAttribute()` 是访问该存储的受支持方式；只有当您需要它们未暴露的能力时，才直接注入它。

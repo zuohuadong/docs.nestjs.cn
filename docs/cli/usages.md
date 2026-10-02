@@ -192,6 +192,7 @@ $ nest add <name> [options]
 ```bash
 $ nest upgrade [options]
 $ nest update [options]
+
 ```
 
 ##### 描述
@@ -229,6 +230,7 @@ $ nest update [options]
 
 ```bash
 $ nest deploy [mau-options]
+
 ```
 
 ##### 描述
@@ -239,6 +241,7 @@ $ nest deploy [mau-options]
 
 ```bash
 $ npm install --save-dev @nestjs/mau
+
 ```
 
 由于 Mau 一旦启动就会接管终端，它的输出和显示的任何提示都会直接传递给您。Mau 的功能介绍和配置方法请参阅[部署章节](/deployment#easy-deployment-with-mau)。

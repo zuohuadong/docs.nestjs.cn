@@ -47,12 +47,14 @@ export class UsersController {
     return { id };
   }
 }
+
 ```
 
 全局注册该管道：
 
 ```typescript
 app.useGlobalPipes(new StandardSchemaValidationPipe());
+
 ```
 
 默认情况下，该管道返回由模式产生的值。当您的模式执行强制转换或变换时，这会非常有用。
@@ -63,6 +65,7 @@ app.useGlobalPipes(
     transform: true,
   }),
 );
+
 ```
 
 如果您还希望它验证通过 `createParamDecorator()` 创建的自定义参数装饰器所产生的值，请启用 `validateCustomDecorators`。
@@ -73,6 +76,7 @@ app.useGlobalPipes(
     validateCustomDecorators: true,
   }),
 );
+
 ```
 
 当您的模式已经存在于基于类的 DTO 之外时，请使用这种方式。如果您的项目依赖 `class-validator` 装饰器，`ValidationPipe` 仍然是正确的选择。

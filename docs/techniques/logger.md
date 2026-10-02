@@ -132,22 +132,26 @@ const app = await NestFactory.create(AppModule, {
 ```typescript
 const logger = new Logger('UserService');
 logger.log('User created', { userId: 1, email: 'foo@bar.com' });
+
 ```
 
 在文本模式下，参数会内联追加到同一行格式化输出中：
 
 ```plaintext
 [Nest] 3785  - 02/26/2026, 10:04:41 AM     LOG [UserService] User created { userId: 1, email: 'foo@bar.com' }
+
 ```
 
 当传入多个普通对象时，它们会被合并为一组参数：
 
 ```typescript
 logger.log('Request handled', { method: 'GET' }, { path: '/api', duration: 42 });
+
 ```
 
 ```plaintext
 [Nest] 3785  - 02/26/2026, 10:04:41 AM     LOG [UserService] Request handled { method: 'GET', path: '/api', duration: 42 }
+
 ```
 
 在 JSON 模式下，参数默认嵌套在 `params` 键之下：
@@ -161,12 +165,14 @@ logger.log('Request handled', { method: 'GET' }, { path: '/api', duration: 42 })
   "context": "UserService",
   "params": { "userId": 1 }
 }
+
 ```
 
 如果您更希望把它们展开到 JSON 对象的根部——某些日志聚合器更喜欢这样——请启用 `flattenParams`：
 
 ```typescript
 new ConsoleLogger({ json: true, flattenParams: true });
+
 ```
 
 ```json
@@ -178,6 +184,7 @@ new ConsoleLogger({ json: true, flattenParams: true });
   "context": "UserService",
   "userId": 1
 }
+
 ```
 
 相关的 `ConsoleLogger` 选项如下：
@@ -460,6 +467,7 @@ ObserveModule.forRoot({
   serviceId: 'orders-api',
   forwardLogs: true,
 });
+
 ```
 
 您依然可以像以前一样带着 `orderId` 参数调用 `this.logger.log()`——无需生成关联 ID，也无需在服务层层层传递上下文对象。在执行页面上，该请求的日志会被放置在 trace 自身的时间线上，每一行都紧邻写入时正在进行的跨度，因此"重试警告是在超时*之前*而不是之后触发的"是您能直接看到的东西，而不用跨三个日志流从时间戳去推断。

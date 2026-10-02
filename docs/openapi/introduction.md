@@ -192,6 +192,7 @@ export class CatsController {
     return this.catsService.create(createCatDto);
   }
 }
+
 ```
 
 Swagger 模块会接这些模式，并把它们转换为生成文档中的请求体和参数。
@@ -209,6 +210,7 @@ standardSchemaConverter?: (
   schema: unknown,
   options: { schemaType: 'input' | 'output' },
 ) => { schema: unknown; components?: Record<string, any> } | undefined;
+
 ```
 
 返回 `undefined` 告诉 Nest 该转换器不处理此模式，于是它会回退到上述原生转换。这正是让同一个转换器支持多个库变得安全的原因。
@@ -217,6 +219,7 @@ standardSchemaConverter?: (
 
 ```bash
 $ npm i --save-dev zod-openapi
+
 ```
 
 ```typescript title="main.ts"
@@ -235,12 +238,14 @@ const documentOptions: SwaggerDocumentOptions = {
 
 const documentFactory = () =>
   SwaggerModule.createDocument(app, config, documentOptions);
+
 ```
 
 对于 **Valibot**，请使用 [@valibot/to-json-schema](https://github.com/fabian-hiller/valibot/tree/main/packages/to-json-schema)：
 
 ```bash
 $ npm i --save-dev @valibot/to-json-schema
+
 ```
 
 ```typescript title="main.ts"
@@ -254,6 +259,7 @@ const documentOptions: SwaggerDocumentOptions = {
     }),
   }),
 };
+
 ```
 
 注意两者的区别：`createSchema()` 可以提取可复用的定义，因此其结果带有 `components` 映射，您应将其透传，Nest 会合并进文档的共享组件中。而 `toJsonSchema()` 返回单个自包含的模式，因此直接省略 `components` 即可。
@@ -298,6 +304,7 @@ const documentOptions: SwaggerDocumentOptions = {
     return undefined;
   },
 };
+
 ```
 
 > warning **警告** 在调用特定库的转换器之前，务必先按供应商进行判断。把 Valibot 模式传给 `createSchema()`（或反之）会在文档生成时抛出异常，而不是优雅地失败。

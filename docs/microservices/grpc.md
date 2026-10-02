@@ -320,6 +320,7 @@ create(data: Hero): Hero {
   }
   return this.heroes.add(data);
 }
+
 ```
 
 然后注册该过滤器，使这些异常被序列化为 gRPC 错误：
@@ -335,6 +336,7 @@ const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule,
   },
 });
 app.useGlobalFilters(new GrpcExceptionFilter());
+
 ```
 
 有了这个过滤器，客户端收到的将是 `ALREADY_EXISTS` 而不是 `UNKNOWN`。
@@ -345,6 +347,7 @@ app.useGlobalFilters(new GrpcExceptionFilter());
 import { GrpcException, GrpcStatus } from '@nestjs/microservices';
 
 throw new GrpcException('Rate limit exceeded', GrpcStatus.RESOURCE_EXHAUSTED);
+
 ```
 
 以下状态特定的异常类均可用，各自对应 `GrpcStatus` 枚举的一个成员：

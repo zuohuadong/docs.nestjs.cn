@@ -314,6 +314,7 @@ export class Hero extends AggregateRoot {
     this.apply(new HeroKilledDragonEvent(this.id, enemyId));
   }
 }
+
 ```
 
 **方式 2：Mixin（适用于已有继承层次）**
@@ -336,6 +337,7 @@ export class Dragon extends WithAggregateRoot(Monster) {
     this.apply(new DragonDiedEvent(this.id)); // 通过 mixin 即可使用！
   }
 }
+
 ```
 
 **方式 3：自定义实现**
@@ -370,6 +372,7 @@ export class CustomEntity implements IAggregateRoot {
     // 自定义逻辑
   }
 }
+
 ```
 
 这三种方式都能与 `EventPublisher` 无缝协作，它接受任何实现了 `IAggregateRoot` 接口的对象。
