@@ -172,6 +172,138 @@ const documentFactory = () => SwaggerModule.createDocument(app, config, options)
 
 ```
 
+#### Standard Schema（Zod、Valibot）
+
+Nest 的路由参数装饰器通过其 `schema` 选项接受兼容 [Standard Schema](https://standardschema.dev/) 的模式（参见[控制器章节](/controllers#请求对象)）：
+
+```typescript title="cats.controller.ts"
+import { z } from 'zod';
+
+const createCatSchema = z.object({
+  name: z.string(),
+  age: z.number().int().positive(),
+  breed: z.string(),
+});
+
+@Controller('cats')
+export class CatsController {
+  @Post()
+  create(@Body({ schema: createCatSchema }) createCatDto: CreateCatDto) {
+    return this.catsService.create(createCatDto);
+  }
+}
+```
+
+Swagger 模块会接这些模式，并把它们转换为生成文档中的请求体和参数。
+
+##### 无需配置的库
+
+如果您的验证库实现了 **Standard JSON Schema** 扩展——即其模式暴露了 `~standard.jsonSchema`——Nest 会自行完成转换，无需任何配置。它会请求 `openapi-3.0` 目标，并根据模式描述的是请求还是响应，选用 `input` 或 `output` 变体。
+
+##### 提供转换器
+
+对于未暴露该扩展的库，请在 `SwaggerDocumentOptions` 中提供 `standardSchemaConverter`。它会接收原始模式以及正在生成的 `schemaType`，并返回转换后的 OpenAPI 模式：
+
+```typescript
+standardSchemaConverter?: (
+  schema: unknown,
+  options: { schemaType: 'input' | 'output' },
+) => { schema: unknown; components?: Record<string, any> } | undefined;
+```
+
+返回 `undefined` 告诉 Nest 该转换器不处理此模式，于是它会回退到上述原生转换。这正是让同一个转换器支持多个库变得安全的原因。
+
+对于 **Zod**，请使用 [zod-openapi](https://github.com/samchungy/zod-openapi)：
+
+```bash
+$ npm i --save-dev zod-openapi
+```
+
+```typescript title="main.ts"
+import { SwaggerDocumentOptions } from '@nestjs/swagger';
+import { createSchema } from 'zod-openapi';
+
+const documentOptions: SwaggerDocumentOptions = {
+  standardSchemaConverter: (schema, { schemaType }) => {
+    const converted = createSchema(schema as never, {
+      io: schemaType,
+      openapiVersion: '3.0.0',
+    });
+    return { schema: converted.schema, components: converted.components };
+  },
+};
+
+const documentFactory = () =>
+  SwaggerModule.createDocument(app, config, documentOptions);
+```
+
+对于 **Valibot**，请使用 [@valibot/to-json-schema](https://github.com/fabian-hiller/valibot/tree/main/packages/to-json-schema)：
+
+```bash
+$ npm i --save-dev @valibot/to-json-schema
+```
+
+```typescript title="main.ts"
+import { toJsonSchema } from '@valibot/to-json-schema';
+
+const documentOptions: SwaggerDocumentOptions = {
+  standardSchemaConverter: (schema, { schemaType }) => ({
+    schema: toJsonSchema(schema as never, {
+      target: 'openapi-3.0',
+      typeMode: schemaType,
+    }),
+  }),
+};
+```
+
+注意两者的区别：`createSchema()` 可以提取可复用的定义，因此其结果带有 `components` 映射，您应将其透传，Nest 会合并进文档的共享组件中。而 `toJsonSchema()` 返回单个自包含的模式，因此直接省略 `components` 即可。
+
+##### 同时支持多个库
+
+由于转换器接收到的模式类型是 `unknown`，您可以根据模式的供应商分支处理，从而在同一个应用程序中支持多个库。每个 Standard Schema 都在 `~standard.vendor` 上暴露供应商信息：
+
+```typescript title="main.ts"
+import { toJsonSchema } from '@valibot/to-json-schema';
+import { createSchema } from 'zod-openapi';
+
+function hasVendor(schema: unknown, vendor: string) {
+  return (
+    !!schema &&
+    typeof schema === 'object' &&
+    (schema as { '~standard'?: { vendor?: string } })['~standard']?.vendor ===
+      vendor
+  );
+}
+
+const documentOptions: SwaggerDocumentOptions = {
+  standardSchemaConverter: (schema, { schemaType }) => {
+    if (hasVendor(schema, 'zod')) {
+      const converted = createSchema(schema as never, {
+        io: schemaType,
+        openapiVersion: '3.0.0',
+      });
+      return { schema: converted.schema, components: converted.components };
+    }
+
+    if (hasVendor(schema, 'valibot')) {
+      return {
+        schema: toJsonSchema(schema as never, {
+          target: 'openapi-3.0',
+          typeMode: schemaType,
+        }),
+      };
+    }
+
+    // 此处不处理 —— 让 Nest 回退到原生转换
+    return undefined;
+  },
+};
+```
+
+> warning **警告** 在调用特定库的转换器之前，务必先按供应商进行判断。把 Valibot 模式传给 `createSchema()`（或反之）会在文档生成时抛出异常，而不是优雅地失败。
+
+> info **提示** 当您的模式执行变换时，`schemaType` 非常重要：`input` 形状是客户端发送的内容，而 `output` 形状是解析后处理器接收到的内容。Nest 会根据被文档化的位置请求相应的形状，因此请将该值直接透传给您的转换器，而不是硬编码。
+
 #### 设置选项
 
 您可以通过将一个符合 `SwaggerCustomOptions` 接口的配置对象作为第四个参数传递给 `SwaggerModule#设置` 方法来配置 Swagger UI。

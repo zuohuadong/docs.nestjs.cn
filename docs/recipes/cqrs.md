@@ -294,6 +294,88 @@ const hero = new HeroModel('id'); // <-- HeroModel 是一个类
 
 现在，`HeroModel` 类的每个实例都将能够发布事件，而无需使用 `mergeObjectContext()` 方法。
 
+#### 灵活的聚合根
+
+`AggregateRoot` 类是一个具体实现，您可以扩展它来为您的领域模型添加事件驱动能力。然而，这种方式要求领域实体直接继承 `AggregateRoot`，如果您的应用程序已经有既定的实体继承层次（例如基础的 `Entity` 类，或者诸如 `Monster`、`Vehicle` 等领域特定的基类），这可能会成为一种限制。
+
+为了提供更大的灵活性，`@nestjs/cqrs` 包提供了三种不同的聚合根实现方式：
+
+**方式 1：传统方式（类继承）**
+
+这是前面示例中展示的标准方式。它非常适合简单场景或全新项目。
+
+```typescript
+export class Hero extends AggregateRoot {
+  constructor(private id: string) {
+    super();
+  }
+
+  killEnemy(enemyId: string) {
+    this.apply(new HeroKilledDragonEvent(this.id, enemyId));
+  }
+}
+```
+
+**方式 2：Mixin（适用于已有继承层次）**
+
+如果您已经有一个基类，无法直接继承 `AggregateRoot`，可以使用 `WithAggregateRoot<EventBase, TBase>()` mixin 函数。它允许您将聚合根行为应用到任何现有的基类上。
+
+```typescript title="dragon.model.ts"
+abstract class Monster {
+  constructor(protected readonly id: string) {}
+  abstract roar(): void;
+}
+
+export class Dragon extends WithAggregateRoot(Monster) {
+  roar(): void {
+    console.log('Roarrrr!');
+  }
+
+  die(): void {
+    this.roar();
+    this.apply(new DragonDiedEvent(this.id)); // 通过 mixin 即可使用！
+  }
+}
+```
+
+**方式 3：自定义实现**
+
+如果需要最大程度的控制，或者您希望领域层完全与框架解耦，可以直接实现 `IAggregateRoot` 接口。`EventPublisher` 接受任何实现了该接口的对象。
+
+```typescript
+export class CustomEntity implements IAggregateRoot {
+  private events: IEvent[] = [];
+
+  getUncommittedEvents() {
+    return this.events;
+  }
+
+  publish(event: IEvent) {
+    // 自定义逻辑
+  }
+
+  commit() {
+    // 自定义逻辑
+  }
+
+  uncommit() {
+    // 自定义逻辑
+  }
+
+  apply(event: IEvent) {
+    this.events.push(event);
+  }
+
+  loadFromHistory(history: IEvent[]) {
+    // 自定义逻辑
+  }
+}
+```
+
+这三种方式都能与 `EventPublisher` 无缝协作，它接受任何实现了 `IAggregateRoot` 接口的对象。
+
+#### 手动发布事件
+
 此外，我们可以使用 `EventBus` 手动发出事件：
 
 ```typescript

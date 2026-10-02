@@ -474,6 +474,13 @@ export const anchorMappings: Record<string, string> = {
   'error-handling': '错误处理',
   'factory-providers-usefactory': '工厂提供者usefactory',
   'creating-a-custom-driver': '创建自定义驱动',
+  'route-conflicts-and-resolution-order': '路由冲突与解析顺序',
+  'machine-readable-error-codes': '机器可读的错误代码',
+  'structured-logging-params': '结构化日志参数',
+  'exception-handling': '异常处理',
+  'regular-expression-patterns': '正则表达式模式',
+  'request-scoped-gateways': '请求作用域的网关',
+  'schema-validation': '模式验证',
 };
 
 // 路径映射表

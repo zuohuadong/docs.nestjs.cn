@@ -27,6 +27,58 @@ $ npm i --save class-validator class-transformer
 `ValidationPipe` 从 `@nestjs/common` 包导出。
 :::
 
+#### 使用内置的 StandardSchemaValidationPipe
+
+如果您的项目已经使用兼容 Standard Schema 的库定义了请求模式，您可以将它们直接附加到路由装饰器上，并使用 `StandardSchemaValidationPipe` 进行验证。
+
+```typescript
+import { z } from 'zod';
+import { Body, Controller, Param, Post, Get, StandardSchemaValidationPipe } from '@nestjs/common';
+
+@Controller('users')
+export class UsersController {
+  @Post()
+  create(@Body({ schema: createUserSchema }) body: CreateUserDto) {
+    return body;
+  }
+
+  @Get(':id')
+  findOne(@Param('id', { schema: z.coerce.number().int().positive() }) id: number) {
+    return { id };
+  }
+}
+```
+
+全局注册该管道：
+
+```typescript
+app.useGlobalPipes(new StandardSchemaValidationPipe());
+```
+
+默认情况下，该管道返回由模式产生的值。当您的模式执行强制转换或变换时，这会非常有用。
+
+```typescript
+app.useGlobalPipes(
+  new StandardSchemaValidationPipe({
+    transform: true,
+  }),
+);
+```
+
+如果您还希望它验证通过 `createParamDecorator()` 创建的自定义参数装饰器所产生的值，请启用 `validateCustomDecorators`。
+
+```typescript
+app.useGlobalPipes(
+  new StandardSchemaValidationPipe({
+    validateCustomDecorators: true,
+  }),
+);
+```
+
+当您的模式已经存在于基于类的 DTO 之外时，请使用这种方式。如果您的项目依赖 `class-validator` 装饰器，`ValidationPipe` 仍然是正确的选择。
+
+> info **提示** 相同的模式还可以驱动您的 OpenAPI 文档。参见 OpenAPI 章节中的 [Standard Schema (Zod, Valibot)](/openapi/introduction#standard-schema-zod-valibot)。
+
 因为此管道使用 [`class-validator`](https://github.com/typestack/class-validator) 和 [`class-transformer`](https://github.com/typestack/class-transformer) 库，所以有许多可用的选项。你可以通过传递给管道的配置对象来配置这些设置。以下是内置选项：
 
 ```typescript

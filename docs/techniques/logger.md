@@ -125,6 +125,70 @@ const app = await NestFactory.create(AppModule, {
 
 您可以在此 [Pull Request](https://github.com/nestjs/nest/pull/14121) 中看到不同的变体。
 
+#### 结构化日志参数
+
+日志消息经常需要携带元数据——用户 ID、请求耗时、关联 ID。从 NestJS v12 开始，传递在首个消息参数**之后**的普通对象会被视为结构化参数，并附加到同一条日志条目上，而不是作为单独的日志记录输出。
+
+```typescript
+const logger = new Logger('UserService');
+logger.log('User created', { userId: 1, email: 'foo@bar.com' });
+```
+
+在文本模式下，参数会内联追加到同一行格式化输出中：
+
+```plaintext
+[Nest] 3785  - 02/26/2026, 10:04:41 AM     LOG [UserService] User created { userId: 1, email: 'foo@bar.com' }
+```
+
+当传入多个普通对象时，它们会被合并为一组参数：
+
+```typescript
+logger.log('Request handled', { method: 'GET' }, { path: '/api', duration: 42 });
+```
+
+```plaintext
+[Nest] 3785  - 02/26/2026, 10:04:41 AM     LOG [UserService] Request handled { method: 'GET', path: '/api', duration: 42 }
+```
+
+在 JSON 模式下，参数默认嵌套在 `params` 键之下：
+
+```json
+{
+  "level": "log",
+  "pid": 3785,
+  "timestamp": 1772089691769,
+  "message": "User created",
+  "context": "UserService",
+  "params": { "userId": 1 }
+}
+```
+
+如果您更希望把它们展开到 JSON 对象的根部——某些日志聚合器更喜欢这样——请启用 `flattenParams`：
+
+```typescript
+new ConsoleLogger({ json: true, flattenParams: true });
+```
+
+```json
+{
+  "level": "log",
+  "pid": 3785,
+  "timestamp": 1772089691769,
+  "message": "User created",
+  "context": "UserService",
+  "userId": 1
+}
+```
+
+相关的 `ConsoleLogger` 选项如下：
+
+| 选项               | 描述                                                                                     | 默认值  |
+| ------------------ | ------------------------------------------------------------------------------------------------------------- | ------- |
+| `structuredParams` | 启用后，消息之后记录的普通对象会作为参数附加到同一条目上。                     | `true`  |
+| `flattenParams`    | 启用后，参数会展开到 JSON 记录的根部，而不是嵌套在 `params` 之下。仅 JSON 模式。 | `false` |
+
+> info **提示** 只有**普通对象**会被视为参数。数组、字符串、数字、类实例和 `null` 仍会作为单独的消息记录，而作为*第一个*参数传入的普通对象仍被视为消息本身。设置 `structuredParams: false` 可恢复 v12 之前的行为。
+
 #### 将日志记录器用于应用程序日志记录
 
 我们可以结合上述几种技术，在 Nest 系统日志记录和我们自己的应用程序事件/消息日志记录之间提供一致的行为和格式。
@@ -384,6 +448,25 @@ await app.listen(process.env.PORT ?? 3000);
 :::info 提示
 或者，您可以暂时使用 `logger: false` 指令禁用日志记录，而不是将 `bufferLogs` 设置为 `true`。请注意，如果您向 `NestFactory.create` 提供 `logger: false`，在调用 `useLogger` 之前不会记录任何内容，因此您可能会错过一些重要的初始化错误。如果您不介意一些初始消息将使用默认日志记录器记录，您可以简单地省略 `logger: false` 选项。
 :::
+
+#### 将日志与请求关联
+
+集中式日志解决的是存储问题，而不是调查问题。当每个实例的日志都汇聚到同一处之后，困难的部分变成了从数千行交错的日志中重建*单个*请求——这正是为什么如此多的生产环境调试，实际上都是在发明关联 ID、把它穿透到每一次日志调用中，并祈祷路径上没有哪个环节忘记传递它。
+
+[NestJS Observe](https://www.observe.nestjs.com/ 'NestJS Observe') 免除了这些簿记工作。打开 `forwardLogs`，通过 Nest 的 `Logger` 写入的每一行都会被捕获，并自动附带它所在 trace：
+
+```typescript
+ObserveModule.forRoot({
+  serviceId: 'orders-api',
+  forwardLogs: true,
+});
+```
+
+您依然可以像以前一样带着 `orderId` 参数调用 `this.logger.log()`——无需生成关联 ID，也无需在服务层层层传递上下文对象。在执行页面上，该请求的日志会被放置在 trace 自身的时间线上，每一行都紧邻写入时正在进行的跨度，因此"重试警告是在超时*之前*而不是之后触发的"是您能直接看到的东西，而不用跨三个日志流从时间戳去推断。
+
+结构化日志参数同样会被保留，因此 `orderId` 仍是一个可查询的字段，而不会被摊平进消息文本。日志行本身也可以设置告警——"当 `payment declined` 在 15 分钟内出现超过 10 次时告诉我"。
+
+如果您更愿意把日志内容保留在自己的聚合器中，也完全不必转发任何内容：关闭 `forwardLogs` 时，SDK 仍会增强 `ConsoleLogger`，让每一行都携带其 trace id，这足以让您从现有堆栈中的一行日志跳转到仪表盘中的完整 trace。两种方式及其脱敏设置请参阅 [SDK 参考](/observability/sdk)。
 
 #### 使用外部日志记录器
 

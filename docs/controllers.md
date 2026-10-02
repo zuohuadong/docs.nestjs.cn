@@ -213,6 +213,58 @@ findAll() {
 
 当涉及到在路由 **中间** 使用的星号时，Express 需要命名通配符（例如，`ab{*splat&#125;cd`），而 Fastify 根本不支持它们。
 
+#### 路由冲突与解析顺序
+
+Nest 按声明顺序注册路由。在顺序敏感的适配器上——默认的 Express 适配器就是其一——这意味着参数化路由可能会静默地遮蔽更具体的路由：
+
+```typescript
+@Controller('users')
+export class UsersController {
+  @Get(':id')
+  findOne() {}
+
+  @Get('me') // 永远不会被执行：`:id` 会先匹配到 "me"
+  findMe() {}
+}
+```
+
+这个问题很容易被忽视，因为应用程序启动时不会发出任何警告，问题只会在运行时——当请求被分发给错误的处理器时——才显现出来。诸如 `ParseIntPipe` 之类的管道在这里无济于事——路由在选择处理器时*早于*任何管道的运行。
+
+NestJS v12 在 `NestApplicationOptions` 上新增了两个可选选项来防范这一问题。两者默认都保持以往的行为，因此除非您显式设置，现有应用程序不受影响。
+
+**`routeConflictPolicy`** 启用启动时的诊断。它接受按类别划分的严重级别 `'off'`、`'warn'` 或 `'error'`：
+
+```typescript
+const app = await NestFactory.create(AppModule, {
+  routeConflictPolicy: { duplicate: 'error', shadow: 'warn' },
+});
+```
+
+<table>
+  <tr>
+    <td><code>duplicate</code></td>
+    <td>两个路由拥有完全相同的方法、路径、主机和版本。</td>
+  </tr>
+  <tr>
+    <td><code>shadow</code></td>
+    <td>两个路由模式可以匹配同一个请求，例如 <code>/users/me</code> 和 <code>/users/:id</code>。</td>
+  </tr>
+</table>
+
+设置为 `'error'` 时，每一对冲突都会被聚合到一个单一的 `RouteConflictException` 中，并在 `app.listen()` 期间抛出，这样您能一次看到全部冲突，而不是每次重启只看到一个。
+
+**`routeResolutionStrategy`** 控制注册顺序。将其设置为 `'specificity'` 会优先注册最具体的路由——字面量片段优先于参数化片段，参数化片段优先于通配符——因此上例无论声明顺序如何都能正常工作：
+
+```typescript
+const app = await NestFactory.create(AppModule, {
+  routeResolutionStrategy: 'specificity',
+});
+```
+
+默认值为 `'declaration'`，即保留以往的行为。
+
+> info **提示** 这些选项只在注册顺序会影响匹配的适配器上才有意义。`ExpressAdapter` 是顺序敏感的；`FastifyAdapter` 则不是，因为 `find-my-way` 已经按特异性对路由排序。在 Fastify 上，`shadow` 策略是空操作，`'specificity'` 排序也不生效，而 `duplicate` 策略在两者上都有效。`RouteConflictPolicy`、`RouteConflictPolicyLevel` 和 `RouteResolutionStrategy` 类型从 `@nestjs/common` 导出。
+
 #### 状态码
 
 如前所述，响应的默认 **状态码** 始终为 **200**，除了 POST 请求，默认为 **201**。您可以通过在处理程序级别使用 `@HttpCode(...)` 装饰器轻松更改此行为。
@@ -460,6 +512,22 @@ const app = await NestFactory.create<NestFastifyApplication>(
 #### 错误处理
 
 有关处理错误（即处理异常）的单独章节，请参阅 [这里](/overview/exception-filters)。
+
+#### 在生产环境中观测路由
+
+在您的机器上表现完美的控制器，在真实流量下可能表现得截然不同。生产环境中出现的问题从来不是“这个路由能不能工作？”，而是“为什么 `GET /cats/:id` 在周二部署之后从 40 毫秒变成了 900 毫秒，是每个请求都这样，还是只有一个倒霉的租户？”
+
+路由处理器正是回答这个问题的天然单元，而 [NestJS Observe](https://www.observe.nestjs.com/ 'NestJS Observe') 报告的正是这个单元。由于 `@nestjs/observe` SDK 挂接在 Nest 自身的请求生命周期上，而不是包装 HTTP 服务器，每一项度量都会以您声明的路由模式标注——是 `GET /cats/:id`，而不是一万个不同的 URL——因此每个路由就是一行可以排序、绘图和告警的数据：
+
+```typescript
+const app = await NestFactory.create(AppModule, {
+  instrument: ObserveInstrument,
+});
+```
+
+这就是全部的集成工作。从这里开始，排查一个缓慢的路由只需三次点击：按 p95 对路由列表排序，打开该操作查看回归是恒定的还是突发的、是否始于某次发布，然后打开一次缓慢的执行并阅读它的瀑布图——是哪个控制器、哪个服务方法、哪个查询占用了时间。耗时按**类和方法**归因，并扣除所有被 await 等待的部分，因此 `CatsService.findOne()` 自身耗时 800 毫秒，与它在数据库上等待了 800 毫秒，可以被立刻区分开。
+
+请参阅[可观测性](/observability/overview)章节完成接入，以及[仪表盘](/observability/dashboard)了解从告警到单个请求的完整排查路径。
 
 #### 完整资源示例
 

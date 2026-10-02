@@ -177,6 +177,72 @@ $ nest add <name> [options]
 | --- | --- |
 | `<name>` | 要导入的库名称。 |
 
+##### 选项
+
+| 选项                  | 描述                                                                                      |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| `--dry-run`           | 报告将做出的更改，但不改变文件系统。<br/> 别名：`-d`                                        |
+| `--skip-install`      | 跳过包安装。<br/> 别名：`-s`                                                               |
+| `--project [project]` | 库应添加到的项目。<br/> 别名：`-p`                                                          |
+
+#### nest upgrade
+
+将现有项目升级到最新的 NestJS 主版本。
+
+```bash
+$ nest upgrade [options]
+$ nest update [options]
+```
+
+##### 描述
+
+在 NestJS v11 项目的根目录下运行 `nest upgrade`，它会将您的依赖项更新到 v12，并替您完成迁移中的机械化部分：
+
+- 将所有可识别的 `@nestjs/*` 包升级到其 v12 兼容的主版本（`@nestjs/graphql`、`@nestjs/apollo` 和 `@nestjs/mercurius` 升级到 v14），并报告它不认识的其他 `@nestjs/*` 包，供您自行审查
+- 将 `nest-cli.json` 从已弃用的 `webpack` / `webpackConfigPath` 选项迁移到 `--builder rspack`，并同步更新 `package.json` 中相应的脚本
+- 将 GraphQL 的 `playground` 选项重命名为 `graphiql`，把订阅从 `subscriptions-transport-ws` 切换到 `graphql-ws`，并相应替换相关包
+- 用 `@nats-io/transport-node` / `@nats-io/nats-core` 替换已过时的 `nats` 包，并重写 `nats` 的导入
+- 将库特定的 `@nestjs/config` 设置移到 `validationOptions.libraryOptions` 之下，并将 Joi 升级到 v18（首个实现 Standard Schema 的版本）
+- 在存在 Jest（以及 `@types/jest` / `ts-jest`）的地方进行升级，并在您的 Node.js 版本过旧、无法 `require()` 仅支持 ESM 的 v12 包时发出警告
+- 可选地安装并接好 [`@nestjs/observe`](/observability/overview) —— 它会给出提示，除非您传入 `--observe` 或 `--no-observe`
+- 扫描您的源代码并打印关于行为已变化但无法自动迁移之处的说明，例如生命周期钩子的顺序、更严格的管道签名以及结构化日志参数
+
+该命令最后会安装更新后的依赖项（除非传入 `--skip-install`），并打印一份报告，列出它更改、警告和保留原样的所有内容。
+
+> warning **警告** `nest upgrade` 只会升级**本地**的 `@nestjs/cli` 依赖。全局安装的 CLI 请自行更新：`npm i -g @nestjs/cli@latest` —— 并且要在运行升级**之前**进行，因为该命令本身随 CLI 一起发布。
+
+> info **提示** 该原理（schematic）刻意不会将您的项目迁移到 ESM、Vitest 或 oxlint。这些是新生成的 v12 项目的默认配置，但现有项目可以按自己的节奏采用它们。完整情况请参阅[迁移指南](/migration-guide)。
+
+##### 选项
+
+| 选项                            | 描述                                                                                                            |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `--dry-run`                     | 报告将做出的更改，但不改变文件系统。<br/> 别名：`-d`                                                                  |
+| `--skip-install`                | 跳过包安装。<br/> 别名：`-s`                                                                                         |
+| `--observe` / `--no-observe`    | 设置 `@nestjs/observe`，或完全跳过设置。两者都不传则会给出提示。                                                        |
+| `--tag [tag]`                   | 使用 npm dist-tag（例如 `next`）而不是默认的版本范围。<br/> 别名：`-t`                                                |
+| `--collection [collectionName]` | 指定 schematics 集合。使用包含 schematic 的已安装 npm 包的包名。<br/> 别名：`-c`                                       |
+
+#### nest deploy
+
+将您的应用程序部署到云端，由 [Mau](https://mau.nestjs.com/) 提供支持。
+
+```bash
+$ nest deploy [mau-options]
+```
+
+##### 描述
+
+`nest deploy` 是 Mau CLI 的一个轻量封装。它会定位 Mau 的可执行文件，并将您传递的每个参数直接转发给 `mau deploy`，因此 Mau 支持的任何选项在这里都可以原样使用。
+
+如果您的项目中尚未安装 Mau，该命令会提示将 `@nestjs/mau` 添加为开发依赖，然后继续。在非交互式环境（例如 CI）中，该命令会直接失败而不是给出提示，因此请先显式安装：
+
+```bash
+$ npm install --save-dev @nestjs/mau
+```
+
+由于 Mau 一旦启动就会接管终端，它的输出和显示的任何提示都会直接传递给您。Mau 的功能介绍和配置方法请参阅[部署章节](/deployment#easy-deployment-with-mau)。
+
 #### nest info
 
 显示有关已安装的 nest 包和其他有用的系统信息。例如：

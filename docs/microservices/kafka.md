@@ -177,6 +177,21 @@ Kafka 微服务消息模式利用两个主题作为请求和回复通道。`Clie
 
 为了防止 `ClientKafkaProxy` 消费者丢失响应消息，使用了 Nest 特定的内置自定义分区器。此自定义分区器将分区分配给按高分辨率时间戳（`process.hrtime()`）排序的消费者集合，这些时间戳在应用程序启动时设置。
 
+#### 正则表达式模式
+
+KafkaJS 支持通过正则表达式订阅主题，从 NestJS v12 开始，您可以直接将 `RegExp` 传给 `@MessagePattern()` 或 `@EventPattern()`。Nest 会保留该模式，将其转发给 KafkaJS 的 `subscribe()` 调用，并在为传入主题解析处理器时回退到正则表达式匹配：
+
+```typescript
+@EventPattern(/^hero\..+$/)
+handleHeroEvents(@Payload() data: any, @Ctx() context: KafkaContext) {
+  console.log(`Topic: ${context.getTopic()}`);
+}
+```
+
+这会将处理器订阅到匹配该表达式的每个主题——`hero.kill.dragon`、`hero.rescue.villager` 等等——而无需逐个显式注册。使用 `context.getTopic()` 可以查明实际投递消息的主题。
+
+> info **提示** 正则表达式模式是 Kafka 特有的能力；其他传输器仍按精确值匹配模式。Nest 在匹配前会重置 `lastIndex`，因此全局（`/g`）和粘性（`/y`）表达式不会产生有状态的遗漏。
+
 #### 消息响应订阅
 
 :::warning 注意

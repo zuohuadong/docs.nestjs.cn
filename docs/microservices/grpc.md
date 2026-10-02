@@ -304,6 +304,80 @@ call(): Observable<any> {
 
 请注意，这需要更新我们之前定义的 `HeroesService` 接口。
 
+#### 异常处理
+
+gRPC 处理器可以抛出 `RpcException`，但普通的 `RpcException` 不携带 gRPC 状态码，因此客户端在每次失败时收到的都是 `UNKNOWN`。从 NestJS v12 开始，microservices 包提供了一组专用的 gRPC 异常和一个 `GrpcExceptionFilter`，可将它们映射为规范的 gRPC 错误对象。
+
+在处理器中抛出某个状态特定的异常：
+
+```typescript title="heroes.controller.ts"
+import { GrpcAlreadyExistsException } from '@nestjs/microservices';
+
+@GrpcMethod('HeroesService')
+create(data: Hero): Hero {
+  if (this.heroes.has(data.id)) {
+    throw new GrpcAlreadyExistsException('Hero already exists');
+  }
+  return this.heroes.add(data);
+}
+```
+
+然后注册该过滤器，使这些异常被序列化为 gRPC 错误：
+
+```typescript title="main.ts"
+import { GrpcExceptionFilter } from '@nestjs/microservices';
+
+const app = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
+  transport: Transport.GRPC,
+  options: {
+    package: 'hero',
+    protoPath: join(import.meta.dirname, 'hero/hero.proto'),
+  },
+});
+app.useGlobalFilters(new GrpcExceptionFilter());
+```
+
+有了这个过滤器，客户端收到的将是 `ALREADY_EXISTS` 而不是 `UNKNOWN`。
+
+您还可以使用通用的 `GrpcException` 并显式传入状态码：
+
+```typescript
+import { GrpcException, GrpcStatus } from '@nestjs/microservices';
+
+throw new GrpcException('Rate limit exceeded', GrpcStatus.RESOURCE_EXHAUSTED);
+```
+
+以下状态特定的异常类均可用，各自对应 `GrpcStatus` 枚举的一个成员：
+
+<table>
+  <tr>
+    <td><code>GrpcCancelledException</code></td>
+    <td><code>GrpcUnknownException</code></td>
+    <td><code>GrpcInvalidArgumentException</code></td>
+    <td><code>GrpcDeadlineExceededException</code></td>
+  </tr>
+  <tr>
+    <td><code>GrpcNotFoundException</code></td>
+    <td><code>GrpcAlreadyExistsException</code></td>
+    <td><code>GrpcPermissionDeniedException</code></td>
+    <td><code>GrpcResourceExhaustedException</code></td>
+  </tr>
+  <tr>
+    <td><code>GrpcFailedPreconditionException</code></td>
+    <td><code>GrpcAbortedException</code></td>
+    <td><code>GrpcOutOfRangeException</code></td>
+    <td><code>GrpcUnimplementedException</code></td>
+  </tr>
+  <tr>
+    <td><code>GrpcInternalException</code></td>
+    <td><code>GrpcUnavailableException</code></td>
+    <td><code>GrpcDataLossException</code></td>
+    <td><code>GrpcUnauthenticatedException</code></td>
+  </tr>
+</table>
+
+> info **提示** `GrpcExceptionFilter` 同样处理 `RpcException`。如果您传给它的错误对象带有数值型的 `code` 或 `status` 属性，该值将用作 gRPC 状态码；否则错误将被报告为 `UNKNOWN`。
+
 #### 示例
 
 一个工作示例可在 [此处](https://github.com/nestjs/nest/tree/master/sample/04-grpc) 获得。

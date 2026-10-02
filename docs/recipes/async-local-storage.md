@@ -84,6 +84,93 @@ export class AppService {
 
 >  warning **警告** 请注意，虽然这种技术对很多用例非常有用，但它隐式地混淆了代码流程（创建隐式上下文），因此在使用时要小心，并且避免创建上下文地狱。
 
+### NestJS Observe
+
+如果您运行 [NestJS Observe](/observability/overview)，`@nestjs/observe` SDK 已经为其插桩的每个请求、任务和消息维护着一个 `AsyncLocalStorage` 存储——正是它在调用栈中承载着追踪上下文。`TracerService` 暴露了这个存储，因此请求作用域的状态是您读写的东西，而不是需要您搭建的东西：无需编写模块，无需挂载中间件，也无需针对每种传输器重新接线。
+
+> info **提示** 这与[手动插桩](/observability/manual-instrumentation)中介绍的 `TracerService` 是同一个。本节只介绍它与异步本地存储相关的一面——跨度、已处理错误的捕获和自定义指标在那里描述。
+
+#### 配置
+
+除了[可观测性 → SDK](/observability/sdk) 中描述的标准 SDK 接入之外，无需任何额外操作：安装包，导入 `ObserveModule.forRoot()`，并将 `ObserveInstrument` 传给 `NestFactory.create()`。
+
+```bash
+$ npm i @nestjs/observe
+```
+
+`ObserveModule` 导出了 `TracerService`，因此可以在应用程序的任何位置注入：
+
+```ts title="cats.service.ts"
+import { Injectable } from '@nestjs/common';
+import { TracerService } from '@nestjs/observe';
+
+@Injectable()
+export class CatsService {
+  constructor(private readonly tracerService: TracerService) {}
+}
+```
+
+#### 读取和写入存储
+
+`setAttribute(key, value)` 写入当前上下文存储，`getAttribute(key)` 在同一请求下游的任何位置——另一个服务、守卫、拦截器——读回它，而无需把值层层穿透每个函数签名：
+
+```ts title="cats.controller.ts"
+@Get()
+findAll(@Req() req: Request) {
+  this.tracerService.setAttribute('userId', req.headers['x-user-id']);
+  return this.catsService.getCatForUser();
+}
+```
+
+```ts title="cats.service.ts"
+@Injectable()
+export class CatsService {
+  constructor(
+    private readonly tracerService: TracerService,
+    private readonly catsRepository: CatsRepository,
+  ) {}
+
+  getCatForUser() {
+    const userId = this.tracerService.getAttribute('userId');
+    return this.catsRepository.getForUser(userId);
+  }
+}
+```
+
+`getAttribute()` 对从未设置过的键返回 `undefined`。在被追踪上下文之外调用这两个方法都会抛出异常，因为没有可供读写的存储——如果您需要的值可能在请求存在之前被合法地读取，请对调用做相应防护。
+
+#### 为存储添加类型
+
+将存储的形状作为 `TracerService` 的第一个类型参数传入，即可对键和值进行校验，包括嵌套路径：
+
+```ts
+interface RequestStore {
+  userId: number;
+  flags: { betaCheckout: boolean };
+}
+
+@Injectable()
+export class CatsService {
+  constructor(private readonly tracerService: TracerService<RequestStore>) {}
+
+  enableBeta() {
+    this.tracerService.setAttribute('flags.betaCheckout', true);
+  }
+}
+```
+
+#### HTTP 之外
+
+由于存储是由插桩而非中间件创建的，它存在于 SDK 追踪的每一种操作中——HTTP 和 GraphQL 请求、gRPC 与 `@nestjs/microservices` 消息，以及诸如 BullMQ 消费者和定时任务之类的后台工作。上述模式在所有这些场景中完全相同，这正是它与只覆盖 HTTP 的手写中间件方案的实际区别。
+
+存储还保存着当前的追踪 ID，因此它兼作日志与下游服务的关联键。`currentTraceId()` 返回它，与 `getAttribute()` 不同，在被追踪上下文之外它返回 `null` 而不是抛出异常：
+
+```ts
+const traceId = this.tracerService.currentTraceId();
+```
+
+> info **提示** `ObserveModule` 同样导出了底层的 `AsyncLocalStorage` 实例。`setAttribute()`/`getAttribute()` 是访问该存储的受支持方式；只有当您需要它们未暴露的能力时，才直接注入它。
+
 ### NestJS CLS
 
 `nestjs-cls` 包提供了使用 plain `AsyncLocalStorage` 的多个 DX 改进。它将实现抽象到一个模块中，该模块提供了多种方式来初始化 CLS 对于不同传输方式（不仅限于 HTTP），并且提供了强类型支持。
