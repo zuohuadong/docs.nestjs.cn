@@ -1,0 +1,188 @@
+{
+  "Header": [
+    {
+      "logo": "/assets/logo/roche-logo.png",
+      "url": "https://roche.com",
+      "width": "90px"
+    },
+    {
+      "logo": "/assets/logo/adidas.svg",
+      "url": "https://adidas.com",
+      "width": "80px"
+    },
+    {
+      "logo": "/assets/logo/capgemini.svg",
+      "url": "https://capgemini.com"
+    },
+    {
+      "logo": "/assets/logo/societe-generale-logo.png",
+      "url": "https://www.societegenerale.fr/"
+    },
+    {
+      "logo": "/assets/logo/rewe.svg",
+      "url": "https://rewe-digital.com/",
+      "width": "180px"
+    },
+    {
+      "logo": "/assets/logo/decathlon.png",
+      "url": "https://www.decathlon.com/"
+    },
+    {
+      "logo": "/assets/logo/autodesk.png",
+      "url": "https://www.autodesk.com/"
+    },
+    {
+      "logo": "/assets/logo/neo4j.png",
+      "url": "https://www.neo4j.com/"
+    },
+    {
+      "logo": "/assets/logo/bmw.svg",
+      "url": "https://bmw.com"
+    },
+    {
+      "logo": "/assets/logo/gitlab.png",
+      "url": "https://gitlab.com/"
+    },
+    {
+      "logo": "/assets/logo/ibm.svg",
+      "url": "https://www.ibm.com/"
+    },
+    {
+      "logo": "/assets/logo/jetbrains.svg",
+      "url": "https://www.jetbrains.com/"
+    },
+    {
+      "logo": "/assets/logo/mercedes.png",
+      "url": "https://www.mercedes-benz.com/"
+    },
+    {
+      "logo": "/assets/logo/totalenergies.svg",
+      "url": "https://totalenergies.com/"
+    },
+    {
+      "logo": "/assets/logo/bytedance.png",
+      "url": "https://www.bytedance.com"
+    },
+    {
+      "logo": "/assets/logo/shipt.png",
+      "url": "https://www.shipt.com/"
+    },
+    {
+      "logo": "/assets/logo/sanofi.png",
+      "url": "https://github.com/Sanofi-IADC"
+    },
+    {
+      "logo": "/assets/logo/sitepen.svg",
+      "url": "https://sitepen.com"
+    },
+    {
+      "logo": "https://nestjs.com/img/trilon.png",
+      "url": "https://trilon.io"
+    },
+    {
+      "logo": "/assets/logo/vue-storefront.png",
+      "url": "https://www.vuestorefront.io/"
+    },
+    {
+      "logo": "/assets/logo/hingehealth.png",
+      "url": "https://hingehealth.com",
+      "width": "120px"
+    },
+     {
+      "logo": "/assets/logo/whiskey-house.svg",
+      "url": "https://whiskeyhouse.com"
+    }
+  ],
+  "Body": [
+    "https://gorrion.io/",
+    "http://balticdatascience.com/",
+    "https://prohabits.com/",
+    "https://komed-health.com/",
+    "https://kerberus.com.co/",
+    "http://xtremis.com/",
+    "https://notadd.com/",
+    "http://jsdaddy.io/",
+    "https://yumpingo.com/",
+    "https://analytics-importer.cz/",
+    "https://dayzim.com/",
+    "https://wizkids.co.uk/",
+    "https://pilvia.com/",
+    "https://wi-q.com/",
+    "http://agrofel.com.br",
+    "https://societegenerale.com/",
+    "https://trashpanda.hulan.nl/",
+    "https://bytedance.com/",
+    "https://votercircle.com",
+    "https://erento.com",
+    "https://ideas.manticore-labs.com/",
+    "https://smartexlab.com/",
+    "https://automama.ru/",
+    "https://iflix.com/",
+    "https://frontendwatch.com/",
+    "https://mobilejazz.com/",
+    "https://cgiandi.com/",
+    "https://www.titlex.com.au/",
+    "https://codengage.com/",
+    "https://budacode.com/",
+    "https://blueanchor.io/",
+    "https://www.easymetrics.com/",
+    "https://getapollo.io/",
+    "https://big-bench.com/",
+    "https://www.qingtui.cn/",
+    "https://www.rosebayconsult.com/",
+    "https://www.patrocinium.com/",
+    "https://creatorsdaily.com",
+    "https://autoscar.com.br",
+    "https://www.mediktiv.com",
+    "https://harmonize.health",
+    "https://accerlery.be",
+    "https://www.facile.it",
+    "https://shopback.com",
+    "https://www.ottonova.de",
+    "https://www.radity.com",
+    "https://globalctoforum.org",
+    "https://halojasa.com",
+    "https://hexito.com",
+    "https://rivvy.app",
+    "https://padfever.com/",
+    "https://datenlotse.org",
+    "https://bemum.co",
+    "https://weoptimeye.ai",
+    "https://nemovote.com",
+    "https://selleo.com",
+    "https://pchas.ir",
+    "https://tayeh.ir",
+    "https://forwardigital.co.uk",
+    "https://rozetka.com.ua",
+    "https://www.itrio.net",
+    "https://alexishr.com",
+    "https://dyrector.io",
+    "https://stijlbreuk.nl",
+    "https://polygon-software.ch",
+    "https://bewith.io",
+    "https://swetrix.com",
+    "https://swyftlogistics.com",
+    "https://evershop.io",
+    "https://e-design.ca",
+    "https://growthmill.com",
+    "https://tarken.com.br",
+    "https://remato.com",
+    "https://remberg.de/en",
+    "https://uninterrupted.tech",
+    "https://www.digando.com",
+    "https://novu.co",
+    "https://aqreach.com",
+    "https://phalco.de",
+    "https://www.tesseractpro.io",
+    "https://www.kwanso.com",
+    "https://cmdn.io",
+    "https://ayo.so",
+    "https://devitjobs.com",
+    "https://formation.tech",
+    "https://gofirmex.com",
+    "https://vbdhub.org",
+    "https://www.arven-tech.com",
+    "https://runsystem.net",
+    "https://zenobank.io"
+  ]
+}
