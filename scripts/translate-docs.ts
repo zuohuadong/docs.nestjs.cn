@@ -65,7 +65,7 @@ class DocumentTranslator {
 
     this.aiClient = new AIClient({
       apiKey: options.apiKey || process.env.NVIDIA_API_KEY,
-      model: options.model || 'deepseek-ai/deepseek-v4-flash-0731',
+      model: options.model || 'deepseek-ai/deepseek-v4.1-flash',
       maxTokens: options.maxTokens || 8192,
     });
 
@@ -416,7 +416,7 @@ if (args.includes('--help') || args.includes('-h')) {
 选项:
   --content-dir <dir>     源文件目录 (默认: content)
   --docs-dir <dir>        目标文件目录 (默认: docs)
-  --model <model>         NVIDIA NIM 模型 (默认: deepseek-ai/deepseek-v4-flash-0731)
+  --model <model>         NVIDIA NIM 模型 (默认: deepseek-ai/deepseek-v4.1-flash)
   --concurrency <num>     并发请求数 (默认: 3, 受 40 RPM 限速)
   --api-key <key>         NVIDIA API Key (或设置 NVIDIA_API_KEY 环境变量)
   --no-ai                 禁用 AI 翻译，仅处理格式
@@ -436,7 +436,7 @@ const options: Partial<TranslatorOptions> = {
   contentDir: getArgValue('--content-dir') || 'content',
   docsDir: getArgValue('--docs-dir') || 'docs',
   useAI: !args.includes('--no-ai'),
-  model: getArgValue('--model') || 'deepseek-ai/deepseek-v4-flash-0731',
+  model: getArgValue('--model') || 'deepseek-ai/deepseek-v4.1-flash',
   concurrency: concurrencyValue ? parseInt(concurrencyValue, 10) : 3,
   translateEnglish: args.includes('--translate-english'),
   force: args.includes('--force'),
