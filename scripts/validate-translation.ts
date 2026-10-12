@@ -97,12 +97,20 @@ function checkCodeBlockCount(
   const targetCount = countCodeBlockDelimiters(targetContent);
   const diff = Math.abs(sourceCount - targetCount);
 
-  if (diff > 2) {
-    // 大偏差：翻译严重破坏了代码块
+  if (targetCount % 2 !== 0) {
+    // 目标文件存在未闭合代码块
     issues.push({
       file: relativePath,
       type: 'codeblock',
       severity: 'error',
+      message: `Unclosed code block in target file (odd delimiter count: ${targetCount})`,
+    });
+  } else if (diff > 2) {
+    // 大偏差：源文件与译文代码块数量不一致（可能源文件有未翻译的新增章节，或译文遗漏）
+    issues.push({
+      file: relativePath,
+      type: 'codeblock',
+      severity: 'warning',
       message: `Code block delimiter count mismatch: source=${sourceCount}, target=${targetCount} (diff=${diff})`,
     });
   } else if (diff > 0) {

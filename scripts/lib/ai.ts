@@ -24,7 +24,7 @@ export class AIClient {
     this.config = {
       apiKey: config.apiKey || process.env.NVIDIA_API_KEY || '',
       baseUrl: config.baseUrl || 'https://integrate.api.nvidia.com/v1/chat/completions',
-      model: config.model || 'deepseek-ai/deepseek-v4-flash-0731',
+      model: config.model || 'deepseek-ai/deepseek-v4.1-flash',
       maxTokens: config.maxTokens || 8192,
       temperature: config.temperature || 0.3,
       rpmLimit: config.rpmLimit || 40,
