@@ -294,4 +294,4 @@ const app = await NestFactory.create(AppModule, {
 
 ```
 
-两者默认都保持以往的行为，因此除非您显式设置，现有应用程序不会有任何变化。完整描述请参阅[控制器章节](/controllers#路由冲突与解析顺序)。
+两者默认都保持以往的行为，因此除非您显式设置，现有应用程序不会有任何变化。完整描述请参阅[控制器章节](/overview/controllers#路由冲突与解析顺序)。

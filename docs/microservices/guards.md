@@ -1,13 +1,13 @@
 <!-- 此文件从 content/microservices/guards.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T10:41:12.067Z -->
+<!-- 生成时间: 2026-10-21T09:29:12.253Z -->
 <!-- 源文件: content/microservices/guards.md -->
+<!-- 源哈希: 43b71691271ece80469c034b57adaa82 -->
 
 ### 守卫
 
-微服务守卫与 [regular HTTP application guards](/overview/guards) 之间没有根本区别。
-唯一的区别是，你应该使用 `RpcException` 而不是抛出 `HttpException`。
+微服务守卫的工作方式与 [regular HTTP application guards](/overview/guards) 相同。唯一的区别是它们应该抛出 `RpcException` 而不是 `HttpException`。当守卫返回 `false` 时，Nest 会抛出带有 `Forbidden resource` 消息的 `RpcException`。
 
-> info **提示** `RpcException` 类从 `@nestjs/microservices` 包中暴露。
+> info **提示** `RpcException` 类从 `@nestjs/microservices` 包中导出。
 
 #### 绑定守卫
 
@@ -21,3 +21,5 @@ accumulate(data: number[]): number {
 }
 
 ```
+
+> info **提示** 在主 HTTP 应用程序上注册的全局守卫不会应用于连接到 [hybrid application](/faq/hybrid-application) 的微服务，除非你设置 `inheritAppConfig` 选项。参见 [sharing configuration](/faq/hybrid-application#共享配置)。
