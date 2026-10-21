@@ -1,29 +1,30 @@
 <!-- 此文件从 content/graphql/cli-plugin.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:04:42.146Z -->
+<!-- 生成时间: 2026-10-21T10:06:16.846Z -->
 <!-- 源文件: content/graphql/cli-plugin.md -->
+<!-- 源哈希: 580728a6d8935704cf64dafc3150fa0c -->
 
 ### CLI 插件
 
-> warning **警告** 本章仅适用于代码优先方法。
+> warning **警告** 本章仅适用于代码优先（code first）方式。
 
-TypeScript 的元数据反射系统存在一些限制，使得无法确定类的属性组成，也无法识别给定属性是可选的还是必需的。然而，其中一些约束可以在编译时解决。Nest 提供了一个插件来增强 TypeScript 编译过程，从而减少所需的样板代码量。
+TypeScript 的元数据反射系统存在若干限制，例如，无法确定一个类由哪些属性组成，或者某个给定属性是可选的还是必需的。然而，其中一些约束可以在编译时得到解决。Nest 提供了一个插件，它增强了 TypeScript 编译过程，以减少所需的样板代码量。
 
-> info **提示** 此插件是**可选启用**的。如果您愿意，可以手动声明所有装饰器，或者仅在需要的地方声明特定的装饰器。
+> info **提示** 此插件是**选择性启用**的。如果你愿意，可以手动声明所有装饰器，或者只在需要的地方声明特定的装饰器。
 
 #### 概述
 
-GraphQL 插件将自动：
+GraphQL 插件会自动执行以下操作：
 
-- 为所有输入对象、对象类型和参数类的属性添加 `@Field` 注解，除非使用了 `@HideField`
-- 根据问号设置 `nullable` 属性（例如，`name?: string` 将设置 `nullable: true`）
+- 为输入对象（input object）、对象类型（object type）和参数（args）类的所有属性添加 `@Field` 注解，除非使用了 `@HideField`
+- 根据问号设置 `nullable` 属性（例如，`name?: string` 会设置 `nullable: true`）
 - 根据类型设置 `type` 属性（也支持数组）
-- 根据注释生成属性的描述（如果 `introspectComments` 设置为 `true`）
+- 根据注释为属性生成描述（如果 `introspectComments` 设置为 `true`）
 
-请注意，您的文件名**必须**具有以下后缀之一才能被插件分析：`['.input.ts', '.args.ts', '.entity.ts', '.model.ts']`（例如，`author.entity.ts`）。如果您使用不同的后缀，可以通过指定 `typeFileNameSuffix` 选项来调整插件行为（见下文）。
+你的文件名**必须**具有以下后缀之一，才能被插件分析：`['.input.ts', '.args.ts', '.entity.ts', '.model.ts']`（例如，`author.entity.ts`）。如果你使用不同的后缀，请通过 `typeFileNameSuffix` 选项调整插件的行为（见下文）。
 
-根据我们目前所学的内容，您必须复制大量代码才能让包知道您的类型应如何在 GraphQL 中声明。例如，您可以如下定义一个简单的 `Author` 类：
+根据我们目前所介绍的内容，你必须重复大量代码来告诉该包你的类型应如何在 GraphQL 中声明。例如，你可以按如下方式定义一个 `Author` 类：
 
-```typescript
+```typescript title="authors/models/author.model.ts"
 @ObjectType()
 export class Author {
   @Field(type => ID)
@@ -41,11 +42,11 @@ export class Author {
 
 ```
 
-虽然对于中型项目来说这不是一个重大问题，但一旦您拥有大量类，它就会变得冗长且难以维护。
+虽然这在中型项目中不是什么大问题，但一旦你有大量的类，它就会变得冗长且难以维护。
 
-通过启用 GraphQL 插件，上述类定义可以简单地声明为：
+启用 GraphQL 插件后，上面的类定义可以按如下方式声明：
 
-```typescript
+```typescript title="authors/models/author.model.ts"
 @ObjectType()
 export class Author {
   @Field(type => ID)
@@ -57,15 +58,15 @@ export class Author {
 
 ```
 
-该插件基于**抽象语法树**自动添加适当的装饰器。因此，您不必再为散布在代码中的 `@Field` 装饰器而烦恼。
+该插件基于**抽象语法树**动态添加适当的装饰器，因此你不必在整个代码中散布 `@Field` 装饰器。
 
-> info **提示** 插件将自动生成任何缺失的 GraphQL 属性，但如果您需要覆盖它们，只需通过 `@Field()` 显式设置即可。
+> info **提示** 该插件会自动生成任何缺失的 GraphQL 属性。如果你需要覆盖它们，请使用 `@Field()` 显式设置它们。
 
 #### 注释内省
 
-启用注释内省功能后，CLI 插件将根据注释为字段生成描述。
+启用注释内省功能后，CLI 插件会根据注释为字段生成描述。
 
-例如，给定一个示例 `roles` 属性：
+例如，考虑一个 `roles` 属性：
 
 ```typescript
 /**
@@ -78,7 +79,7 @@ roles: string[];
 
 ```
 
-您必须重复描述值。启用 `introspectComments` 后，CLI 插件可以提取这些注释并自动为属性提供描述。现在，上述字段可以简单地声明如下：
+在这里，你必须重复该描述。启用 `introspectComments` 后，CLI 插件会提取这些注释并自动为属性提供描述。上面的字段随后可以按如下方式声明：
 
 ```typescript
 /**
@@ -90,7 +91,7 @@ roles: string[];
 
 #### 使用 CLI 插件
 
-要启用插件，请打开 `nest-cli.json`（如果您使用 [Nest CLI](/cli/overview)）并添加以下 `plugins` 配置：
+要启用该插件，请打开 `nest-cli.json`（如果你使用 [Nest CLI](/cli/overview)）并添加以下 `plugins` 配置：
 
 ```javascript
 {
@@ -103,7 +104,7 @@ roles: string[];
 
 ```
 
-您可以使用 `options` 属性来自定义插件的行为。
+使用 `options` 属性来自定义插件的行为：
 
 ```javascript
 {
@@ -124,12 +125,14 @@ roles: string[];
 
 ```
 
-`options` 属性必须满足以下接口：
+`options` 属性接受以下选项：
 
 ```typescript
 export interface PluginOptions {
-  typeFileNameSuffix?: string[];
+  typeFileNameSuffix?: string | string[];
   introspectComments?: boolean;
+  esmCompatible?: boolean;
+  debug?: boolean;
 }
 
 ```
@@ -143,19 +146,29 @@ export interface PluginOptions {
   <tr>
     <td><code>typeFileNameSuffix</code></td>
     <td><code>['.input.ts', '.args.ts', '.entity.ts', '.model.ts']</code></td>
-    <td>GraphQL 类型文件后缀</td>
+    <td>包含 GraphQL 类型的文件的后缀</td>
   </tr>
   <tr>
     <td><code>introspectComments</code></td>
-      <td><code>false</code></td>
-      <td>如果设置为 true，插件将根据注释为属性生成描述</td>
+    <td><code>false</code></td>
+    <td>如果设置为 <code>true</code>，插件会根据注释为属性生成描述</td>
+  </tr>
+  <tr>
+    <td><code>esmCompatible</code></td>
+    <td>从每个文件的模块格式推断</td>
+    <td>如果设置为 <code>true</code>，插件会生成 ESM 兼容的代码（不调用 <code>require()</code>，并在相对导入后附加输出扩展名）。</td>
+  </tr>
+  <tr>
+    <td><code>debug</code></td>
+    <td><code>false</code></td>
+    <td>如果设置为 <code>true</code>，插件会记录诊断消息（例如，当它发现一个未导出的类型时）</td>
   </tr>
 </table>
 
-如果您不使用 CLI，而是使用自定义的 `webpack` 配置，可以将此插件与 `ts-loader` 结合使用：
+如果你不使用 CLI，而是使用自定义的 `webpack` 配置，你可以将此插件与 `ts-loader` 结合使用：
 
 ```javascript
-getCustomTransformers: (program: any) => ({
+getCustomTransformers: (program) => ({
   before: [require('@nestjs/graphql/plugin').before({}, program)]
 }),
 
@@ -163,14 +176,14 @@ getCustomTransformers: (program: any) => ({
 
 #### SWC 构建器
 
-对于标准设置（非 monorepo），要在 SWC 构建器中使用 CLI 插件，您需要启用类型检查，如 [here](/recipes/swc#类型检查) 所述。
+对于标准（非 monorepo）设置，将 CLI 插件与 SWC 构建器一起使用需要启用类型检查，如 [SWC type checking](/recipes/swc#类型检查) 中所述。
 
 ```bash
 $ nest start -b swc --type-check
 
 ```
 
-对于 monorepo 设置，请遵循 [here](/recipes/swc#monorepo-and-cli-plugins) 中的说明。
+对于 monorepo 设置，请遵循 [monorepo and CLI plugins](/recipes/swc#monorepo-and-cli-plugins) 中的说明。
 
 ```bash
 $ npx ts-node src/generate-metadata.ts
@@ -178,7 +191,7 @@ $ npx ts-node src/generate-metadata.ts
 
 ```
 
-现在，必须通过 `GraphQLModule` 方法加载序列化的元数据文件，如下所示：
+然后，在 `GraphQLModule` 配置中加载序列化的元数据文件，如下所示：
 
 ```typescript
 import metadata from './metadata.js'; // <-- file auto-generated by the "PluginMetadataGenerator"
@@ -192,16 +205,16 @@ GraphQLModule.forRoot<...>({
 
 #### 与 `ts-jest` 集成（e2e 测试）
 
-在启用此插件运行 e2e 测试时，您可能会遇到编译 schema 的问题。例如，最常见的错误之一是：
+当你在启用此插件的情况下运行 e2e 测试时，可能会遇到编译模式（schema）的问题。例如，最常见的错误之一是：
 
 ```json
 Object type <name> must define one or more fields.
 
 ```
 
-这是因为 `jest` 配置没有在任何地方导入 `@nestjs/graphql/plugin` 插件。
+发生这种情况是因为 `jest` 配置没有在任何地方导入 `@nestjs/graphql/plugin` 插件。
 
-要解决此问题，请在您的 e2e 测试目录中创建以下文件：
+要解决此问题，请在你的 e2e 测试目录中创建以下文件：
 
 ```javascript
 const transformer = require('@nestjs/graphql/plugin');
@@ -221,7 +234,7 @@ module.exports.factory = (cs) => {
 
 ```
 
-完成此操作后，在您的 `jest` 配置文件中导入 AST 转换器。默认情况下（在入门应用程序中），e2e 测试配置文件位于 `test` 文件夹下，名为 `jest-e2e.json`。
+完成此操作后，在你的 `jest` 配置文件中导入 AST 转换器。默认情况下（在入门应用程序中），e2e 测试配置文件位于 `test` 文件夹中，名为 `jest-e2e.json`。
 
 ```json
 {
@@ -237,7 +250,7 @@ module.exports.factory = (cs) => {
 
 ```
 
-如果您使用 `jest@^29`，则使用下面的代码片段，因为之前的方法已被弃用。
+如果你使用 `jest@^29` 或更高版本，请改用下面的代码片段，因为之前的方法已被弃用。
 
 ```json
 {

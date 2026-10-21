@@ -1,20 +1,21 @@
 <!-- 此文件从 content/graphql/directives.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:01:06.207Z -->
+<!-- 生成时间: 2026-10-21T09:50:44.827Z -->
 <!-- 源文件: content/graphql/directives.md -->
+<!-- 源哈希: b3df52c89afcb29b0b96d81d7b9b4075 -->
 
 ### 指令
 
-指令可以附加到字段或片段包含上，并且可以以服务器期望的任何方式影响查询的执行（了解更多 [here](https://graphql.org/learn/queries/#directives)）。GraphQL 规范提供了几个默认指令：
+指令可以附加到字段或片段包含上，并且可以以服务器期望的任何方式影响查询的执行（参见 GraphQL 文档中的 [directives](https://graphql.org/learn/queries/#directives)）。GraphQL 规范提供了几个默认指令：
 
-- `@include(if: Boolean)` - 仅当参数为 true 时，才在结果中包含此字段
-- `@skip(if: Boolean)` - 如果参数为 true，则跳过此字段
-- `@deprecated(reason: String)` - 将字段标记为已弃用，并附带消息
+- `@include(if: Boolean)`：仅当参数为 `true` 时，才在结果中包含此字段
+- `@skip(if: Boolean)`：如果参数为 `true`，则跳过此字段
+- `@deprecated(reason: String)`：将该字段标记为已弃用，并附带一条消息
 
-指令是一个以 `@` 字符开头的标识符，可选后跟一组命名参数，它可以出现在 GraphQL 查询和模式语言中几乎任何元素之后。
+指令是一个标识符，前面带有一个 `@` 字符，后面可选地跟一个具名参数列表。在 GraphQL 查询语言和模式语言中，指令几乎可以出现在任何元素之后。
 
 #### 自定义指令
 
-为了指示当 Apollo/Mercurius 遇到你的指令时应执行什么操作，你可以创建一个转换函数。该函数使用 `mapSchema` 函数遍历模式中的位置（字段定义、类型定义等）并执行相应的转换。
+要定义 Apollo 或 Mercurius 遇到你的指令时会发生什么，请创建一个转换器函数。该函数使用 `mapSchema` 函数遍历模式中的各个位置（字段定义、类型定义等），并应用相应的转换。
 
 ```typescript
 import { getDirective, MapperKind, mapSchema } from '@graphql-tools/utils';
@@ -52,7 +53,7 @@ export function upperDirectiveTransformer(
 
 ```
 
-现在，使用 `transformSchema` 函数在 `GraphQLModule#forRoot` 方法中应用 `upperDirectiveTransformer` 转换函数：
+接下来，在 `GraphQLModule#forRoot()` 方法中使用 `transformSchema` 选项应用 `upperDirectiveTransformer` 函数：
 
 ```typescript
 GraphQLModule.forRoot({
@@ -62,11 +63,11 @@ GraphQLModule.forRoot({
 
 ```
 
-一旦注册，`@upper` 指令就可以在我们的模式中使用。但是，应用指令的方式将根据你使用的方法（代码优先或模式优先）而有所不同。
+注册后，就可以在模式中使用 `@upper` 指令。如何应用该指令取决于你使用的方法（代码优先还是模式优先）。
 
 #### 代码优先
 
-在代码优先方法中，使用 `@Directive()` 装饰器来应用指令。
+在代码优先方法中，使用 `@Directive()` 装饰器来应用该指令：
 
 ```typescript
 @Directive('@upper')
@@ -77,7 +78,7 @@ title: string;
 
 > info **提示** `@Directive()` 装饰器从 `@nestjs/graphql` 包中导出。
 
-指令可以应用于字段、字段解析器、输入和对象类型，以及查询、变更和订阅。以下是应用于查询处理程序级别的指令示例：
+指令可以应用于字段、字段解析器、输入类型和对象类型，以及查询、变更和订阅。下面的示例在查询处理器级别应用指令：
 
 ```typescript
 @Directive('@deprecated(reason: "This query will be removed in the next version")')
@@ -88,9 +89,9 @@ async getAuthor(@Args({ name: 'id', type: () => Int }) id: number) {
 
 ```
 
-> warn **警告** 通过 `@Directive()` 装饰器应用的指令不会反映在生成的模式定义文件中。
+> warning **警告** 通过 `@Directive()` 装饰器应用的指令不会反映在生成的模式定义文件中。
 
-最后，确保在 `GraphQLModule` 中声明指令，如下所示：
+最后，在 `GraphQLModule` 配置中声明这些指令：
 
 ```typescript
 GraphQLModule.forRoot({
@@ -108,11 +109,11 @@ GraphQLModule.forRoot({
 
 ```
 
-> info **提示** `GraphQLDirective` 和 `DirectiveLocation` 均从 `graphql` 包中导出。
+> info **提示** `GraphQLDirective` 和 `DirectiveLocation` 都从 `graphql` 包中导出。
 
 #### 模式优先
 
-在模式优先方法中，直接在 SDL 中应用指令。
+在模式优先方法中，直接在 SDL 中应用指令：
 
 ```graphql
 directive @upper on FIELD_DEFINITION

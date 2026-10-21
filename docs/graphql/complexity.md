@@ -1,27 +1,28 @@
 <!-- 此文件从 content/graphql/complexity.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:05:30.064Z -->
+<!-- 生成时间: 2026-10-21T10:07:58.063Z -->
 <!-- 源文件: content/graphql/complexity.md -->
+<!-- 源哈希: 177ebb41b692047608413b1d880dfd90 -->
 
 ### 复杂度
 
-> warning **警告** 本章仅适用于代码优先方法。
+> warning **警告** 本章仅适用于代码优先（code first）方式。
 
-查询复杂度允许您定义某些字段的复杂程度，并通过**最大复杂度**来限制查询。其思想是使用一个简单的数字来定义每个字段的复杂度。常见的默认值为每个字段赋予 `1` 的复杂度。此外，GraphQL 查询的复杂度计算可以通过所谓的复杂度估计器进行自定义。复杂度估计器是一个简单的函数，用于计算字段的复杂度。您可以向规则中添加任意数量的复杂度估计器，它们会依次执行。第一个返回数值复杂度值的估计器将决定该字段的复杂度。
+查询复杂度允许你定义某些字段的复杂程度，并通过**最大复杂度**来限制查询。其核心思想是将每个字段的复杂度表示为一个数字。一个常见的默认做法是给每个字段赋予 `1` 的复杂度。你还可以通过复杂度估算器（complexity estimator）自定义 GraphQL 查询复杂度的计算方式。复杂度估算器是一个用于计算字段复杂度的函数。你可以向规则中添加任意数量的估算器，它们会依次执行。第一个返回数值的估算器将决定该字段的复杂度。
 
-`@nestjs/graphql` 包与诸如 [graphql-query-complexity](https://github.com/slicknode/graphql-query-complexity) 之类的工具集成得很好，这些工具提供了基于成本分析的解决方案。使用此库，您可以拒绝那些被认为执行成本过高的对 GraphQL 服务器的查询。
+`@nestjs/graphql` 包集成了诸如 [graphql-query-complexity](https://github.com/slicknode/graphql-query-complexity) 之类的工具，后者提供了一种基于成本分析的解决方案。借助该库，你可以拒绝执行成本过高的查询。
 
 #### 安装
 
-要开始使用它，我们首先安装所需的依赖。
+首先，安装所需的依赖：
 
 ```bash
 $ npm install --save graphql-query-complexity
 
 ```
 
-#### 开始使用
+#### 快速开始
 
-安装过程完成后，我们可以定义 `ComplexityPlugin` 类：
+安装完成后，定义 `ComplexityPlugin` 类：
 
 ```typescript
 import { GraphQLSchemaHost } from '@nestjs/graphql';
@@ -71,16 +72,16 @@ export class ComplexityPlugin implements ApolloServerPlugin {
 
 ```
 
-出于演示目的，我们将允许的最大复杂度指定为 `20`。在上面的示例中，我们使用了 2 个估计器：`simpleEstimator` 和 `fieldExtensionsEstimator`。
+出于演示目的，允许的最大复杂度被设置为 `20`。上面的示例使用了两个估算器：`fieldExtensionsEstimator` 和 `simpleEstimator`：
 
-- `simpleEstimator`：简单估计器为每个字段返回固定的复杂度
-- `fieldExtensionsEstimator`：字段扩展估计器提取模式中每个字段的复杂度值
+- `fieldExtensionsEstimator`：提取为模式中每个字段定义的复杂度值（通过字段的 `extensions`）
+- `simpleEstimator`：为每个字段返回固定的复杂度（用作未定义复杂度的字段的回退值）
 
-> info **提示** 记得将此类添加到任何模块的提供者数组中。
+> info **提示** 记得将该类添加到模块的 `providers` 数组中。
 
 #### 字段级复杂度
 
-有了这个插件，我们现在可以通过在传递给 `@Field()` 装饰器的选项对象中指定 `complexity` 属性来定义任何字段的复杂度，如下所示：
+有了这个插件，你可以通过在传递给 `@Field()` 装饰器的选项对象中指定 `complexity` 属性来定义任意字段的复杂度：
 
 ```typescript
 @Field({ complexity: 3 })
@@ -88,7 +89,7 @@ title: string;
 
 ```
 
-或者，您可以定义估计器函数：
+或者，你也可以定义一个估算器函数：
 
 ```typescript
 @Field({ complexity: (options: ComplexityEstimatorArgs) => ... })
@@ -98,10 +99,13 @@ title: string;
 
 #### 查询/变更级复杂度
 
-此外，`@Query()` 和 `@Mutation()` 装饰器可以指定 `complexity` 属性，如下所示：
+`@Query()` 和 `@Mutation()` 装饰器在其选项对象中也接受 `complexity` 属性：
 
 ```typescript
-@Query({ complexity: (options: ComplexityEstimatorArgs) => options.args.count * options.childComplexity })
+@Query(() => [Item], {
+  complexity: (options: ComplexityEstimatorArgs) =>
+    options.args.count * options.childComplexity,
+})
 items(@Args('count') count: number) {
   return this.itemsService.getItems({ count });
 }
