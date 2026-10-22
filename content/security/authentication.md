@@ -1547,6 +1547,26 @@ providers: [
 
 The `github()` preset works the same way. `microsoft()` also takes your directory's tenant id as its `tenant` option, next to `clientId` and `clientSecret`: a GUID from the Overview page of the Microsoft Entra admin center, such as `process.env.ENTRA_TENANT_ID`. A domain, or the multi-tenant `common`, `organizations` and `consumers`, fails at startup: for those, Microsoft publishes another issuer than the one asked for, and every sign-in would fail. Add them next to `google` in `providers`, and register the callback URL with each of them, with its name in place of `google`.
 
+An application served under several domains, such as one domain per customer, can't name a single callback URL: a login started on one domain must come back to that domain. Pass a function of the request as `callbackUrl` instead. `start()` calls it on the login, and `finish()` calls it again on the callback, so it must return the same URL for both. Compare the host with your own list of domains rather than trusting the header, and register every URL it can return with each provider:
+
+```typescript
+@@filename(src/app.module)
+oidc: {
+  callbackUrl: ({ headers }) => {
+    const host = CUSTOMER_DOMAINS.find((domain) => domain === headers.host);
+    if (!host) {
+      throw new NotFoundException();
+    }
+    return `https://${host}/auth/oidc/:provider/callback`;
+  },
+  providers: {
+    // ...
+  },
+},
+```
+
+The function can also be `async`, to look the domains up in your database. Whatever it throws is the login's answer, like the 404 above for a domain the application doesn't serve, and a URL that isn't absolute fails the login with an error that names the function. The `__Host-oidc_tx` cookie belongs to the domain that set it, so a login finishes on the domain where it started. If the function ever returned another URL on the callback, the provider would refuse the code, and the callback would get a 401. Behind a proxy that rewrites the host, read the header it forwards instead, such as `X-Forwarded-Host`, and only from a proxy you trust.
+
 #### Add magic-link sign-in
 
 A magic link signs a customer in from their inbox, without a password. The package creates and checks the links; delivering them is up to you, through a `MagicLinkHandler`. The store emails them like the verification links, with a template and a mail class of their own:
@@ -1667,7 +1687,7 @@ export class MagicLinkController {
 
 - The request route answers 202 whether or not the address has an account, and the account is only created once the link is used. A request posted from another site's page gets a 403, as a sign-in does: that page could otherwise set this browser's transaction cookie for a link to its author's address, then get the customer to open it (login CSRF).
 - `consume()` burns the token, calls `resolveUser()`, and signs the user in through `SignInService`, which sets the cookie, so two-factor authentication still applies. `resolveUser()` returns the account with its stored `email`, and the link signs the account in only if that is the address the link was sent to, compared trimmed, lowercased and in Unicode NFC. A lookup that ignores accents or dots, as MySQL's default collation does, can't hand one mailbox another customer's account: `consume()` returns `null` instead.
-- A link works only in the browser that asked for it. `create()` sets a transaction cookie, `__Host-magic_link_tx`, and `consume()` refuses the token without it, before looking anything up: it throws a `MagicLinkError`, and the module answers it with a 401 whose `error` is `not_this_browser` and whose message tells the customer to open the link in the browser they requested it from, or to request a new one here. Otherwise anyone could request a link for their own address and get a customer to open it, which would sign the customer's browser in to the attacker's account (login CSRF). The refused link stays valid in the browser that requested it, and the answer reveals nothing about the token, since a made-up one gets it too. So a customer who asks for a link on the laptop and opens the email on the phone is told to open it on the laptop, or to ask for a new link on the phone, which then works there; an application that would rather let the link itself work on the phone sets `bindToBrowser: false` in the `magicLink` options. Unknown, used and expired links, and addresses the handler refuses, get the controller's one generic answer: `consume()` returns `null` for all of them, and only the `magic-link-refused` event says which it was.
+- A link works only in the browser that asked for it. `create()` sets a transaction cookie, `__Host-magic_link_tx`, and `consume()` refuses the token without it, before looking anything up: it throws a `MagicLinkError`, and the module answers it with a 401 whose `error` is `not_this_browser` and whose message tells the customer to open the latest link in the browser they requested it from, or to request a new one here. Otherwise anyone could request a link for their own address and get a customer to open it, which would sign the customer's browser in to the attacker's account (login CSRF). The refused link stays valid in the browser that requested it, and the answer reveals nothing about the token, since a made-up one gets it too. The cookie keeps the last five links the browser requested, so a customer who clicks "Resend" and then opens the first email is still signed in; a link older than those five gets the same 401. So a customer who asks for a link on the laptop and opens the email on the phone is told to open it on the laptop, or to ask for a new link on the phone, which then works there; an application that would rather let the link itself work on the phone sets `bindToBrowser: false` in the `magicLink` options. Unknown, used and expired links, and addresses the handler refuses, get the controller's one generic answer: `consume()` returns `null` for all of them, and only the `magic-link-refused` event says which it was.
 - Using the link proves the address, so accounts created by a link are verified. An account created with a password is different while its address is unverified: the link proves who owns the address now, not who chose the password, so the handler refuses it with a 403 rather than handing a pre-hijacked account to its owner. Once the owner has used the [verification link](/security/authentication#verify-email-addresses), or [reset the password](/security/authentication#reset-forgotten-passwords), magic links work for that account too.
 - `redirectTo` survives the round trip only if it's a relative path, such as `/orders`.
 
@@ -3859,7 +3879,7 @@ A family of refresh tokens counts as revoked when any of its tokens is, so a suc
 | `magicLink.url` | required | The page magic links open. `ttl` defaults to `'15m'`. See [Add magic-link sign-in](/security/authentication#add-magic-link-sign-in). |
 | `magicLink.bindToBrowser` | `true` | Accept a link only in the browser that requested it. |
 | `magicLink.cookie` | `secure: true` | Attributes of the `__Host-magic_link_tx` transaction cookie. |
-| `oidc.callbackUrl` | required | The public callback URL, with `:provider` in place of the provider's name. See [Add "Sign in with Google"](/security/authentication#add-sign-in-with-google). |
+| `oidc.callbackUrl` | required | The public callback URL, with `:provider` in place of the provider's name, or a function of the request that returns it. See [Add "Sign in with Google"](/security/authentication#add-sign-in-with-google). |
 | `oidc.providers` | required | Provider configurations by name, such as `google()`, `github()` and `microsoft()`, which also takes the directory's `tenant` id. |
 | `oidc.redirectAfterLogin` | `/` | Where to land when the login had no `redirectTo`. |
 | `oidc.transactionTtl` | `'10m'` | How long a login may take between the redirect and the callback. |
@@ -3923,7 +3943,7 @@ Your subclass implements `findKey(id)`, which returns the key's stored `hash`, i
 | `AuthenticationError` | 401 | its `code`, if any | its `code`; else `Unauthorized` with a message, none without | Bad credentials, or `requireUser()` without a user (no message, no code) |
 | `JwtError` | 401 | none | `Unauthorized` | A token is malformed, badly signed, expired, or for another issuer or audience |
 | `RefreshTokenError` | 401 | none | `Unauthorized` | A refresh token is invalid, expired or reused; `reason` says which |
-| `MagicLinkError` | 401 | `not_this_browser` | `not_this_browser` | A magic link was opened in another browser than the one that requested it |
+| `MagicLinkError` | 401 | `not_this_browser` | `not_this_browser` | A magic link was opened in another browser than the one that requested it, or after that browser requested five newer ones |
 | `MfaAlreadyEnrolledError` | 409 | none | `Conflict` | `enroll()` without `replace: true` for a user with a confirmed authenticator |
 
 When no provider recognises any credentials, the guard answers 401 with `missing_credentials`, and no `error`:

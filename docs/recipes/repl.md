@@ -104,7 +104,9 @@ Interface: $(token: InjectionToken) => any
 | 功能     | 描述                                                         | 签名                                                            |
 | -------- | ------------------------------------------------------------ | --------------------------------------------------------------- |
 | `debug`  | 以列表形式打印所有已注册模块及其控制器和提供程序。           | `debug(moduleCls?: ClassRef \| string) => void`                |
-| `get` 或 `$` | 获取可注入对象或控制器的实例，否则抛出异常。                 | `get(token: InjectionToken) => any`                            |
+| `get` 或 ````
+
+ | 获取可注入对象或控制器的实例，否则抛出异常。                 | `get(token: InjectionToken) => any`                            |
 | `help`    | 显示所有可用的 REPL 原生函数。                               | `help() => void`                                                |
 | `methods` | 显示给定提供者或控制器上所有可用的公共方法。                 | `methods(token: ClassRef \| string) => void`                   |
 | `resolve` | 解析可注入对象或控制器的临时或请求作用域实例，否则抛出异常。 | `resolve(token: InjectionToken, contextId: any) => Promise<any>` |
