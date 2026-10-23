@@ -122,9 +122,9 @@ The `options` property is specific to the chosen transporter. The <strong>Rabbit
 
 #### Client
 
-As with other microservice transporters, you have [several options](/microservices/basics#client) for creating a RabbitMQ `ClientProxy` instance.
+As with other microservice transporters, you have [several options](/microservices/basics#client-producer-class) for creating a RabbitMQ `ClientProxy` instance.
 
-One way to create an instance is to use the `ClientsModule`. Import it and call its `register()` method, passing an options object with the same properties shown above for the `createMicroservice()` method, plus a `name` property to use as the injection token. Read more about `ClientsModule` in the [microservices overview](/microservices/basics#client).
+One way to create an instance is to use the `ClientsModule`. Import it and call its `register()` method, passing an options object with the same properties shown above for the `createMicroservice()` method, plus a `name` property to use as the injection token. Read more about `ClientsModule` in the [microservices overview](/microservices/basics#client-producer-class).
 
 ```typescript
 @Module({
@@ -147,7 +147,7 @@ One way to create an instance is to use the `ClientsModule`. Import it and call 
 })
 ```
 
-You can also create a client with `ClientProxyFactory` or `@Client()`, as described in the [microservices overview](/microservices/basics#client).
+You can also create a client with `ClientProxyFactory` or `@Client()`, as described in the [microservices overview](/microservices/basics#client-producer-class).
 
 #### Context
 
@@ -278,6 +278,24 @@ replaceEmoji(data, context) {
 }
 ```
 
+Starting with NestJS v12.1.3, a message handler can also return a record. Nest sends the record data as the reply and applies the record options (for example, the `headers` and `priority` properties) to the reply message:
+
+```typescript
+@MessagePattern('replace-emoji')
+replaceEmoji() {
+  return new RmqRecordBuilder(':cat:')
+    .setOptions({
+      headers: {
+        ['x-version']: '1.0.0',
+      },
+      priority: 3,
+    })
+    .build();
+}
+```
+
+The reply always carries the correlation id of the request, so the client can match it to the request.
+
 #### Instance status updates
 
 To get real-time updates on the connection and the state of the underlying driver instance, subscribe to the `status` stream. This stream provides status updates specific to the chosen driver. For the RMQ driver, the `status` stream emits `connected`, `disconnected`, `blocked`, and `unblocked` events.
@@ -318,6 +336,8 @@ server.on<RmqEvents>('error', (err) => {
 ```
 
 > info **Hint** The `RmqEvents` type is imported from the `@nestjs/microservices` package.
+
+Starting with NestJS v12.1.2, listeners registered with the client's `on()` method stay registered until you call `close()`, so they are also attached to the new connection the client creates on the next `send()` or `emit()` call after a connection attempt failed. Registrations are not deduplicated, so register each listener once rather than again after a failed attempt.
 
 #### Underlying driver access
 
