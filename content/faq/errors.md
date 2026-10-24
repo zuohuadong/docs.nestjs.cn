@@ -4,7 +4,7 @@ While learning and working with NestJS, you may run into the errors described on
 
 #### "Cannot resolve dependency" error
 
-> info **Hint** [NestJS Devtools](/devtools/overview#investigating-the-cannot-resolve-dependency-error) can help you resolve the "Cannot resolve dependency" error.
+> info **Hint** [NestJS Devtools](/devtools/overview#debugging-cannot-resolve-dependency-errors) can help you resolve the "Cannot resolve dependency" error.
 
 The most common error message says that Nest can't resolve the dependencies of a provider. It usually looks like this:
 
@@ -47,7 +47,7 @@ This usually has one of the following causes:
 2. **Injecting by a type or an interface.** Types and interfaces don't exist at runtime, so Nest can't use them as injection tokens. Inject the class reference instead, or use a custom token with the `@Inject()` decorator (see [custom providers](/fundamentals/custom-providers)).
 3. **Type-only imports.** For class-based providers, import the concrete class instead of only its type with the [`import type ...`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export) syntax.
 
-<app-banner-devtools></app-banner-devtools>
+<app-banner-observe></app-banner-observe>
 
 In a **monorepo setup**, you may see the same error for the core `ModuleRef` provider as the `<unknown_token>`:
 

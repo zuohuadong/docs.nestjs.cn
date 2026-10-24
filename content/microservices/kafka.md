@@ -109,6 +109,10 @@ The `options` property is specific to the chosen transporter. The <strong>Kafka<
       >)</td>
   </tr>
   <tr>
+    <td><code>parser</code></td>
+    <td>Options of the parser that decodes incoming messages: <code>keepBinary</code> passes message values to handlers as buffers instead of decoding them (<code>boolean</code>), and <code>maxMessageSize</code> is the size in bytes, after decompression, above which a message is skipped instead of decoded. Defaults to <code>16777216</code> (16 MiB) (<code>number</code>)</td>
+  </tr>
+  <tr>
     <td><code>producerOnlyMode</code></td>
     <td>Client only. Skips consumer group registration so the client acts only as a producer (<code>boolean</code>)</td>
   </tr>
@@ -122,9 +126,9 @@ The `options` property is specific to the chosen transporter. The <strong>Kafka<
 
 Kafka differs slightly from other microservice transporters: instead of the `ClientProxy` type, you use `ClientKafkaProxy`.
 
-As with other microservice transporters, you have [several options](/microservices/basics#client) for creating a `ClientKafkaProxy` instance.
+As with other microservice transporters, you have [several options](/microservices/basics#client-producer-class) for creating a `ClientKafkaProxy` instance.
 
-One option is the `ClientsModule`. Import it and use its `register()` method to pass an options object with the same properties shown above for the `createMicroservice()` method, plus a `name` property used as the injection token. See the [client section of the microservices overview](/microservices/basics#client) to learn more about `ClientsModule`.
+One option is the `ClientsModule`. Import it and use its `register()` method to pass an options object with the same properties shown above for the `createMicroservice()` method, plus a `name` property used as the injection token. See the [client section of the microservices overview](/microservices/basics#client-producer-class) to learn more about `ClientsModule`.
 
 ```typescript
 @Module({
@@ -149,7 +153,7 @@ One option is the `ClientsModule`. Import it and use its `register()` method to 
 })
 ```
 
-You can also create a client with `ClientProxyFactory` or the `@Client()` decorator, both described in the [microservices overview](/microservices/basics#client).
+You can also create a client with `ClientProxyFactory` or the `@Client()` decorator, both described in the [microservices overview](/microservices/basics#client-producer-class).
 
 Use the `@Client()` decorator as follows:
 
@@ -228,7 +232,9 @@ async onModuleInit() {
 
 #### Incoming
 
-Nest receives incoming Kafka messages as objects with `key`, `value`, and `headers` properties whose values are of type `Buffer`. Nest parses these values by converting the buffers into strings. If a string is "object-like" (i.e., it starts with a curly brace or a square bracket), Nest attempts to parse it as JSON. The `value` is then passed to the associated handler.
+Nest receives incoming Kafka messages as objects with `key`, `value`, and `headers` properties whose values are of type `Buffer`. Nest parses these values by converting the buffers into strings. If a string is "object-like" (i.e., it starts with a curly brace or a square bracket), Nest attempts to parse it as JSON, except for the `kafka_correlationId`, `kafka_replyTopic` and `kafka_replyPartition` headers it routes replies with, which are always kept as strings. The `value` is then passed to the associated handler.
+
+Nest does not decode a message larger than 16 MiB after decompression, counting its key, its headers and, unless `parser.keepBinary` is set, its value. It logs and skips the message, so that its offset is committed, and a `ClientKafkaProxy` fails the request that such a reply answers. To change the limit, set the `parser.maxMessageSize` option.
 
 #### Outgoing
 
@@ -280,7 +286,7 @@ export class HeroesController {
 }
 ```
 
-Messages passed in this format can also contain custom headers set in the `headers` property. Header values must be of type `string` or `Buffer`.
+Messages passed in this format can also contain custom headers set in the `headers` property. Header values must be of type `string` or `Buffer`, and a message can carry at most 10,000 of them, an array value counting once per item. Nest does not send a message with more: `emit()` and `send()` fail, and a `@MessagePattern()` reply is logged and dropped.
 
 ```typescript
 @@filename(heroes.controller)
@@ -454,6 +460,8 @@ throw new KafkaRetriableException('...');
 ```
 
 > info **Hint** The `KafkaRetriableException` class is exported from the `@nestjs/microservices` package.
+
+> warning **Warning** Nest handles a message as a request only when it carries the `kafka_correlationId` and `kafka_replyTopic` headers that `ClientKafkaProxy.send()` adds. Any other message, such as one written by a producer other than Nest, is handled as an event, even when it reaches a `@MessagePattern()` handler: its unhandled exceptions are retriable, and the next message of the partition is only processed once the stream the handler returns completes. For topics that other producers write to, make sure message handlers return streams that complete, and handle the messages they cannot process instead of throwing, unless these should be redelivered.
 
 #### Custom exception handling
 
