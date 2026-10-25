@@ -183,19 +183,40 @@ jobs:
           # 检查是否有可用的 NVIDIA NIM 配置
           if [ -n "$NVIDIA_API_KEY" ]; then
             echo "✅ NVIDIA NIM API 已配置，使用 AI 翻译"
-            if bun run translate-docs:verbose; then
+            set +e
+            bun run translate-docs:verbose 2>&1 | tee /tmp/translate.log
+            TRANSLATION_EXIT_CODE=${PIPESTATUS[0]}
+            set -e
+
+            # 解析翻译统计（Translated / Errors），用于判断本轮是否真正生效
+            STAT_LINE=$(grep -E '^❌ Errors: [0-9]+' /tmp/translate.log | tail -1 || true)
+            TRANSLATED_COUNT=$(grep -oE 'Translated: [0-9]+' /tmp/translate.log | tail -1 | grep -oE '[0-9]+' || true)
+            ERROR_COUNT=$(grep -oE 'Errors: [0-9]+' /tmp/translate.log | tail -1 | grep -oE '[0-9]+' || true)
+            TRANSLATED_COUNT=${TRANSLATED_COUNT:-0}
+            ERROR_COUNT=${ERROR_COUNT:-0}
+            echo "📊 本轮翻译: translated=${TRANSLATED_COUNT} errors=${ERROR_COUNT}"
+            echo "translated_count=${TRANSLATED_COUNT}" >> $GITHUB_OUTPUT
+            echo "error_count=${ERROR_COUNT}" >> $GITHUB_OUTPUT
+
+            # 全部失败（常见于 API 限流 429 / 配额耗尽）：必须让任务失败，
+            # 否则会产出一个“看起来有翻译更新”的空 PR 掩盖问题。
+            if [ "$TRANSLATED_COUNT" -eq 0 ] && [ "$ERROR_COUNT" -gt 0 ]; then
+              echo "❌ 本轮没有任何文件翻译成功（${ERROR_COUNT} 个失败），请检查 NVIDIA API 配额/限流"
+              grep -m5 -E 'API error \([0-9]+\)' /tmp/translate.log || true
+              echo "translation_changed=error" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+
+            if [ "$TRANSLATION_EXIT_CODE" -eq 0 ]; then
               echo "✅ 翻译完成，有内容更新"
               echo "translation_changed=true" >> $GITHUB_OUTPUT
+            elif [ "$TRANSLATION_EXIT_CODE" -eq 1 ]; then
+              echo "✅ 翻译完成，但无需更新"
+              echo "translation_changed=false" >> $GITHUB_OUTPUT
             else
-              TRANSLATION_EXIT_CODE=$?
-              if [ $TRANSLATION_EXIT_CODE -eq 1 ]; then
-                echo "✅ 翻译完成，但无需更新"
-                echo "translation_changed=false" >> $GITHUB_OUTPUT
-              else
-                echo "❌ 翻译失败，退出代码 $TRANSLATION_EXIT_CODE"
-                echo "translation_changed=error" >> $GITHUB_OUTPUT
-                exit 1
-              fi
+              echo "❌ 翻译失败，退出代码 $TRANSLATION_EXIT_CODE"
+              echo "translation_changed=error" >> $GITHUB_OUTPUT
+              exit 1
             fi
           else
             echo "⚠️ 未配置 NVIDIA API Key，使用仅格式化模式"
@@ -346,7 +367,20 @@ jobs:
           建议运行 \`bun run check-translation-integrity:verbose\` 查看详细信息。
           "
           fi
-          
+
+          TRANSLATED_COUNT="${{ steps.translate-content.outputs.translated_count }}"
+          ERROR_COUNT="${{ steps.translate-content.outputs.error_count }}"
+          if [ -n "$ERROR_COUNT" ] && [ "$ERROR_COUNT" -gt 0 ]; then
+            PR_BODY="${PR_BODY}
+
+          ### ❌ 部分文件翻译失败
+          - 本轮成功翻译: ${TRANSLATED_COUNT:-0} 个文件
+          - 失败: ${ERROR_COUNT} 个文件（多为 API 限流 429 / 配额耗尽）
+
+          失败的文件保留了旧译文，请等 API 配额恢复后重新触发本工作流（\`force_translation=true\`）补齐。
+          "
+          fi
+
           PR_BODY="${PR_BODY}
 
           ### 变更文件
@@ -469,7 +503,7 @@ jobs:
           
           # 翻译状态
           if [ "${{ steps.translate-content.outputs.translation_changed }}" == "true" ]; then
-            echo "- **翻译更新**: ✅ 是（使用 Cloudflare Workers AI 更新了 docs 文件夹）" >> $GITHUB_STEP_SUMMARY
+            echo "- **翻译更新**: ✅ 是（AI 重译后更新了 docs 文件夹，成功 ${{ steps.translate-content.outputs.translated_count || '0' }} 个文件）" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ steps.translate-content.outputs.translation_changed }}" == "false" ]; then
             echo "- **翻译更新**: ✅ 已是最新（无需翻译更改）" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ steps.sync-content.outputs.content_changed }}" == "true" ]; then
