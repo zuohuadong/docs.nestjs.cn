@@ -123,8 +123,6 @@ const app = await NestFactory.create(AppModule, {
 
 ```
 
-您可以在此 [Pull Request](https://github.com/nestjs/nest/pull/14121) 中看到不同的变体。
-
 #### 结构化日志参数
 
 日志消息经常需要携带元数据——用户 ID、请求耗时、关联 ID。从 NestJS v12 开始，传递在首个消息参数**之后**的普通对象会被视为结构化参数，并附加到同一条日志条目上，而不是作为单独的日志记录输出。

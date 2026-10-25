@@ -151,7 +151,12 @@ function checkHallucinations(content: string, relativePath: string): ValidationI
   return issues;
 }
 
-function checkBadLinks(content: string, relativePath: string): ValidationIssue[] {
+function checkBadLinks(
+  content: string,
+  relativePath: string,
+  sourceContent?: string,
+  upstreamLinks?: Set<string>,
+): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
   const lines = content.split('\n');
 
@@ -159,7 +164,12 @@ function checkBadLinks(content: string, relativePath: string): ValidationIssue[]
     const line = lines[i];
     for (const { pattern, description } of BAD_LINK_PATTERNS) {
       pattern.lastIndex = 0;
-      if (pattern.test(line)) {
+      let match: RegExpExecArray | null;
+      while ((match = pattern.exec(line)) !== null) {
+        const link = match[0].replace(/^\]\(/, '');
+        // 官方原文本身就有该链接（如官方 PR 引用）则不是译文问题
+        const known = sourceContent?.includes(link) || upstreamLinks?.has(link);
+        if (known) continue;
         issues.push({
           file: relativePath,
           type: 'bad-link',
@@ -174,6 +184,27 @@ function checkBadLinks(content: string, relativePath: string): ValidationIssue[]
   return issues;
 }
 
+/**
+ * 收集官方文档中出现的 GitHub PR/diff 链接，避免误报译文问题
+ */
+function collectUpstreamLinks(): Set<string> {
+  const links = new Set<string>();
+  const files = glob.sync(
+    path.join(CONTENT_DIR, '**/*.md').replace(/\\/g, '/'),
+  );
+  for (const file of files) {
+    const content = fs.readFileSync(file, 'utf8');
+    for (const { pattern } of BAD_LINK_PATTERNS) {
+      pattern.lastIndex = 0;
+      let match: RegExpExecArray | null;
+      while ((match = pattern.exec(content)) !== null) {
+        links.add(match[0].replace(/^\]\(/, ''));
+      }
+    }
+  }
+  return links;
+}
+
 async function main(): Promise<void> {
   console.log('🔍 Validating translation quality...\n');
 
@@ -185,6 +216,7 @@ async function main(): Promise<void> {
   const allIssues: ValidationIssue[] = [];
   let errorCount = 0;
   let warningCount = 0;
+  const upstreamLinks = collectUpstreamLinks();
 
   for (const docFile of docFiles) {
     const relativePath = path.relative(DOCS_DIR, docFile);
@@ -196,8 +228,10 @@ async function main(): Promise<void> {
 
     // 2. 代码块数量对比（与 content/ 源文件对比）
     const sourcePath = path.join(CONTENT_DIR, relativePath);
-    if (fs.existsSync(sourcePath)) {
-      const sourceContent = fs.readFileSync(sourcePath, 'utf8');
+    const sourceContent = fs.existsSync(sourcePath)
+      ? fs.readFileSync(sourcePath, 'utf8')
+      : undefined;
+    if (sourceContent !== undefined) {
       const codeBlockIssues = checkCodeBlockCount(
         sourceContent,
         content,
@@ -211,7 +245,12 @@ async function main(): Promise<void> {
     allIssues.push(...hallucinationIssues);
 
     // 4. 错误链接检测
-    const badLinkIssues = checkBadLinks(content, relativePath);
+    const badLinkIssues = checkBadLinks(
+      content,
+      relativePath,
+      sourceContent,
+      upstreamLinks,
+    );
     allIssues.push(...badLinkIssues);
   }
 

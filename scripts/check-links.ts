@@ -49,6 +49,18 @@ async function checkLinks(): Promise<void> {
       const cleanLink = link.split('#')[0]; // 移除锚点
       if (!cleanLink || cleanLink === './') continue;
 
+      // 静态资源（图片/字体等）不走 .md 路由，需在 docs/public 下查找
+      const assetExt = path.extname(cleanLink).toLowerCase();
+      if (assetExt && assetExt !== '.md' && assetExt !== '.mdx') {
+        const assetPath = cleanLink.startsWith('/')
+          ? path.join(docsDir, 'public', cleanLink)
+          : path.resolve(path.dirname(file), cleanLink);
+        if (!fs.existsSync(assetPath)) {
+          deadLinks.push({ file: path.relative(docsDir, file), link });
+        }
+        continue;
+      }
+
       if (cleanLink.startsWith('/')) {
         targetPath = path.join(docsDir, `${cleanLink}.md`);
       } else {
