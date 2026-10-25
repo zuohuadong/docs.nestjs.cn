@@ -165,7 +165,7 @@ async findOne(@User('email', { schema: z.email() }) email: string) {
 
 ```
 
-详情请参阅 [Validating custom decorators](/application/validation#validating-custom-decorators)。
+详情请参阅 [Validating custom decorators](/techniques/validation#了解更多)。
 
 #### 装饰器组合
 

@@ -13,7 +13,7 @@
 
 要创建一个基本控制器，你需要使用类和**装饰器**。装饰器将类与所需的元数据关联起来，Nest 使用这些元数据来构建路由映射，将请求连接到对应的控制器。
 
-> info **提示** 要使用内置的 [validation](/application/validation) 创建 CRUD 控制器，请使用 CLI 的 [CRUD generator](/recipes/crud-generator#crud-生成器)：`nest g resource [name]`。
+> info **提示** 要使用内置的 [validation](/techniques/validation) 创建 CRUD 控制器，请使用 CLI 的 [CRUD generator](/recipes/crud-generator#crud-生成器)：`nest g resource [name]`。
 
 #### 路由
 
@@ -431,7 +431,7 @@ async create(@Body() createCatDto: CreateCatDto) {
 
 ```
 
-> info **提示** `ValidationPipe` 可以过滤掉路由处理程序不应接收的属性。你将可接受的属性列入白名单，任何不在白名单中的属性都会自动从结果对象中剥离。在 `CreateCatDto` 示例中，白名单由 `name`、`age` 和 `breed` 属性组成。在 [Stripping properties](/application/validation#剥离属性) 中了解更多。
+> info **提示** `ValidationPipe` 可以过滤掉路由处理程序不应接收的属性。你将可接受的属性列入白名单，任何不在白名单中的属性都会自动从结果对象中剥离。在 `CreateCatDto` 示例中，白名单由 `name`、`age` 和 `breed` 属性组成。在 [Stripping properties](/techniques/validation#剥离属性) 中了解更多。
 
 #### 查询参数
 

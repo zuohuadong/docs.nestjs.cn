@@ -71,7 +71,7 @@ export class AppModule {}
   </tr>
   <tr>
     <td><code>scope</code></td>
-    <td><code>EntityManager</code> 提供者的 <a href="/fundamentals/injection-scopes">注入作用域</a>（默认值：<code>Scope.DEFAULT</code>）</td>
+    <td><code>EntityManager</code> 提供者的 <a href="/fundamentals/provider-scopes">注入作用域</a>（默认值：<code>Scope.DEFAULT</code>）</td>
   </tr>
   <tr>
     <td><code>contextName</code></td>
@@ -338,7 +338,7 @@ export class AppModule {}
 
 #### 队列中的请求作用域处理器
 
-中间件仅对 HTTP 请求运行。该流程之外的代码，例如 [queue](/application/queues) 消费者和 [scheduled tasks](/application/task-scheduling)，没有请求上下文，因此你需要自己创建一个。
+中间件仅对 HTTP 请求运行。该流程之外的代码，例如 [queue](/techniques/queues) 消费者和 [scheduled tasks](/techniques/task-scheduling)，没有请求上下文，因此你需要自己创建一个。
 
 对于这些方法，请使用 `@CreateRequestContext()` 装饰器。它会分叉 `EntityManager` 并在新上下文中运行被装饰的 `async` 方法。该装饰器通过类的 `orm` 属性（一个 `MikroORM` 实例）或 `em` 属性（一个 `EntityManager`）来查找 `EntityManager`，因此请以该名称注入其中之一：
 

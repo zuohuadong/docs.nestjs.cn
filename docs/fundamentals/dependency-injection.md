@@ -71,7 +71,7 @@ export class AppModule {}
 
 ```
 
-3. 在 `app.module.ts` 中，我们将令牌 `CatsService` 与来自 `cats.service.ts` 文件的 `CatsService` 类关联起来。我们将在 <a href="/fundamentals/custom-providers#标准提供者">下面</a> 看到这种关联（也称为_注册_）究竟是如何发生的。
+3. 在 `app.module.ts` 中，我们将令牌 `CatsService` 与来自 `cats.service.ts` 文件的 `CatsService` 类关联起来。我们将在 <a href="/fundamentals/dependency-injection#标准提供者">下面</a> 看到这种关联（也称为_注册_）究竟是如何发生的。
 
 当 Nest IoC 容器实例化一个 `CatsController` 时，它首先查找任何依赖项\*。当它找到 `CatsService` 依赖时，它会根据注册步骤（上面的 #3）对 `CatsService` 令牌执行查找，该查找返回 `CatsService` 类。假设 `SINGLETON` 作用域（默认行为），Nest 将创建一个 `CatsService` 的实例，缓存它并返回它，或者如果已经缓存了一个，则返回现有的实例。
 
@@ -147,7 +147,7 @@ export class AppModule {}
 
 #### 非基于类的提供者令牌
 
-到目前为止，我们使用类名作为提供者令牌（`providers` 数组中列出的提供者的 `provide` 属性的值）。这与 [constructor based injection](/overview/providers#依赖注入) 使用的标准模式相匹配，其中令牌也是类名。（如果这个概念不完全清楚，请参阅 <a href="/fundamentals/custom-providers#di-fundamentals">DI 基础</a> 以复习令牌）。有时，我们可能希望灵活地使用字符串或符号作为 DI 令牌。例如：
+到目前为止，我们使用类名作为提供者令牌（`providers` 数组中列出的提供者的 `provide` 属性的值）。这与 [constructor based injection](/overview/providers#依赖注入) 使用的标准模式相匹配，其中令牌也是类名。（如果这个概念不完全清楚，请参阅 <a href="/fundamentals/dependency-injection#di-fundamentals">DI 基础</a> 以复习令牌）。有时，我们可能希望灵活地使用字符串或符号作为 DI 令牌。例如：
 
 ```typescript
 import { connection } from './connection.js';

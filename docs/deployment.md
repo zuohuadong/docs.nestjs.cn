@@ -81,7 +81,7 @@ $ node dist/main.js # Adjust this based on your entry point location
 
 在 NestJS 中，你可以使用 **@nestjs/terminus** 包来实现健康检查，它支持对数据库连接、外部服务以及自定义指标的检查。
 
-请参阅 [health checks (Terminus)](/reliability/terminus) 章节，了解如何在 NestJS 应用程序中实现健康检查。
+请参阅 [health checks (Terminus)](/recipes/terminus) 章节，了解如何在 NestJS 应用程序中实现健康检查。
 
 #### 日志记录
 
@@ -312,7 +312,7 @@ $ mau deploy
   </tr>
   <tr>
     <td><a href="/deployment#health-checks">健康检查</a></td>
-    <td>让 Mau 指向你通过 <a href="/reliability/terminus">Terminus</a> 暴露的端点，不健康的实例会为你处理。</td>
+    <td>让 Mau 指向你通过 <a href="/recipes/terminus">Terminus</a> 暴露的端点，不健康的实例会为你处理。</td>
   </tr>
   <tr>
     <td><a href="/deployment#some-other-tips">监控与备份</a></td>

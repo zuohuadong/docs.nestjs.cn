@@ -25,7 +25,7 @@
 
 你可以将自定义 Nest 中间件实现为函数，或实现为带有 `@Injectable()` 装饰器的类。类应实现 `NestMiddleware` 接口，而函数则没有特殊要求。让我们从实现一个简单的中间件类开始。
 
-> warning **警告** Express 和 Fastify 处理中间件的方式不同，并提供不同的方法签名。有关详细信息，请参阅 [Performance (Fastify)](/http/performance#middleware) 章节。
+> warning **警告** Express 和 Fastify 处理中间件的方式不同，并提供不同的方法签名。有关详细信息，请参阅 [Performance (Fastify)](/techniques/performance#中间件) 章节。
 
 ```typescript title="logger.middleware.ts"
 import { Injectable, NestMiddleware } from '@nestjs/common';
@@ -138,7 +138,7 @@ export class AppModule implements NestModule {
 
 ```
 
-> info **提示** `apply()` 方法接受单个中间件或多个参数来指定 <a href="/middleware#多个中间件">多个中间件</a>。
+> info **提示** `apply()` 方法接受单个中间件或多个参数来指定 <a href="/overview/middlewares#多个中间件">多个中间件</a>。
 
 #### 排除路由
 

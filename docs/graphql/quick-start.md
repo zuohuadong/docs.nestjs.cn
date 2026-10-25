@@ -460,7 +460,7 @@ GraphQLModule.forRootAsync<ApolloDriverConfig>({
 
 #### Mercurius 集成
 
-除了 Apollo，[Fastify](/http/performance) 用户还可以使用 `@nestjs/mercurius` 驱动。
+除了 Apollo，[Fastify](/techniques/performance) 用户还可以使用 `@nestjs/mercurius` 驱动。
 
 ```typescript
 import { Module } from '@nestjs/common';

@@ -33,7 +33,7 @@ export class CatsService implements OnModuleInit {
 
 ```
 
-> warning **警告** 你不能使用 `get()` 方法检索作用域提供者（瞬态或请求作用域）。相反，请使用下面描述的技术 <a href="/fundamentals/module-ref#解析作用域提供者">below</a>。了解如何控制作用域 [here](/fundamentals/provider-scopes)。
+> warning **警告** 你不能使用 `get()` 方法检索作用域提供者（瞬态或请求作用域）。相反，请使用下面描述的技术 <a href="/fundamentals/module-reference#解析作用域提供者">below</a>。了解如何控制作用域 [here](/fundamentals/provider-scopes)。
 
 要从全局上下文检索提供者（例如，如果提供者已在不同的模块中注入），请将 `{ strict: false }` 选项作为第二个参数传递给 `get()`。
 

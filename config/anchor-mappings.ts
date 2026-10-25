@@ -481,6 +481,11 @@ export const anchorMappings: Record<string, string> = {
   'regular-expression-patterns': '正则表达式模式',
   'request-scoped-gateways': '请求作用域的网关',
   'schema-validation': '模式验证',
+
+  // v12 新文档结构：官方 validation 页面切分出的中文锚点
+  '基于模式的验证': '使用内置的-standardschemavalidationpipe',
+  'validating-custom-decorators': '了解更多',
+  'middleware': '中间件',
 };
 
 // 路径映射表
@@ -499,6 +504,23 @@ export const pathMappings: Record<string, string> = {
   '/graphql/resolvers': '/graphql/resolvers-map',
   '/graphql/other-features': '/graphql/guards-interceptors',
   '/cli/monorepo': '/cli/workspaces',
+
+  // v12 新文档结构：官方已迁移到 application/、http/、data/、reliability/、
+  // observability/ 等目录，中文站点对应页面仍沿用旧路径（techniques/、recipes/）。
+  // 尚未翻译的新页面直接回落到官方英文文档，避免 rspress 构建报死链。
+  '/application/validation': '/techniques/validation',
+  '/application/queues': '/techniques/queues',
+  '/application/task-scheduling': '/techniques/task-scheduling',
+  '/http/performance': '/techniques/performance',
+  '/http/file-upload': '/techniques/file-upload',
+  '/http/file-upload#streaming-files': '/techniques/streaming-files',
+  '/data/typeorm': '/recipes/sql-typeorm',
+  '/data/mongodb': '/techniques/mongo',
+  '/data/prisma': '/recipes/prisma',
+  '/data/drizzle': 'https://docs.nestjs.com/data/drizzle',
+  '/reliability/terminus': '/recipes/terminus',
+  '/observability/error-monitoring':
+    'https://docs.nestjs.com/observability/error-monitoring',
 
   // Security 路径映射
   '/security/authentication': '/security/authentication',

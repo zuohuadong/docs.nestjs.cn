@@ -83,7 +83,8 @@ function processFile(
             if (verbose) {
               console.log(`    🔗 路径映射: ${cleanPath} → ${mappedPath}`);
             }
-            return `./${mappedPath}`;
+            // 部分映射直接指向官方英文文档，不能加 ./ 前缀
+            return mappedPath.startsWith('http') ? mappedPath : `./${mappedPath}`;
           }
 
           stats.fixedLinks++;
@@ -100,6 +101,15 @@ function processFile(
         (match, rawPath: string, anchor?: string) => {
           if (!rawPath) return match;
           const clean = rawPath.replace(/^\.\/|^\/|^(?:\.\.\/)+/, '');
+          // 先尝试整条「路径#锚点」映射，再退回纯路径映射
+          const mappedWithAnchor = anchor ? pathMappings[`/${clean}${anchor}`] : undefined;
+          if (mappedWithAnchor) {
+            stats.fixedLinks++;
+            if (verbose) {
+              console.log(`    🔗 路径映射: ${rawPath}${anchor} → ${mappedWithAnchor}`);
+            }
+            return `](${mappedWithAnchor})`;
+          }
           const mapped = pathMappings[`/${clean}`];
           if (!mapped) return match;
           stats.fixedLinks++;
@@ -111,9 +121,33 @@ function processFile(
       );
     }
 
-    // 2. 修正锚点链接（所有文件）
+    // 1.6 修正 HTML 标签中的根相对路径链接（AI 译文偶尔保留 <a href="/xxx">）
+    if (!isSpecial) {
+      content = content.replace(
+        /(href=["'])(\/[^"'#\s]*)(#[^"'\s]*)?(["'])/g,
+        (match, prefix: string, rawPath: string, anchor: string | undefined, suffix: string) => {
+          const mappedWithAnchor = anchor ? pathMappings[`${rawPath}${anchor}`] : undefined;
+          if (mappedWithAnchor) {
+            stats.fixedLinks++;
+            if (verbose) {
+              console.log(`    🔗 路径映射(html): ${rawPath}${anchor} → ${mappedWithAnchor}`);
+            }
+            return `${prefix}${mappedWithAnchor}${suffix}`;
+          }
+          const mapped = pathMappings[rawPath];
+          if (!mapped) return match;
+          stats.fixedLinks++;
+          if (verbose) {
+            console.log(`    🔗 路径映射(html): ${rawPath} → ${mapped}`);
+          }
+          return `${prefix}${mapped}${anchor ?? ''}${suffix}`;
+        },
+      );
+    }
+
+    // 2. 修正锚点链接（所有文件；同时支持中文锚点）
     content = content.replace(
-      /(\.\/[^\s)]*|https?:\/\/[^\s)]*)?#([a-zA-Z0-9_-]+)/g,
+      /(\.\/[^\s)]*|https?:\/\/[^\s)]*)?#([\w\u4e00-\u9fff-]+)/g,
       (match, linkPart?: string, anchorPart?: string) => {
         if (!anchorPart) return match;
         if (anchorMappings[anchorPart]) {
@@ -148,7 +182,8 @@ function processFile(
           .replace(/\/\/ TODO:/g, '// 待办：')
           .replace(/\/\/ FIXME:/g, '// 修复：');
 
-        return match.replace(codeContent, translatedCode);
+        // 用回调替换：译文里含 $`、$' 等序列时会被当作替换模式，必须隔离
+        return match.replace(codeContent, () => translatedCode);
       },
     );
 

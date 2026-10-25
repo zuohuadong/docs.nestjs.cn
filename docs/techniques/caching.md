@@ -112,7 +112,7 @@ export class AppController {
 ```
 
 > warning **警告** 只有 `GET` 端点会被缓存。此外，注入了原生响应对象（`@Res()`）的 HTTP 服务器路由不能使用缓存拦截器。更多详情请参阅
-> <a href="/interceptors#响应映射">响应映射</a>。
+> <a href="/overview/interceptors#响应映射">响应映射</a>。
 
 为了减少所需的样板代码，你可以将 `CacheInterceptor` 全局绑定到所有端点：
 

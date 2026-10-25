@@ -446,9 +446,7 @@ export class HeroesGameSagas {
 `ofType` 操作符和 `@Saga()` 装饰器从 `@nestjs/cqrs` 包导出。
 :::
 
-`@Saga()` 装饰器将方法标记为 saga。`events```
-
- 参数是所有事件的 Observable 流。`ofType` 操作符按指定的事件类型过滤流。`map` 操作符将事件映射到新的命令实例。
+`@Saga()` 装饰器将属性标记为 saga。`events$` 参数是所有事件的 Observable 流。`ofType` 操作符按指定的事件类型过滤流，`map` 操作符将每个事件映射到新的命令实例。
 
 在这个例子中，我们将 `HeroKilledDragonEvent` 映射到 `DropAncientItemCommand` 命令。然后，`DropAncientItemCommand` 命令由 `CommandBus` 自动分派。
 

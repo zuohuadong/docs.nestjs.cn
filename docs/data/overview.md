@@ -9,10 +9,10 @@ Nest 与数据库无关，因此你可以将其与任何 SQL 或 NoSQL 数据库
 
 大多数应用程序在更高的抽象层次上工作，使用 ORM 或查询构建器。本类别中的章节涵盖以下集成：
 
-- **[TypeORM](/data/typeorm)**（`@nestjs/typeorm`）：一个 ORM，具有基于装饰器的实体和仓储模式。它支持大多数 SQL 数据库以及 MongoDB。
-- **[Drizzle](/data/drizzle)**（`@nestjs/drizzle`）：一个轻量级、TypeScript 优先的 ORM。你使用普通函数声明表，并使用类似 SQL 的查询构建器编写查询，Drizzle 会从模式中推断出每一种结果类型。
-- **[MongoDB](/data/mongodb)**（`@nestjs/mongoose`）：用于 MongoDB 的 [Mongoose](https://mongoosejs.com/) 模式和模型。
-- **[Prisma](/data/prisma)**：一个从模式文件生成类型安全客户端的 ORM。它没有 Nest 专用的包：你通过提供者暴露生成的客户端。
+- **[TypeORM](/recipes/sql-typeorm)**（`@nestjs/typeorm`）：一个 ORM，具有基于装饰器的实体和仓储模式。它支持大多数 SQL 数据库以及 MongoDB。
+- **[Drizzle](https://docs.nestjs.com/data/drizzle)**（`@nestjs/drizzle`）：一个轻量级、TypeScript 优先的 ORM。你使用普通函数声明表，并使用类似 SQL 的查询构建器编写查询，Drizzle 会从模式中推断出每一种结果类型。
+- **[MongoDB](/techniques/mongo)**（`@nestjs/mongoose`）：用于 MongoDB 的 [Mongoose](https://mongoosejs.com/) 模式和模型。
+- **[Prisma](/recipes/prisma)**：一个从模式文件生成类型安全客户端的 ORM。它没有 Nest 专用的包：你通过提供者暴露生成的客户端。
 - **[MikroORM](/data/mikroorm)**（`@mikro-orm/nestjs`，由 MikroORM 团队维护）：一个基于数据映射器（Data Mapper）、工作单元（Unit of Work）和标识映射（Identity Map）模式的 ORM。
 - **[Sequelize](/data/sequelize)**（`@nestjs/sequelize`）：一个用于 SQL 数据库的基于 Promise 的 ORM。使用 `sequelize-typescript` 包，你可以通过装饰器声明模型。
 

@@ -287,7 +287,7 @@ const moduleRef = await Test.createTestingModule({
       <code>get()</code>
     </td>
     <td>
-      检索应用程序上下文中可用的控制器或提供者（包括守卫、过滤器等）的静态实例。继承自 <a href="/fundamentals/module-ref">模块引用</a> 类。
+      检索应用程序上下文中可用的控制器或提供者（包括守卫、过滤器等）的静态实例。继承自 <a href="/fundamentals/module-reference">模块引用</a> 类。
     </td>
   </tr>
   <tr>
@@ -295,7 +295,7 @@ const moduleRef = await Test.createTestingModule({
       <code>resolve()</code>
     </td>
     <td>
-      检索应用程序上下文中可用的控制器或提供者（包括守卫、过滤器等）的动态创建的作用域实例（请求或瞬态）。继承自 <a href="/fundamentals/module-ref">模块引用</a> 类。
+      检索应用程序上下文中可用的控制器或提供者（包括守卫、过滤器等）的动态创建的作用域实例（请求或瞬态）。继承自 <a href="/fundamentals/module-reference">模块引用</a> 类。
     </td>
   </tr>
   <tr>
@@ -358,7 +358,7 @@ const moduleRef = await Test.createTestingModule({
 
 [Request-scoped](/fundamentals/provider-scopes) 提供者为每个传入的 **请求** 唯一创建。实例在请求完成处理后会被垃圾回收。这带来了一个问题，因为我们无法访问为被测试请求专门生成的依赖注入子树。
 
-我们知道（基于上述章节）`resolve()` 方法可用于检索动态实例化的类。此外，如 <a href="/fundamentals/module-ref#解析作用域提供者">此处</a> 所述，我们知道可以传递唯一的上下文标识符来控制 DI 容器子树的生命周期。我们如何在测试环境中利用这一点？
+我们知道（基于上述章节）`resolve()` 方法可用于检索动态实例化的类。此外，如 <a href="/fundamentals/module-reference#解析作用域提供者">此处</a> 所述，我们知道可以传递唯一的上下文标识符来控制 DI 容器子树的生命周期。我们如何在测试环境中利用这一点？
 
 策略是预先生成一个上下文标识符，并强制 Nest 使用这个特定的 ID 为所有传入请求创建子树。这样，我们就能检索到为被测试请求创建的实例。
 

@@ -22,7 +22,7 @@ accumulate(data: number[]): number {
 
 ```
 
-`@Payload()` 装饰器还接受一个 `schema` 选项，它允许 `StandardSchemaValidationPipe`（从 `@nestjs/common` 导出）根据 [Standard Schema](/application/validation#基于模式的验证)（例如，Zod 模式）验证负载。以相同的方式配置其 `exceptionFactory` 选项，以便验证错误作为 `RpcException` 抛出：
+`@Payload()` 装饰器还接受一个 `schema` 选项，它允许 `StandardSchemaValidationPipe`（从 `@nestjs/common` 导出）根据 [Standard Schema](/techniques/validation#使用内置的-standardschemavalidationpipe)（例如，Zod 模式）验证负载。以相同的方式配置其 `exceptionFactory` 选项，以便验证错误作为 `RpcException` 抛出：
 
 ```typescript
 @UsePipes(new StandardSchemaValidationPipe({ exceptionFactory: (issues) => new RpcException(issues) }))

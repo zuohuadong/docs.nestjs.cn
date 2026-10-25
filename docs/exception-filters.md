@@ -120,7 +120,7 @@ async findAll() {
 
 因为错误本身已经携带了自己的代码，你可以一键把它交给编码代理：**Copy agent prompt** 会把错误、带有源码行的精简堆栈跟踪、慢 span 以及周围的日志打包成一个自包含的提示词，供 Claude Code、Cursor 或任何其他已打开你仓库的工具使用。
 
-这是对本章所述过滤器的补充，而不是替代：过滤器塑造响应，而插桩记录到达响应之前发生了什么。关于 SDK 捕获的失败相关信息，请参阅 [Error monitoring](/observability/error-monitoring)；关于设置，请参阅 [Observability](/observability/overview) 章节；关于如何把反复出现的错误转化为一个能验证自身修复的受跟踪问题，请参阅 [Dashboard](/observability/dashboard#问题)。
+这是对本章所述过滤器的补充，而不是替代：过滤器塑造响应，而插桩记录到达响应之前发生了什么。关于 SDK 捕获的失败相关信息，请参阅 [Error monitoring](https://docs.nestjs.com/observability/error-monitoring)；关于设置，请参阅 [Observability](/observability/overview) 章节；关于如何把反复出现的错误转化为一个能验证自身修复的受跟踪问题，请参阅 [Dashboard](/observability/dashboard#问题)。
 
 #### 自定义异常
 

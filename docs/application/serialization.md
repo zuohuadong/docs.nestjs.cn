@@ -15,7 +15,7 @@ Nest 提供了两个内置拦截器，以声明式的方式应用这些规则：
 
 - `StandardSchemaSerializerInterceptor` 使用以 [Zod](https://zod.dev/)、[Valibot](https://valibot.dev/)、[ArkType](https://arktype.io/) 或任何其他 [Standard Schema](https://standardschema.dev/) 兼容库编写的模式来验证和转换响应。请参阅 [Schema-based serialization](#schema-based-serialization)。
 
-> info **提示** 这两个拦截器都不会序列化 [StreamableFile](/http/file-upload#streaming-files) 响应。
+> info **提示** 这两个拦截器都不会序列化 [StreamableFile](/techniques/streaming-files) 响应。
 
 #### 排除属性
 

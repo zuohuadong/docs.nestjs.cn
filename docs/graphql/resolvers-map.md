@@ -326,7 +326,7 @@ type Query {
 
 ```
 
-> info **提示** 像 `GetAuthorArgs` 这样的参数类与 `ValidationPipe` 配合良好（参见 [Validation](/application/validation)）。
+> info **提示** 像 `GetAuthorArgs` 这样的参数类与 `ValidationPipe` 配合良好（参见 [Validation](/techniques/validation)）。
 
 #### 类继承
 
@@ -632,7 +632,7 @@ export abstract class IQuery {
 
 ```
 
-生成类（而不是默认的接口）让你能够将声明式验证**装饰器**与模式优先方法结合使用（参见 [Validation](/application/validation)）。例如，你可以向生成的 `CreatePostInput` 类添加 `class-validator` 装饰器，如下所示，以强制 `title` 字段的字符串最小和最大长度：
+生成类（而不是默认的接口）让你能够将声明式验证**装饰器**与模式优先方法结合使用（参见 [Validation](/techniques/validation)）。例如，你可以向生成的 `CreatePostInput` 类添加 `class-validator` 装饰器，如下所示，以强制 `title` 字段的字符串最小和最大长度：
 
 ```typescript
 import { MinLength, MaxLength } from 'class-validator';
@@ -645,7 +645,7 @@ export class CreatePostInput {
 
 ```
 
-> warning **注意** 要启用对输入（及参数）的自动验证，请使用 `ValidationPipe`。更多信息请参阅 [Validation](/application/validation) 和 [Pipes](/pipes) 章节。
+> warning **注意** 要启用对输入（及参数）的自动验证，请使用 `ValidationPipe`。更多信息请参阅 [Validation](/techniques/validation) 和 [Pipes](/pipes) 章节。
 
 但是，直接添加到生成文件中的装饰器会在每次重新生成文件时被**覆盖**。因此，应创建一个单独的文件并扩展生成的类。
 

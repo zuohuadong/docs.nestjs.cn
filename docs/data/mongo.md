@@ -5,7 +5,7 @@
 
 ### Mongo
 
-Nest 支持两种与 [MongoDB](https://www.mongodb.com/) 数据库集成的方法。你可以使用 [TypeORM chapter](/data/typeorm) 中描述的 [TypeORM](https://github.com/typeorm/typeorm) 模块（它带有 MongoDB 连接器），或者使用 [Mongoose](https://mongoosejs.com)——最流行的 MongoDB 对象建模工具。本章介绍后者，使用专用的 `@nestjs/mongoose` 包。
+Nest 支持两种与 [MongoDB](https://www.mongodb.com/) 数据库集成的方法。你可以使用 [TypeORM chapter](/recipes/sql-typeorm) 中描述的 [TypeORM](https://github.com/typeorm/typeorm) 模块（它带有 MongoDB 连接器），或者使用 [Mongoose](https://mongoosejs.com)——最流行的 MongoDB 对象建模工具。本章介绍后者，使用专用的 `@nestjs/mongoose` 包。
 
 首先安装所需的依赖：
 

@@ -113,7 +113,7 @@ async findOne(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
 
 绑定验证管道的工作方式略有不同；我们将在本章后面介绍。
 
-> info **提示** 有关验证管道的丰富示例，请参阅 [Validation techniques](/application/validation)。
+> info **提示** 有关验证管道的丰富示例，请参阅 [Validation techniques](/techniques/validation)。
 
 #### 自定义管道
 
@@ -199,7 +199,7 @@ export interface ArgumentMetadata {
 
 #### 基于模式的验证
 
-> info **提示** 以下各节将从零开始构建验证管道，以展示管道的工作方式。在生产环境中进行基于模式的验证时，请改用内置的 `StandardSchemaValidationPipe`。它可与 Zod、Valibot、ArkType 以及任何其他兼容 [Standard Schema](https://standardschema.dev/) 的库配合使用，并会读取你通过参数装饰器（例如 `@Body()` 和 `@Param()`）的 `schema` 选项附加的模式。详情请参见 [Schema-based validation](/application/validation#基于模式的验证)。
+> info **提示** 以下各节将从零开始构建验证管道，以展示管道的工作方式。在生产环境中进行基于模式的验证时，请改用内置的 `StandardSchemaValidationPipe`。它可与 Zod、Valibot、ArkType 以及任何其他兼容 [Standard Schema](https://standardschema.dev/) 的库配合使用，并会读取你通过参数装饰器（例如 `@Body()` 和 `@Param()`）的 `schema` 选项附加的模式。详情请参见 [Schema-based validation](/techniques/validation#使用内置的-standardschemavalidationpipe)。
 
 让我们把验证管道做得更有用一些。考虑 `CatsController` 的 `create()` 方法：我们希望在运行服务方法之前，确保 POST body 对象是有效的。
 
@@ -451,7 +451,7 @@ export class AppModule {}
 
 #### 内置的 ValidationPipe
 
-你不必自己构建一个通用的验证管道：Nest 开箱即用地提供了 `ValidationPipe`。内置的 `ValidationPipe` 提供了比本章构建的示例更多的选项，本章的示例保持简单是为了说明自定义管道的机制。对于基于模式的验证，Nest 还提供了内置的 `StandardSchemaValidationPipe`。有关完整细节和大量示例，请参见 [Validation techniques](/application/validation)。
+你不必自己构建一个通用的验证管道：Nest 开箱即用地提供了 `ValidationPipe`。内置的 `ValidationPipe` 提供了比本章构建的示例更多的选项，本章的示例保持简单是为了说明自定义管道的机制。对于基于模式的验证，Nest 还提供了内置的 `StandardSchemaValidationPipe`。有关完整细节和大量示例，请参见 [Validation techniques](/techniques/validation)。
 
 #### 转换用例
 
