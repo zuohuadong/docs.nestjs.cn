@@ -174,7 +174,7 @@ const documentFactory = () => SwaggerModule.createDocument(app, config, options)
 
 #### Standard Schema（Zod、Valibot）
 
-Nest 的路由参数装饰器通过其 `schema` 选项接受兼容 [Standard Schema](https://standardschema.dev/) 的模式（参见[控制器章节](/controllers#请求对象)）：
+Nest 的路由参数装饰器通过其 `schema` 选项接受兼容 [Standard Schema](https://standardschema.dev/) 的模式（参见[控制器章节](/overview/controllers#请求对象)）：
 
 ```typescript title="cats.controller.ts"
 import { z } from 'zod';
