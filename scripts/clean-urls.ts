@@ -60,3 +60,20 @@ function processDirectory(dir: string): void {
 console.log('🔗 Converting HTML files to clean URL directory structure...');
 processDirectory(outDir);
 console.log('✅ Clean URLs conversion complete!');
+
+// 404.html 由 Rspress 单独生成，不会应用 config.head 中的标签，
+// 这里补充 AdSense 站点验证所需的 meta 标记。
+const adsenseMeta =
+  '<meta name="google-adsense-account" content="ca-pub-3319999205844901">';
+const notFoundPath = path.join(outDir, '404.html');
+if (fs.existsSync(notFoundPath)) {
+  const html = fs.readFileSync(notFoundPath, 'utf-8');
+  if (!html.includes('google-adsense-account')) {
+    fs.writeFileSync(
+      notFoundPath,
+      html.replace(/<head>/i, `<head>\n${adsenseMeta}`),
+      'utf-8',
+    );
+    console.log('✅ Injected AdSense meta tag into 404.html');
+  }
+}

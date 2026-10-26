@@ -103,6 +103,13 @@ const config: UserConfig = {
     [
       'meta',
       {
+        name: 'google-adsense-account',
+        content: 'ca-pub-3319999205844901',
+      },
+    ],
+    [
+      'meta',
+      {
         name: 'theme-color',
         content: '#ffffff',
       },
