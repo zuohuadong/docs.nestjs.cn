@@ -7,17 +7,6 @@ const app = await NestFactory.create(AppModule);
 app.setGlobalPrefix('v1');
 ```
 
-To serve the same routes under more than one prefix, pass an array. Every route is then registered once per prefix:
-
-```typescript
-app.setGlobalPrefix(['api', 'v1']);
-// GET /api/cats and GET /v1/cats reach the same route handler
-```
-
-> info **Hint** In Nest v10 and earlier, a regular expression prefix such as `(api|v1)` served this purpose. That syntax is no longer supported, so use an array instead.
-
-> warning **Warning** `@nestjs/swagger` only reads the first prefix. With `app.setGlobalPrefix(['api', 'v1'])`, the generated OpenAPI document lists routes under `/api` only, and the [`useGlobalPrefix`](/openapi/introduction#setup-options) option serves Swagger UI under `/api` only.
-
 To exclude routes from the global prefix, use the `exclude` option:
 
 ```typescript
@@ -34,8 +23,10 @@ app.setGlobalPrefix('v1', { exclude: ['cats'] });
 
 > info **Hint** The `path` property supports wildcard parameters through the [path-to-regexp](https://github.com/pillarjs/path-to-regexp#parameters) package. Bare wildcard asterisks (`*`) are deprecated; use parameters (`:param`) or named wildcards (`*splat`) instead. A named wildcard requires at least one extra segment, so `health/*splat` excludes `/health/status` but not `/health` itself. To exclude both, wrap the wildcard in braces: `health/{{ '{' }}*splat&#125;`.
 
-The `exclude` option behaves the same way with multiple prefixes: excluded routes are served without any prefix. In the following example, `health` is only available at `/health`, while every other route is available under both `/api` and `/v1`:
+#### Excluded routes and unmatched requests
 
-```typescript
-app.setGlobalPrefix(['api', 'v1'], { exclude: ['health'] });
-```
+Excluded routes are registered outside the prefix, but Nest still handles requests to them that don't match a handler. For example, with `exclude: ['health']` and only a `GET /health` handler, a `POST /health` request goes through your exception filters and gets Nest's standard `404` response.
+
+With the Express adapter, a request to a path that is neither under the prefix nor excluded never reaches Nest: Express answers it with its default `404` page. The Fastify adapter passes every unmatched request to Nest.
+
+> info **Hint** With [URI versioning](/http/versioning) enabled, exclusions are matched without the version segment, and an excluded route keeps it. For example, `exclude: ['health']` with `defaultVersion: '1'` serves the route at `/v1/health`.
