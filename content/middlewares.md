@@ -20,7 +20,7 @@ By default, Nest middleware is equivalent to [Express](https://expressjs.com/en/
 
 You implement custom Nest middleware either as a function or as a class with the `@Injectable()` decorator. A class should implement the `NestMiddleware` interface, while a function has no special requirements. Let's start by implementing a simple middleware class.
 
-> warning **Warning** Express and Fastify handle middleware differently and provide different method signatures. See the [Performance (Fastify)](/http/performance#middleware) chapter for details.
+> warning **Warning** Express and Fastify handle middleware differently and provide different method signatures, while the Node adapter uses the Express signature. See the [HTTP adapters](/http/performance#middleware) chapter for details.
 
 ```typescript
 @@filename(logger.middleware)
@@ -207,6 +207,21 @@ consumer
 With the example above, `LoggerMiddleware` is bound to all routes defined inside `CatsController` **except** those matching the three entries passed to the `exclude()` method.
 
 > info **Hint** The `exclude()` method supports wildcard parameters using the [path-to-regexp](https://github.com/pillarjs/path-to-regexp#parameters) package.
+
+Paths passed to `exclude()` are declared without the [global prefix](/faq/global-prefix), which Nest adds unless the route is excluded from it. If an exclusion matches a path that is excluded from the global prefix and has no parameters or wildcards, the middleware is also skipped for that path, which is served without the prefix. This match follows the case sensitivity of the router.
+
+```typescript
+// main.ts
+app.setGlobalPrefix('api', { exclude: ['health', 'health/ready'] });
+
+// app.module.ts
+consumer
+  .apply(LoggerMiddleware)
+  .exclude('health', 'health/*splat')
+  .forRoutes('*splat');
+```
+
+Here, `health/*splat` also skips the middleware for `/health/ready`. It doesn't match `/health` itself, so `health` is listed as well.
 
 #### Functional middleware
 

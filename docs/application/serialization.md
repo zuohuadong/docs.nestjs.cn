@@ -1,11 +1,11 @@
 <!-- 此文件从 content/application/serialization.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-10-21T08:33:07.808Z -->
+<!-- 生成时间: 2026-10-31T09:38:44.142Z -->
 <!-- 源文件: content/application/serialization.md -->
-<!-- 源哈希: b17437df59efa0266c75493debbe6a20 -->
+<!-- 源哈希: ecfa88579fed8729f8ea33cc9c9cc7da -->
 
 ### 序列化
 
-序列化发生在对象作为网络响应返回之前。它是定义用于转换和净化发送给客户端的数据规则的合适位置。例如，像密码这样的敏感数据必须始终从响应中排除，而某些属性可能需要进一步转换，例如只返回实体属性的一个子集。在每个处理程序中手动执行这些转换既繁琐又容易出错，而且很难确保覆盖了所有情况。
+序列化发生在对象作为网络响应返回之前。它是定义转换和净化发送给客户端数据的规则的合适位置。例如，诸如密码之类的敏感数据必须始终从响应中排除，而某些属性可能需要进一步转换，例如只返回实体属性的一个子集。在每个处理程序中手动执行这些转换既繁琐又容易出错，而且很难确保覆盖了每一种情况。
 
 #### 概述
 
@@ -19,7 +19,7 @@ Nest 提供了两个内置拦截器，以声明式的方式应用这些规则：
 
 #### 排除属性
 
-假设你想从每个响应中排除用户实体的 `password` 属性。按如下方式注解该实体：
+假设你想从每个响应中排除用户实体的 `password` 属性。请按如下方式注解该实体：
 
 ```typescript
 import { Exclude } from 'class-transformer';
@@ -70,7 +70,7 @@ findOne(): UserEntity {
 
 ```
 
-该拦截器也可以绑定到整个应用程序（请参阅 [Binding interceptors](/overview/interceptors#绑定拦截器)）。拦截器和实体类声明共同确保**每一个**返回 `UserEntity` 的路由处理程序都会省略 `password` 属性，从而在一处强制实施此规则。
+该拦截器也可以绑定到应用程序范围（请参阅 [Binding interceptors](/overview/interceptors#绑定拦截器)）。拦截器与实体类声明共同确保**每一个**返回 `UserEntity` 的路由处理程序都会省略 `password` 属性，从而在一处强制执行此规则。
 
 #### 暴露属性
 
@@ -115,15 +115,15 @@ findOne(): UserEntity {
 
 #### 转换普通对象
 
-`@SerializeOptions()` 的 `type` 选项会在响应被序列化之前将其转换为指定类的实例，因此即使处理程序返回的是普通对象，该类的 `class-transformer` 装饰器也会生效。这消除了在每个处理程序中实例化该类或调用 `plainToInstance()` 的需要。
+`@SerializeOptions()` 的 `type` 选项会在响应被序列化之前将其转换为指定类的实例，因此即使处理程序返回的是普通对象，该类的 `class-transformer` 装饰器也会生效。这样就不再需要在每个处理程序中实例化该类或调用 `plainToInstance()`。
 
-在下面的示例中，两个条件分支都返回普通 JavaScript 对象，它们会被转换为 `UserEntity` 实例并应用相关的装饰器：
+在下面的示例中，两个条件分支都返回普通 JavaScript 对象，它们会被转换为 `UserEntity` 实例并应用相关装饰器：
 
 ```typescript
 @UseInterceptors(ClassSerializerInterceptor)
 @SerializeOptions({ type: UserEntity })
 @Get()
-findOne(@Query() { id }: { id: number }): UserEntity {
+findOne(@Query('id', ParseIntPipe) id: number): UserEntity {
   if (id === 1) {
     return {
       id: 1,
@@ -145,13 +145,13 @@ findOne(@Query() { id }: { id: number }): UserEntity {
 
 > info **提示** 声明处理程序的返回类型可以让 TypeScript 检查返回的普通对象是否与 DTO 或实体的结构匹配。`plainToInstance()` 函数不提供这种类型检查，因此不匹配的对象可能会被忽略。
 
-> warning **警告** 响应的结构由 `type` 类决定，而不是由返回值的类决定。不是 `type` 类实例的值（例如另一个实体的实例）会像普通对象一样被转换：其自身类的装饰器（例如 `@Exclude()`）会被忽略，而 `type` 类未声明的属性会被原样复制。要只发送 `type` 类的属性，请为每个属性添加 `@Expose()` 装饰器，并在同一个 `@SerializeOptions()` 装饰器的选项中添加 `excludeExtraneousValues: true`。
+> warning **警告** 响应的结构由 `type` 类决定，而不是由返回值的类决定。不是 `type` 类实例的值（例如另一个实体的实例）会像普通对象一样被转换：它自身类的装饰器（例如 `@Exclude()`）会被忽略，而 `type` 类未声明的属性会被原样复制。要只发送 `type` 类的属性，请为每个属性添加 `@Expose()` 装饰器，并在同一个 `@SerializeOptions()` 装饰器的选项中添加 `excludeExtraneousValues: true`。
 
 #### 基于模式的序列化
 
-`StandardSchemaSerializerInterceptor` 使用模式而不是类装饰器来塑造响应。模式精确地描述了从 API 出去的内容：拦截器将路由处理程序返回的值通过模式运行，并将模式的输出发送给客户端。它接受任何实现了 [Standard Schema](https://standardschema.dev/) 规范的模式。本节中的示例使用 Zod。
+`StandardSchemaSerializerInterceptor` 使用模式而不是类装饰器来塑造响应。该模式精确描述了离开 API 的内容：拦截器会让路由处理程序返回的值通过该模式运行，并将模式的输出发送给客户端。它接受任何实现了 [Standard Schema](https://standardschema.dev/) 规范的模式。本节中的示例使用 Zod。
 
-由于 `z.object()` 会剥离模式未声明的属性，因此响应模式也是一个允许列表。以下模式保证用户的 `password` 永远不会被发送，即使服务返回完整的数据库行：
+由于 `z.object()` 会剥离模式未声明的属性，因此响应模式也是一个允许列表。以下模式保证用户的 `password` 永远不会被发送，即使服务返回了完整的数据库行：
 
 ```typescript title="user-response.schema.ts"
 import { z } from 'zod';
@@ -166,7 +166,7 @@ export type UserResponse = z.infer<typeof userResponseSchema>;
 
 ```
 
-绑定拦截器，并使用 `@SerializeOptions()` 装饰器的 `schema` 选项选择模式：
+绑定该拦截器，并通过 `@SerializeOptions()` 装饰器的 `schema` 选项来选择模式：
 
 ```typescript title="users.controller.ts"
 import {
@@ -201,7 +201,7 @@ export class UsersController {
 
 ```
 
-服务返回包含 `password` 属性的用户记录，但客户端只会收到已声明的属性：
+服务返回的用户记录包含 `password` 属性，但客户端只会收到已声明的属性：
 
 ```json
 {
@@ -212,9 +212,9 @@ export class UsersController {
 
 ```
 
-当处理程序返回数组时（如 `findAll()` 所做的那样），拦截器会将模式应用于**每个元素**。请传递单个项的模式，而不是数组模式。
+当处理程序返回数组时（如 `findAll()` 那样），拦截器会将模式应用于**每个元素**。请传递单个元素的模式，而不是数组模式。
 
-`null`、`undefined`、原始值以及 `StreamableFile` 响应都会原样发送，没有模式的处理程序的响应也是如此。
+`null`、`undefined`、原始值以及 `StreamableFile` 响应会原样发送，没有模式的处理程序的响应也是如此。
 
 #### 使用模式转换响应
 
@@ -249,7 +249,7 @@ export const userResponseSchema = z
 
 ```
 
-使用 Valibot 编写的相同模式使用 `v.pipe()` 和 `v.transform()`：
+使用 Valibot 编写的相同模式则使用 `v.pipe()` 和 `v.transform()`：
 
 ```typescript
 import * as v from 'valibot';
@@ -282,7 +282,7 @@ export class UsersController {}
 
 ```
 
-要将拦截器绑定到整个应用程序，请向它传入 `Reflector` 实例，拦截器使用该实例读取 `@SerializeOptions()` 元数据：
+要将该拦截器绑定到整个应用程序，请向它传入 `Reflector` 实例，拦截器会使用该实例读取 `@SerializeOptions()` 元数据：
 
 ```typescript title="main.ts"
 const app = await NestFactory.create(AppModule);
@@ -292,7 +292,7 @@ app.useGlobalInterceptors(
 
 ```
 
-或者，使用 `APP_INTERCEPTOR` 令牌注册它（如 [Binding interceptors](/overview/interceptors#绑定拦截器) 中所述），Nest 会为你注入 `Reflector`。没有模式的处理程序不受全局拦截器影响。
+或者，使用 `APP_INTERCEPTOR` 令牌注册它（如 [Binding interceptors](/overview/interceptors#绑定拦截器) 中所述），Nest 会为你注入 `Reflector`。没有模式的处理程序不受全局拦截器的影响。
 
 拦截器构造函数还接受默认选项，当处理程序及其控制器都未设置模式时，这些选项会生效：
 
@@ -303,15 +303,15 @@ app.useGlobalInterceptors(
   </tr>
   <tr>
     <td><code>validateOptions</code></td>
-    <td>转发给模式 <code>~standard.validate()</code> 方法的选项，适用于支持它们的库。处理程序可以使用 <code>@SerializeOptions()</code> 的 <code>validateOptions</code> 选项覆盖它们。</td>
+    <td>转发给模式的 <code>~standard.validate()</code> 方法的选项，适用于支持这些选项的库。处理程序可以通过 <code>@SerializeOptions()</code> 的 <code>validateOptions</code> 选项覆盖它们。</td>
   </tr>
 </table>
 
 #### 序列化错误
 
-与模式不匹配的响应（例如缺少属性或属性类型错误的记录）表明服务器存在缺陷，而不是请求有问题。在这种情况下，拦截器会抛出一个列出模式问题的错误，客户端会收到 `500 Internal Server Error` 响应，而不是部分序列化的数据。错误消息（包括这些问题）会由默认异常过滤器记录。
+与模式不匹配的响应（例如记录缺少属性或属性类型错误）表明服务器存在缺陷，而不是请求有问题。在这种情况下，拦截器会抛出一个列出模式问题的错误，客户端会收到 `500 Internal Server Error` 响应，而不是部分序列化的数据。错误消息（包括这些问题）会由默认异常过滤器记录。
 
-使用 Valibot 的可运行示例可在 [here](https://github.com/nestjs/nest/tree/master/sample/36-valibot-serializer) 中找到。
+一个使用 Valibot 的可运行示例可在 [here](https://github.com/nestjs/nest/tree/master/sample/36-valibot-serializer) 中找到。
 
 #### 示例
 
@@ -319,8 +319,8 @@ app.useGlobalInterceptors(
 
 #### WebSocket 与微服务
 
-虽然本章展示的示例使用 HTTP 应用程序（例如 Express 或 Fastify），但 `ClassSerializerInterceptor` 和 `StandardSchemaSerializerInterceptor` 在 WebSocket 和微服务中的工作方式相同，与传输方式无关。
+虽然本章展示的示例使用的是 HTTP 应用程序（例如 Express 或 Fastify），但 `ClassSerializerInterceptor` 和 `StandardSchemaSerializerInterceptor` 在 WebSocket 和微服务中的工作方式完全相同，与传输方式无关。
 
 #### 了解更多
 
-在 [class-transformer](https://github.com/typestack/class-transformer) 仓库中阅读有关可用装饰器和选项的更多信息。有关模式库，请参阅 [Zod](https://zod.dev/)、[Valibot](https://valibot.dev/) 和 [ArkType](https://arktype.io/) 文档。
+在 [class-transformer](https://github.com/typestack/class-transformer) 仓库中阅读更多关于可用装饰器和选项的内容。关于模式库，请参阅 [Zod](https://zod.dev/)、[Valibot](https://valibot.dev/) 和 [ArkType](https://arktype.io/) 文档。

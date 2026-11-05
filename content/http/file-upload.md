@@ -8,6 +8,8 @@ To handle file uploads, Nest provides a built-in module based on the [multer](ht
 
 > info **Hint** If your application runs on the `FastifyAdapter`, the same interceptors are available from the `@nestjs/platform-fastify` package, backed by [@fastify/multipart](https://github.com/fastify/fastify-multipart) instead of Multer, and the decorators and pipes described in this chapter work unchanged. Only the import path changes - see the [Fastify](/http/file-upload#fastify) section below.
 
+> info **Hint** If your application runs on the `NodeAdapter`, import the interceptors and `MulterModule` from `@nestjs/platform-node` instead of `@nestjs/platform-express`. They are the same Multer-based interceptors, so everything in this chapter applies unchanged.
+
 For type safety, install the Multer type definitions:
 
 ```shell
@@ -399,7 +401,7 @@ uploadFile(@UploadedFile() file: Express.Multer.File) {
 
 ##### Field name limits
 
-Field names such as `user[address][city]` or `tags[2]` build nested objects and arrays in the request body. Two limits bound them: `fieldNestingDepth`, the number of nesting levels (`a[b][c]` has 2), and `fieldArrayIndexLimit`, the highest array index (`tags[2]` uses index 2). A request that exceeds either one is rejected with a `400 Bad Request` response. Starting with NestJS v12.1.4, they default to 32 and 1000 respectively (Multer leaves them unlimited), so that a single request cannot build an arbitrarily deep body or a huge array. Set a limit to `Infinity` to lift it.
+Field names such as `user[address][city]` or `tags[2]` build nested objects and arrays in the request body. Two limits bound them: `fieldNestingDepth`, the number of nesting levels (`a[b][c]` has 2), and `fieldArrayIndexLimit`, the highest array index (`tags[2]` uses index 2). A request that exceeds either one is rejected with a `400 Bad Request` response. Starting with NestJS v12.2, they default to 32 and 1000 respectively (Multer leaves them unlimited), so that a single request cannot build an arbitrarily deep body or a huge array. Set a limit to `Infinity` to lift it.
 
 ##### Disk storage
 
@@ -431,7 +433,7 @@ uploadFile(@UploadedFile() file: Express.Multer.File) {
 
 To apply the same storage and limits to every file interceptor in a module, set them as [default options](/http/file-upload#default-options) or with [async configuration](/http/file-upload#async-configuration).
 
-Files stored on disk are not removed automatically once your route handler has run. Delete them (for example with `unlink()` from `fs/promises`) once you have processed them, including when processing fails. Starting with NestJS v12.1.4, if a pipe rejects the request (for example, because `ParseFilePipe` validation fails), the route handler does not run, and the stored files are removed once the error response has been sent.
+Files stored on disk are not removed automatically once your route handler has run. Delete them (for example with `unlink()` from `fs/promises`) once you have processed them, including when processing fails. Starting with NestJS v12.2, if a pipe rejects the request (for example, because `ParseFilePipe` validation fails), the route handler does not run, and the stored files are removed once the error response has been sent.
 
 ##### Sending files to external storage
 
@@ -441,7 +443,7 @@ To store uploads in S3, Cloudflare R2 or another external store without bufferin
 
 #### Fastify
 
-Starting with NestJS v12.1, applications running on the `FastifyAdapter` (see [Performance (Fastify)](/http/performance)) can handle file uploads with the same API, backed by the [@fastify/multipart](https://github.com/fastify/fastify-multipart) plugin instead of Multer. The interceptors described in this chapter take the same arguments and options, populate the request in the same way, and fail with the same error responses, while `@UploadedFile()`, `@UploadedFiles()`, `ParseFilePipe`, `ParseFilePipeBuilder` and the built-in file validators work unchanged.
+Starting with NestJS v12.1, applications running on the `FastifyAdapter` (see [Fastify adapter](/http/performance#fastify-adapter)) can handle file uploads with the same API, backed by the [@fastify/multipart](https://github.com/fastify/fastify-multipart) plugin instead of Multer. The interceptors described in this chapter take the same arguments and options, populate the request in the same way, and fail with the same error responses, while `@UploadedFile()`, `@UploadedFiles()`, `ParseFilePipe`, `ParseFilePipeBuilder` and the built-in file validators work unchanged.
 
 First, install the plugin:
 
@@ -719,7 +721,7 @@ getFile(@Res({ passthrough: true }) res: Response): StreamableFile {
 
 ##### Stream errors
 
-With the Express adapter, if the stream emits an error before any data has been sent, the client receives a `400 Bad Request` response, and the error is logged. Starting with NestJS v12.1.4, the response body no longer contains the error message, which may include the path of the file. If data has already been sent, the response is ended. To customize this behavior, pass a handler to the `setErrorHandler()` method:
+With the Express adapter, if the stream emits an error before any data has been sent, the client receives a `400 Bad Request` response, and the error is logged. Starting with NestJS v12.2, the response body no longer contains the error message, which may include the path of the file. If data has already been sent, the response is ended. To customize this behavior, pass a handler to the `setErrorHandler()` method:
 
 ```typescript
 @Get()
@@ -738,7 +740,7 @@ getReport(): StreamableFile {
 
 The `setErrorLogger()` method replaces the function that logs errors: those the default error handler answers, and those the response stream emits while the file is being written to it.
 
-> info **Note** The error handler and the error logger apply to the Express adapter. With the Fastify adapter, a stream error is handled by the [exceptions layer](/exception-filters), so by default the client receives a `500 Internal Server Error` response.
+> info **Note** The error handler and the error logger apply to the Express and Node adapters. With the Fastify adapter, a stream error is handled by the [exceptions layer](/exception-filters), so by default the client receives a `500 Internal Server Error` response.
 
 ##### Cross-platform support
 

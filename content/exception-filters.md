@@ -15,7 +15,7 @@ Out of the box, this is done by a built-in **global exception filter**, which ha
 }
 ```
 
-> info **Hint** The global exception filter partially supports the `http-errors` library. A thrown error that carries `statusCode` and `message` properties in the shape that library produces is sent back with those values, instead of the default `InternalServerErrorException` response for unrecognized exceptions.
+> info **Hint** The global exception filter partially supports the `http-errors` library. A thrown error that carries `statusCode` and `message` properties in the shape that library produces is sent back with those values, instead of the default `InternalServerErrorException` response for unrecognized exceptions. Starting with NestJS v12.2, if the error's `expose` property is `false`, the response carries the standard reason phrase for its status code (for example, `Bad Gateway`) instead of the error's message. `http-errors` sets `expose` to `false` for status codes of 500 and above, so pass `expose: true` to `createError()` when the message of a 5xx error is meant for the client.
 
 #### Throwing standard exceptions
 
@@ -199,8 +199,9 @@ The response then carries the code alongside the usual fields:
 ```json
 {
   "message": "Password is too weak",
-  "errorCode": "WEAK_PASSWORD",
-  "statusCode": 400
+  "error": "Bad Request",
+  "statusCode": 400,
+  "errorCode": "WEAK_PASSWORD"
 }
 ```
 
