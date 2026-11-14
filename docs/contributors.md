@@ -1031,10 +1031,10 @@ docs/
         </a>
     </td>
     <td align="center">
-        <a href="https://github.com/Half-Sugar-Code">
-            <img src="https://avatars.githubusercontent.com/u/54879607?v=4" width="100;" alt="Half-Sugar-Code"/>
+        <a href="https://github.com/soda-codex">
+            <img src="https://avatars.githubusercontent.com/u/54879607?v=4" width="100;" alt="soda-codex"/>
             <br />
-            <sub><b>Half-Sugar-Code</b></sub>
+            <sub><b>soda-codex</b></sub>
         </a>
     </td>
     <td align="center">
