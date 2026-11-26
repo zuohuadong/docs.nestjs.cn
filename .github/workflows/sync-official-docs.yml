@@ -20,6 +20,8 @@ jobs:
     env:
       # NVIDIA NIM API 配置
       NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+      # 可选：用仓库变量覆盖默认翻译模型（模型下线返回 410 时无需改代码）
+      NVIDIA_MODEL: ${{ vars.NVIDIA_MODEL }}
     
     steps:
       - name: Checkout current repository

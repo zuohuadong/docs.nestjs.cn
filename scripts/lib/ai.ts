@@ -2,7 +2,7 @@
  * AI API 交互模块
  *
  * 统一的 AI 翻译接口，支持：
- * - NVIDIA NIM (默认，使用 DeepSeek V3.1)
+ * - NVIDIA NIM (默认，使用 NVIDIA_MODEL 或内置默认模型)
  * - 指数退避重试（3 次，针对 429/500/503）
  * - 速率限制（默认 40 RPM）
  * - 滑动窗口上下文（分段翻译时附加前段摘要）
@@ -10,6 +10,12 @@
 
 import type { AIConfig, AICompletionResponse, GlossaryData } from './types.js';
 import { getErrorMessage } from './types.js';
+
+/**
+ * 内置默认模型。NVIDIA NIM 会下线旧模型（返回 410 Gone），
+ * 可用 NVIDIA_MODEL 环境变量覆盖，无需改代码。
+ */
+export const DEFAULT_MODEL = 'z-ai/glm-5.3-flash';
 
 // ============================================================================
 // AI Client
@@ -24,7 +30,7 @@ export class AIClient {
     this.config = {
       apiKey: config.apiKey || process.env.NVIDIA_API_KEY || '',
       baseUrl: config.baseUrl || 'https://integrate.api.nvidia.com/v1/chat/completions',
-      model: config.model || 'deepseek-ai/deepseek-v4.1-flash',
+      model: config.model || process.env.NVIDIA_MODEL || DEFAULT_MODEL,
       maxTokens: config.maxTokens || 8192,
       temperature: config.temperature || 0.3,
       rpmLimit: config.rpmLimit || 40,
