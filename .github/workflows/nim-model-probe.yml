@@ -1,11 +1,15 @@
 name: NIM Model Probe
 
-# 临时诊断工作流：检查 NVIDIA NIM 上候选翻译模型是否可访问、首字延迟与吞吐。
-# 用 workflow_dispatch 手动触发，输出仅包含状态码/耗时/返回片段，不泄露密钥。
+# 临时诊断工作流：逐个候选模型发起真实翻译请求，记录状态码、耗时与完整译文，
+# 用于挑选可用的翻译模型。诊断完成后删除。
 
 on:
   workflow_dispatch:
     inputs:
+      models:
+        description: '逗号分隔的模型 ID'
+        type: string
+        default: 'nvidia/nemotron-3-ultra-550b-a55b,nvidia/nemotron-3.5-bolt-e4b,poolside/laguna-xs-2.1'
       sample_file:
         description: '用于构造请求的样例源文件'
         type: string
@@ -13,7 +17,11 @@ on:
       max_chars:
         description: '样例截断长度'
         type: string
-        default: '2000'
+        default: '4000'
+      max_tokens:
+        description: 'max_tokens'
+        type: string
+        default: '2048'
 
 jobs:
   probe:
@@ -25,39 +33,27 @@ jobs:
 
       - name: Probe candidate models
         run: |
-          python3 - "${{ inputs.sample_file }}" "${{ inputs.max_chars }}" <<'PY'
-          import json, os, sys, time, urllib.request, urllib.error
+          python3 - <<'PY'
+          import json, os, re, time, urllib.request, urllib.error
 
-          sample_file, max_chars = sys.argv[1], int(sys.argv[2])
+          models = [m.strip() for m in os.environ['MODELS'].split(',') if m.strip()]
+          sample_file = os.environ['SAMPLE_FILE']
+          max_chars = int(os.environ['MAX_CHARS'])
+          max_tokens = int(os.environ['MAX_TOKENS'])
           text = open(sample_file, encoding='utf-8').read()[:max_chars]
 
           system = (
-            'You are a professional technical documentation translator. '
-            'Translate the following NestJS documentation from English to Chinese. '
-            'Keep code, Markdown, links and placeholders such as ⟦CB_0⟧ unchanged.'
+            'You are a professional technical documentation translator specializing in '
+            'translating NestJS English technical documentation to Chinese.\n'
+            'Keep code examples, Markdown formatting, links and placeholders such as '
+            '⟦CB_0⟧, ⟦IC_1⟧, ⟦LN_2⟧ exactly as they are in the source text.'
           )
-
-          models = [
-            'z-ai/glm-5.3-flash',
-            'moonshotai/kimi-k3.1-pro',
-            'minimaxai/minimax-m3.1-flash',
-            'mistralai/mistral-large-4-1t-a52b',
-            'nvidia/nemotron-3.5-lightning-30b-a3b',
-            'nvidia/nemotron-3-ultra-550b-a55b',
-            'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning',
-            'nvidia/nemotron-3.5-bolt-e4b',
-            'nvidia/riva-translate-4b-instruct-v2',
-            'google/gemma-3-12b-it',
-            'stepfun-ai/step-5-preview',
-            'poolside/laguna-xs-2.1',
-          ]
 
           url = 'https://integrate.api.nvidia.com/v1/chat/completions'
           key = os.environ.get('NVIDIA_API_KEY', '')
           print(f'API key configured: {bool(key)}')
-          print(f'sample: {sample_file} ({len(text)} chars)')
-          print(f'{"model":52} {"status":8} {"secs":>6}  detail')
-          print('-' * 110)
+          print(f'sample: {sample_file} ({len(text)} chars), max_tokens={max_tokens}')
+          print(f'placeholder count in sample: {len(re.findall(r"⟦[A-Z]+_\\d+⟧", text))}')
 
           for model in models:
             payload = json.dumps({
@@ -66,7 +62,7 @@ jobs:
                 {'role': 'system', 'content': system},
                 {'role': 'user', 'content': text},
               ],
-              'max_tokens': 256,
+              'max_tokens': max_tokens,
               'temperature': 0.3,
             }).encode()
             req = urllib.request.Request(
@@ -78,22 +74,33 @@ jobs:
               },
             )
             started = time.time()
-            status, detail = '-', ''
+            print('=' * 100)
+            print(f'MODEL: {model}')
             try:
-              with urllib.request.urlopen(req, timeout=60) as resp:
-                body = resp.read().decode('utf-8', 'replace')
-                status = resp.status
-                try:
-                  msg = json.loads(body)['choices'][0]['message']['content']
-                  detail = f'out={len(msg)} chars: ' + ' '.join(msg.split())[:70]
-                except Exception:
-                  detail = 'unparsable: ' + body[:120]
+              with urllib.request.urlopen(req, timeout=180) as resp:
+                body = json.loads(resp.read().decode('utf-8', 'replace'))
+                msg = body['choices'][0]['message']
+                content = msg.get('content') or ''
+                reasoning = msg.get('reasoning_content') or ''
+                usage = body.get('usage') or {}
+                print(f'status=200 secs={time.time()-started:.1f} '
+                      f'finish={body["choices"][0].get("finish_reason")} '
+                      f'content={len(content)} reasoning={len(reasoning)} usage={usage}')
+                if content:
+                  print('--- OUTPUT START ---')
+                  print(content)
+                  print('--- OUTPUT END ---')
+                else:
+                  print('content empty; message keys:', sorted(msg.keys()))
+                  print('reasoning head:', reasoning[:200])
             except urllib.error.HTTPError as e:
-              status = e.code
-              detail = e.read().decode('utf-8', 'replace')[:160]
+              print(f'HTTP {e.code} after {time.time()-started:.1f}s: '
+                    f'{e.read().decode("utf-8", "replace")[:300]}')
             except Exception as e:
-              status = 'ERR'
-              detail = f'{type(e).__name__}: {e}'[:160]
-            elapsed = time.time() - started
-            print(f'{model:52} {str(status):8} {elapsed:6.1f}  {detail}', flush=True)
+              print(f'ERR {type(e).__name__} after {time.time()-started:.1f}s: {e}')
           PY
+        env:
+          MODELS: ${{ inputs.models }}
+          SAMPLE_FILE: ${{ inputs.sample_file }}
+          MAX_CHARS: ${{ inputs.max_chars }}
+          MAX_TOKENS: ${{ inputs.max_tokens }}
