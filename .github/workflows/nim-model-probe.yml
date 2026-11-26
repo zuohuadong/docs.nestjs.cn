@@ -1,0 +1,99 @@
+name: NIM Model Probe
+
+# 临时诊断工作流：检查 NVIDIA NIM 上候选翻译模型是否可访问、首字延迟与吞吐。
+# 用 workflow_dispatch 手动触发，输出仅包含状态码/耗时/返回片段，不泄露密钥。
+
+on:
+  workflow_dispatch:
+    inputs:
+      sample_file:
+        description: '用于构造请求的样例源文件'
+        type: string
+        default: 'content/data/caching.md'
+      max_chars:
+        description: '样例截断长度'
+        type: string
+        default: '2000'
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    env:
+      NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Probe candidate models
+        run: |
+          python3 - "${{ inputs.sample_file }}" "${{ inputs.max_chars }}" <<'PY'
+          import json, os, sys, time, urllib.request, urllib.error
+
+          sample_file, max_chars = sys.argv[1], int(sys.argv[2])
+          text = open(sample_file, encoding='utf-8').read()[:max_chars]
+
+          system = (
+            'You are a professional technical documentation translator. '
+            'Translate the following NestJS documentation from English to Chinese. '
+            'Keep code, Markdown, links and placeholders such as ⟦CB_0⟧ unchanged.'
+          )
+
+          models = [
+            'z-ai/glm-5.3-flash',
+            'moonshotai/kimi-k3.1-pro',
+            'minimaxai/minimax-m3.1-flash',
+            'mistralai/mistral-large-4-1t-a52b',
+            'nvidia/nemotron-3.5-lightning-30b-a3b',
+            'nvidia/nemotron-3-ultra-550b-a55b',
+            'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning',
+            'nvidia/nemotron-3.5-bolt-e4b',
+            'nvidia/riva-translate-4b-instruct-v2',
+            'google/gemma-3-12b-it',
+            'stepfun-ai/step-5-preview',
+            'poolside/laguna-xs-2.1',
+          ]
+
+          url = 'https://integrate.api.nvidia.com/v1/chat/completions'
+          key = os.environ.get('NVIDIA_API_KEY', '')
+          print(f'API key configured: {bool(key)}')
+          print(f'sample: {sample_file} ({len(text)} chars)')
+          print(f'{"model":52} {"status":8} {"secs":>6}  detail')
+          print('-' * 110)
+
+          for model in models:
+            payload = json.dumps({
+              'model': model,
+              'messages': [
+                {'role': 'system', 'content': system},
+                {'role': 'user', 'content': text},
+              ],
+              'max_tokens': 256,
+              'temperature': 0.3,
+            }).encode()
+            req = urllib.request.Request(
+              url, data=payload,
+              headers={
+                'Authorization': f'Bearer {key}',
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+            )
+            started = time.time()
+            status, detail = '-', ''
+            try:
+              with urllib.request.urlopen(req, timeout=60) as resp:
+                body = resp.read().decode('utf-8', 'replace')
+                status = resp.status
+                try:
+                  msg = json.loads(body)['choices'][0]['message']['content']
+                  detail = f'out={len(msg)} chars: ' + ' '.join(msg.split())[:70]
+                except Exception:
+                  detail = 'unparsable: ' + body[:120]
+            except urllib.error.HTTPError as e:
+              status = e.code
+              detail = e.read().decode('utf-8', 'replace')[:160]
+            except Exception as e:
+              status = 'ERR'
+              detail = f'{type(e).__name__}: {e}'[:160]
+            elapsed = time.time() - started
+            print(f'{model:52} {str(status):8} {elapsed:6.1f}  {detail}', flush=True)
+          PY
