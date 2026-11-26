@@ -423,7 +423,7 @@ if (args.includes('--help') || args.includes('-h')) {
 选项:
   --content-dir <dir>     源文件目录 (默认: content)
   --docs-dir <dir>        目标文件目录 (默认: docs)
-  --model <model>         NVIDIA NIM 模型 (默认: NVIDIA_MODEL 环境变量，否则 z-ai/glm-5.3-flash)
+  --model <model>         NVIDIA NIM 模型 (默认: NVIDIA_MODEL 环境变量，否则 nvidia/nemotron-3.5-bolt-e4b)
   --concurrency <num>     并发请求数 (默认: 3, 受 40 RPM 限速)
   --api-key <key>         NVIDIA API Key (或设置 NVIDIA_API_KEY 环境变量)
   --no-ai                 禁用 AI 翻译，仅处理格式
