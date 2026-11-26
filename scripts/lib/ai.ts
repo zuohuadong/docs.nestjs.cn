@@ -14,8 +14,12 @@ import { getErrorMessage } from './types.js';
 /**
  * 内置默认模型。NVIDIA NIM 会下线旧模型（返回 410 Gone），
  * 可用 NVIDIA_MODEL 环境变量覆盖，无需改代码。
+ *
+ * 选型依据（2026-11 实测，4000 字符样例）：该模型 11s 返回、无 reasoning
+ * token、Markdown/代码块保持完整；同为候选的 glm-5.3-flash、kimi-k3.1-pro
+ * 等为 reasoning 模型，长文档下易耗尽 token 或触发 120s 超时。
  */
-export const DEFAULT_MODEL = 'z-ai/glm-5.3-flash';
+export const DEFAULT_MODEL = 'nvidia/nemotron-3.5-bolt-e4b';
 
 // ============================================================================
 // AI Client
