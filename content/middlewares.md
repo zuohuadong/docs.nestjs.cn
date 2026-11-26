@@ -25,7 +25,7 @@ You implement custom Nest middleware either as a function or as a class with the
 ```typescript
 @@filename(logger.middleware)
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
@@ -148,6 +148,8 @@ forRoutes({
 });
 ```
 
+> warning **Warning** A plain string path matches subpaths differently across adapters. With Express and the Node adapter, `forRoutes('cats')` also runs the middleware for subpaths like `/cats/breed`. With Fastify, it matches only `/cats`. To match `/cats` and its subpaths on every adapter, put the slash inside the optional wildcard: `forRoutes('cats{{ '{' }}/*splat&#125;')`.
+
 #### Middleware consumer
 
 The `MiddlewareConsumer` is a helper class that provides several built-in methods to manage middleware. All of them can be **chained** in the [fluent style](https://en.wikipedia.org/wiki/Fluent_interface). The `forRoutes()` method accepts a single string, multiple strings, a `RouteInfo` object, a controller class, or multiple controller classes. In most cases, you'll pass a comma-separated list of **controllers**. Below is an example with a single controller:
@@ -229,7 +231,7 @@ The `LoggerMiddleware` class we've been using is minimal: it has no members, no 
 
 ```typescript
 @@filename(logger.middleware)
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 
 export function logger(req: Request, res: Response, next: NextFunction) {
   console.log('Request...');
@@ -285,7 +287,7 @@ import {
   NestMiddleware,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {

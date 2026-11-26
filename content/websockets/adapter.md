@@ -108,13 +108,68 @@ const wsAdapter = new WsAdapter(app, {
 
 Alternatively, you can set the message parser after creating the adapter with the `setMessageParser()` method.
 
+When the gateways share the application's HTTP server, other `upgrade` listeners can serve their own paths on that server, for example [GraphQL subscriptions](/graphql/subscriptions). The `WsAdapter` leaves an upgrade request for a path that none of its gateways serves to those listeners, and closes the connection if none of them has answered the handshake within a second. When it is the only `upgrade` listener, it closes such a request right away. If another listener answers late, for example after authenticating the request, raise the delay with the `unclaimedUpgradeTimeout` option (in milliseconds), or set it to `0` to leave such connections to the other listeners. A value that isn't a number, such as the `NaN` that `Number()` makes of an unset environment variable, gets the default. To wait five seconds:
+
+```typescript
+const wsAdapter = new WsAdapter(app, {
+  unclaimedUpgradeTimeout: 5000,
+});
+```
+
+When the application closes (`app.close()`, or a system signal once [shutdown hooks](/fundamentals/lifecycle-events#application-shutdown) are enabled), the `WsAdapter` disconnects every client at once, so the replies to messages still being handled are lost.
+
+With the `gracefulShutdown` option, it lets that work finish first. It stops taking new connections (an upgrade request to a gateway on the application's HTTP server gets a `503` response) and new messages from connected clients. Once the messages a client sent have been handled and their replies sent, it closes the client's connection with the close code `1001` ("Going Away"). The `gracePeriod` option sets the longest time this may take, in milliseconds (default: `10000`); clients still connected after that are disconnected, and a warning is logged. A handler that returns a stream which never completes is still being handled, so its client is only disconnected then.
+
+```typescript
+app.useWebSocketAdapter(
+  new WsAdapter(app, {
+    gracefulShutdown: true,
+    gracePeriod: 30000,
+  }),
+);
+```
+
+> info **Hint** In an application created with `NestFactory.create()`, the gateways close after the `onModuleDestroy()` and `beforeApplicationShutdown()` hooks have run, and before `onApplicationShutdown()` is called. Release what the message handlers use, such as a database connection, in `onApplicationShutdown()`.
+
+#### Limits
+
+Both built-in adapters limit how many messages of a client are handled at the same time, 1000 by default: the `IoAdapter` counts each event separately, the `WsAdapter` all of a client's messages together. Later messages wait for their turn. Change the limit with the `maxConcurrentMessages` option, or set it to `Infinity` to lift it (with `0`, no message is handled).
+
+The `IoAdapter` also limits the messages that wait: a client with more than 10000 messages of one event waiting is disconnected, and a warning is logged. Change this with the `maxWaitingMessages` option, or set it to `Infinity` to lift it.
+
+```typescript
+app.useWebSocketAdapter(
+  new IoAdapter(app, {
+    maxConcurrentMessages: 100,
+    maxWaitingMessages: 1000,
+  }),
+);
+```
+
+The `WsAdapter` takes two more limits:
+
+- `maxPayload`: the largest message, in bytes, that a client may send (default: 1 MiB; before NestJS v12.5, the `ws` default of 100 MiB applied). A client that sends a larger one is disconnected with the close code `1009`. The `maxPayload` option of a gateway takes precedence. Set it to `0` to lift the limit.
+- `maxSendBufferSize`: how many bytes may be queued for a client that doesn't read what it is sent before it is disconnected (default: 128 MiB). Set it to `0` to lift the limit.
+
+```typescript
+app.useWebSocketAdapter(
+  new WsAdapter(app, {
+    maxPayload: 10 * 1024 * 1024,
+  }),
+);
+```
+
+A limit that isn't a number, such as the `NaN` that `Number()` makes of an unset environment variable, gets its default.
+
+The `IoAdapter`, and so any class that extends it, also disconnects a client whose message refers to the same binary value (a `Buffer`, an `ArrayBuffer` or a view of one, or a `Blob`) more than once, and logs a warning. Socket.IO clients don't send such messages.
+
 #### Advanced (custom adapter)
 
 For demonstration purposes, we'll integrate the [ws](https://github.com/websockets/ws) library manually. As mentioned, an adapter for this library already exists: the `WsAdapter` class exposed from the `@nestjs/platform-ws` package. A simplified implementation could look like this:
 
 ```typescript
 @@filename(ws-adapter)
-import WebSocket from 'ws';
+import WebSocket, { WebSocketServer } from 'ws';
 import { WebSocketAdapter, INestApplicationContext } from '@nestjs/common';
 import { MessageMappingProperties } from '@nestjs/websockets';
 import { Observable, fromEvent, EMPTY } from 'rxjs';
@@ -124,10 +179,10 @@ export class WsAdapter implements WebSocketAdapter {
   constructor(private app: INestApplicationContext) {}
 
   create(port: number, options: any = {}): any {
-    return new WebSocket.Server({ port, ...options });
+    return new WebSocketServer({ port, ...options });
   }
 
-  bindClientConnect(server, callback: Function) {
+  bindClientConnect(server: WebSocketServer, callback: (...args: any[]) => void) {
     server.on('connection', callback);
   }
 
@@ -145,7 +200,7 @@ export class WsAdapter implements WebSocketAdapter {
   }
 
   bindMessageHandler(
-    buffer,
+    buffer: any,
     handlers: MessageMappingProperties[],
     process: (data: any) => Observable<any>,
   ): Observable<any> {
@@ -159,7 +214,7 @@ export class WsAdapter implements WebSocketAdapter {
     return process(messageHandler.callback(message.data));
   }
 
-  close(server) {
+  close(server: WebSocketServer) {
     server.close();
   }
 }

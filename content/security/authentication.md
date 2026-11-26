@@ -2,6 +2,8 @@
 
 `@nestjs/authentication` signs users in and tells the rest of your application who they are. It registers a global guard, gives you decorators and an injectable context to read the current user, and ships the parts every sign-in flow needs: server-side sessions, password hashing, email verification and password reset links, TOTP two-factor authentication, magic links, OpenID Connect, access and refresh tokens, and API keys. All of them are built on Node.js built-ins, and they keep their state in your database through a store you write against documented interfaces, with the package's tests to check it. You write what only your application knows: how to load a user, which routes are public, and the endpoints of your sign-in flows.
 
+> info **Hint** For a complete API built on token sign-in, from an empty project to production, follow [Build a REST API with JWT authentication in Node.js](/tutorials/rest-api-jwt-authentication).
+
 In this tutorial, you'll add sign-in to the API of an online store for cat food and supplies. By the end, it will:
 
 - Sign customers in with a password, with Google, or with a link sent by email, and keep the web app signed in with a session cookie.
@@ -680,6 +682,19 @@ export class PasswordResetMailer extends PasswordResetHandler {
 
 `findUser()` returns the account's id, its stored address and its stored password hash, `null` for an account without a password. The link goes to that stored address, never to the one typed into the form: a lookup that ignores accents or dots, as MySQL's default collation does, would otherwise mail one customer's link to whoever typed a lookalike address. A link works only while the address and the hash are unchanged, so a password change, by any route, invalidates the links sent before it. Leaving the address or the hash out is an error, which the package logs instead of sending the link.
 
+If your application hashes passwords with something other than `PasswordHasher`, such as argon2 or bcrypt, give the handler a `hashPassword()` method. `reset()` then stores the hash it returns instead of a scrypt one, so the new password is in the format your sign-in checks:
+
+```typescript
+@@filename(src/auth/password-reset.mailer)
+import * as argon2 from 'argon2';
+// ...
+hashPassword(password: string) {
+  return argon2.hash(password);
+}
+```
+
+It receives the password as the customer typed it, once `reset()` has accepted it: not empty and at most 4 KiB. A stricter limit of your hasher, such as bcrypt's 72 bytes, is yours to check before you call `reset()`. When `hashPassword()` throws, the password and the sign-ins stay as they were, and the link works again.
+
 Enable password reset next to email verification, the handler in `AuthModule` and the page in the options:
 
 ```typescript
@@ -775,7 +790,7 @@ export class PasswordResetController {
 
 - `request()` returns before it looks the address up. Finding the account, storing the token and sending the email happen after the response, so a request for an address nobody registered gets the same 202, in the same time, as a customer's: the route can't tell anyone who has an account. That's why `forgot` doesn't `await` anything. A failure after the response, such as a mail server that is down, is logged.
 - A link works once, for an hour (`passwordReset.ttl`), and only while the account still has the address and the password it had when the link was sent.
-- `reset()` stores the new password's hash, invalidates the customer's other reset links, and ends every session of the account, and every refresh token once the application [issues them](/security/authentication#issue-tokens-to-the-mobile-app), so whoever knew the old password is signed out everywhere. [API keys](/security/authentication#issue-api-keys-to-partners) live in your own table and stay valid: to cut them off too, revoke them on the `password-reset` event. A password that `PasswordHasher` refuses, empty or over 4 KiB, gets `null` without spending the link, so the customer can try again. With `signIn: true`, it then signs the customer in on this browser through `SignInService`, so a customer with [two-factor authentication](/security/authentication#add-two-factor-authentication) still has to enter a code.
+- `reset()` stores the new password's hash, invalidates the customer's other reset links, and ends every session of the account, and every refresh token once the application [issues them](/security/authentication#issue-tokens-to-the-mobile-app), so whoever knew the old password is signed out everywhere. [API keys](/security/authentication#issue-api-keys-to-partners) live in your own table and stay valid: to cut them off too, revoke them on the `password-reset` event. A password that is empty or over 4 KiB gets `null` without spending the link, so the customer can try again. With `signIn: true`, it then signs the customer in on this browser through `SignInService`, so a customer with [two-factor authentication](/security/authentication#add-two-factor-authentication) still has to enter a code.
 - The link proves the address too, so `reset()` marks it verified, through your `markVerified()`. That also rescues an account that someone else signed up for with the customer's address: the reset replaces the stranger's password and signs them out.
 
 With the Zod schemas:
@@ -1013,7 +1028,7 @@ export class JwtAuth extends JwtBearerProvider<User> {
 }
 ```
 
-> info **Hint** HS256 with a shared secret suits an API that both issues and verifies its tokens. If other services verify them too, make the `accessToken` key an ES256 private key: `JwtAuth` then verifies with its public half, and so can they. To accept tokens from another issuer instead, pass `super()` its `jwks` URL, which must be https (plain http only on localhost), or its public `key`, with `issuer` and `audience`: both are required, because an identity provider signs every client's tokens with the same keys. For tokens without an audience, pass `audience: false` and check the claim that names your client in `validate()`. Add `clockTolerance: '30s'` for another issuer's clock. Keys are PEM text or a `KeyObject`; import a JWK with `createPublicKey()` from `node:crypto`, passing the JWK as `key` and `'jwk'` as `format`. An empty `key` or `jwks`, such as an unset environment variable, fails at startup instead of falling back to the `accessToken` options. A service that only verifies tokens can leave `accessToken` out entirely and give `super()` what it verifies with: the shared `key`, or the `jwks` with `issuer` and `audience`.
+> info **Hint** HS256 with a shared secret suits an API that both issues and verifies its tokens. If other services verify them too, make the `accessToken` key an ES256 private key: `JwtAuth` then verifies with its public half, and so can they. To accept tokens from another issuer instead, pass `super()` its `jwks` URL, which must be https (plain http only on localhost), or its public `key`, with `issuer` and `audience`: both are required, because an identity provider signs every client's tokens with the same keys. For tokens without an audience, pass `audience: false` and check the claim that names your client in `validate()`. Add `clockTolerance: '30s'` for another issuer's clock, and `maxAge: '1h'` to reject tokens issued longer ago. A `jwks` accepts `RS256` and `ES256` by default: if your issuer signs with another algorithm, list it in `algorithms`, such as `['PS256']`. `HS` algorithms are refused with a `jwks`. To share one key set between several providers, pass a `JwksClient` as `jwks` instead of a URL; it takes `cacheTtl` (default `'10m'`), `cooldown` (default `'30s'`) and `timeout` (default `'5s'`). Keys are PEM text or a `KeyObject`; import a JWK with `createPublicKey()` from `node:crypto`, passing the JWK as `key` and `'jwk'` as `format`. An empty `key` or `jwks`, such as an unset environment variable, fails at startup instead of falling back to the `accessToken` options. A service that only verifies tokens can leave `accessToken` out entirely and give `super()` what it verifies with: the shared `key`, or the `jwks` with `issuer` and `audience`.
 
 Provide it in `AuthModule`:
 
@@ -1071,6 +1086,25 @@ export class TokensController {
 `TokenService.issue()` signs an access token with the `accessToken` options, starts a refresh token, and returns both, with `expiresIn`, the access token's lifetime in seconds. Refresh tokens are opaque, and stored as hashes. Each one works once: `refresh()` spends it and returns its successor, with a new access token. The successors of one sign-in form a family. If a spent token comes back, two parties hold it, a thief and the app, so the service revokes the whole family and both have to sign in again. A refresh token that is unknown, expired or reused throws `RefreshTokenError`, an `AuthenticationError`, which the module answers with a 401, so `refresh` needs no error handling of its own.
 
 The `amr` claim records how the user signed in, and [two-factor authentication](/security/authentication#add-two-factor-authentication) relies on it. `issue()` stores the `claims` with the refresh-token family, and `refresh()` puts them into every access token it mints, so refreshed tokens describe the same sign-in. Keep facts that can change, such as roles, out of `claims`: they would stay in the tokens for as long as the family lives. `validate()` loads the current user on every request instead.
+
+Some claims describe the session rather than the user, such as the workspace a multi-tenant app is working in. To change one, pass `refresh()` a `claims` function. It receives a copy of the family's claims and the user's ID, and returns the claims for the new access token and for every later refresh of the family. It can be async, and it can throw to refuse the change, which leaves the refresh token unspent:
+
+```typescript
+@Post('workspace')
+@HttpCode(200)
+switchWorkspace(@Body() { refreshToken, workspaceId }: SwitchWorkspaceDto) {
+  return this.tokenService.refresh(refreshToken, {
+    claims: async (claims, userId) => {
+      if (!(await this.workspacesService.isMember(userId, workspaceId))) {
+        throw new ForbiddenException();
+      }
+      return { ...claims, workspace: workspaceId };
+    },
+  });
+}
+```
+
+The service ignores `amr`, `auth_time` and the registered JWT claims (`sub`, `iss`, `exp` and the rest) in what the function returns: `amr` and `auth_time` keep their values from the sign-in, and the service sets the others as on any refresh, so a switch can't change the user or add a second factor. Like two refreshes of the same token, a switch and a refresh sent at the same time count as a reuse, so the client should wait for one to finish before it starts the other.
 
 A service that signs short-lived access tokens and has its clients sign in again can turn refresh tokens off. With `refreshToken` set to `false`, `issue()` returns `accessToken` and `expiresIn` alone, and stores nothing, so the application needs no `RefreshTokenStore`. The token endpoint's response has no refresh token: clients sign in again when the access token expires. `refresh()` and `revoke()` throw, saying refresh tokens are disabled, and `revokeAll()` does nothing. The second factor and the `amr` claim work as before. Declare `refreshTokens: false` on `AuthenticationTypes` too, so `issue()` is typed to return an `AccessTokenResult` rather than a `TokenPair`:
 
@@ -1370,6 +1404,8 @@ async disable(
 - A customer whose enrollment was never confirmed has no verified session, so this route refuses them. To cancel such an enrollment, call `disable()` from a route without it while `isEnrolled()` is `false`, or call `enroll()` again.
 
 #### Add "Sign in with Google"
+
+> info **Hint** This section signs a browser in with a session cookie. For an API with bearer tokens, where the web or mobile app gets an ID token from Google's own sign-in library and the API exchanges it for its own JWTs, follow [Add Google login to a Node.js API](/tutorials/google-login).
 
 In the Google Cloud console, create an OAuth client ID of type **Web application**, and add this authorized redirect URI (and the production one, when you deploy):
 
@@ -2582,8 +2618,8 @@ async function emptyStore(db: Database) {
 
 describe('DrizzleAuthenticationStore on PGlite', () => {
   const client = new PGlite();
-  const db = pglite(client) as unknown as Database;
-  beforeAll(() => migratePglite(pglite(client), { migrationsFolder }));
+  const db = pglite({ client }) as unknown as Database;
+  beforeAll(() => migratePglite(pglite({ client }), { migrationsFolder }));
   afterAll(() => client.close());
 
   for (const c of authenticationStoreContract(() => emptyStore(db), { concurrent: true, maxPending: 3 })) {
@@ -2599,7 +2635,7 @@ describe.skipIf(!postgres)(`DrizzleAuthenticationStore on PostgreSQL${reason ? `
   let db: Database;
   beforeAll(async () => {
     pool = new Pool({ connectionString: await postgres!.createDatabase('authentication_tutorial_store'), max: 10 });
-    db = nodePostgres(pool);
+    db = nodePostgres({ client: pool });
     await migrateNodePostgres(db, { migrationsFolder });
   });
   afterAll(async () => {
@@ -3763,7 +3799,7 @@ describe('Authentication (e2e)', () => {
   const ada = { email: 'ada@example.com', password: 'correct horse battery' };
 
   beforeAll(async () => {
-    const db = drizzle(pglite);
+    const db = drizzle({ client: pglite });
     // The app's migrations, the authentication tables included.
     await migrate(db, { migrationsFolder: fileURLToPath(new URL('../drizzle', import.meta.url)) });
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })

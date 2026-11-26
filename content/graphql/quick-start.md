@@ -6,6 +6,8 @@ This chapter assumes a basic understanding of GraphQL and focuses on working wit
 
 You can also build your own driver (see [Creating a custom driver](/graphql/other-features#creating-a-custom-driver)).
 
+> info **Hint** To build a complete GraphQL API step by step, with authentication, batched nested fields, per-field authorization and subscriptions, follow [Build a GraphQL API in Node.js](/tutorials/graphql-api).
+
 #### Installation
 
 Start by installing the required packages:
@@ -497,8 +499,6 @@ export const CatsUnion = createUnionType({
 ```
 
 > info **Hint** You can pass either the module class itself or a factory function returning it. Prefer the factory form (`() => CatsModule`) whenever the type and the module reference each other: it defers module resolution and avoids errors caused by circular imports.
-
-> warning **Warning** If you use `@apollo/server` with the `@as-integrations/fastify` package and serve multiple GraphQL endpoints in a single application, enable the `disableHealthCheck` setting in the `GraphQLModule` configuration.
 
 #### Third-party integrations
 

@@ -2,6 +2,8 @@
 
 Nest supports two methods for integrating with the [MongoDB](https://www.mongodb.com/) database. You can either use the [TypeORM](https://github.com/typeorm/typeorm) module described in the [TypeORM chapter](/data/typeorm), which has a connector for MongoDB, or use [Mongoose](https://mongoosejs.com), the most popular MongoDB object modeling tool. This chapter describes the latter, using the dedicated `@nestjs/mongoose` package.
 
+> info **Hint** For a complete CRUD REST API on MongoDB, with validated ids, duplicate-key errors, cursor pagination and updates that are never lost, follow [Build a CRUD REST API with Node.js and MongoDB](/tutorials/mongodb-crud-api).
+
 Start by installing the required dependencies:
 
 ```bash
@@ -198,6 +200,27 @@ export class CatsService {
   }
 }
 ```
+
+#### Wait for indexes
+
+When Mongoose compiles a model, it creates the model's collection and builds the indexes its schema declares, in the background. Nest doesn't wait for that work: the application can serve requests before a unique index exists, and a build that fails, for example because the collection already holds duplicates, goes unnoticed. The application starts anyway and accepts the duplicates the index should have refused. To make each model provider wait for `model.init()` before it resolves, set `waitForModelInit` (available in `@nestjs/mongoose` 12.0.2 and later):
+
+```typescript
+@Module({
+  imports: [MongooseModule.forRoot('mongodb://localhost/nest', { waitForModelInit: true })],
+})
+export class AppModule {}
+```
+
+With `forRootAsync()`, return the option from the factory, next to `uri`. With the option on, an injected model already has its collection and indexes, and a failed `init()` fails the application's startup with the MongoDB error: a duplicate key under a unique index (`E11000`), conflicting index options, or missing permissions to create an index. Startup also waits for the builds themselves, so a new index on a large collection delays it.
+
+The option can also be set on one model, in a `forFeature()` or `forFeatureAsync()` entry, where it overrides the connection's setting in either direction. The model's discriminators follow it:
+
+```typescript
+MongooseModule.forFeature([{ name: Cat.name, schema: CatSchema, waitForModelInit: true }]),
+```
+
+> info **Hint** The wait is skipped while the connection isn't open yet, as with `lazyConnection: true`. With `autoIndex: false`, `model.init()` doesn't build indexes, so there's nothing to wait for. In production, where a release step usually builds them, use `Model.diffIndexes()` to check that none is missing.
 
 #### Connection
 
@@ -696,6 +719,10 @@ class Person {
 > info **Hint** The `@Virtual()` decorator is imported from the `@nestjs/mongoose` package.
 
 In this example, the `fullName` virtual is derived from `firstName` and `lastName`. Even though it behaves like a normal property when accessed, it's never saved to the MongoDB document.
+
+#### Observability
+
+[NestJS Observe](https://www.observe.nestjs.com/?ref=docs-mongo 'NestJS Observe'), our official observability platform, records Mongoose queries with no configuration. The SDK instruments the `mongodb` driver underneath Mongoose (including the nested copy Mongoose installs when versions disagree), so every command shows up as a span under the provider method that ran it, and a slow request shows which query it was waiting on. See [Database queries and outbound HTTP](/observability/sdk#database-queries-and-outbound-http).
 
 #### Example
 

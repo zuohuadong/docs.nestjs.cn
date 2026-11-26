@@ -22,6 +22,8 @@ In our benchmarks (`wrk` with 100 connections on Node.js 24, against a plain `GE
 
 Keep in mind that the adapter handles only a small part of each request. A route that queries a database or calls other services spends most of its time waiting for them, so the choice of adapter matters most for lightweight routes at high request rates.
 
+To see what switching adapters changes in your own application rather than in a benchmark, deploy the switch as its own release with [NestJS Observe](https://www.observe.nestjs.com/?ref=docs-http-adapters 'NestJS Observe') installed. Observe records requests the same way on all three adapters, and each release gets a verdict that compares latency and error rates per route before and after it, so a lightweight route that got faster and a heavy one that didn't move both show up (see [Releases and their verdicts](/observability/dashboard#releases-and-their-verdicts)).
+
 #### Node adapter
 
 The `NodeAdapter` runs Nest directly on the `node:http` module, with no other framework in between. First, install the required package:
@@ -48,11 +50,24 @@ async function bootstrap() {
 await bootstrap();
 ```
 
-The `NestNodeApplication` type gives you the platform-specific methods of the application object: `useBodyParser()`, `useStaticAssets()`, `setViewEngine()`, and `setBaseViewsDir()`.
+The `NestNodeApplication` type gives you the platform-specific methods of the application object: `useBodyParser()`, `useStaticAssets()`, `setViewEngine()`, `setBaseViewsDir()`, `setLocal()`, and `inject()`.
+
+Pass a `NodeAdapter` instance to `createNestApplication()` in your end-to-end tests as well. Without one, the testing module creates an Express application, so the tests don't run on the adapter your application uses, and they fail if the `@nestjs/platform-express` package is not installed:
+
+```typescript
+app = moduleRef.createNestApplication<NestNodeApplication>(new NodeAdapter());
+```
+
+As with the Fastify adapter, `app.inject()` sends a fake request to the application with [light-my-request](https://github.com/fastify/light-my-request), so a test doesn't need a listening server, only `app.init()`:
+
+```typescript
+const result = await app.inject({ method: 'GET', url: '/cats' });
+expect(result.statusCode).toEqual(200);
+```
 
 ##### Express compatibility
 
-Requests and responses are instances of `NodeRequest` and `NodeResponse` (exported from `@nestjs/platform-node`). They extend Node's `IncomingMessage` and `ServerResponse` with the Express-style properties and methods that middleware, exception filters, and `@Res()` handlers usually rely on, such as `req.get()`, `req.is()`, `req.ip`, `req.ips`, `req.hostname`, `res.status()`, `res.send()`, `res.json()`, `res.set()`, `res.type()`, `res.cookie()`, `res.redirect()`, `res.sendFile()`, and `res.locals`. Middleware runs in an Express-style stack and uses the same `(req, res, next)` signature.
+Requests and responses are instances of `NodeRequest` and `NodeResponse` (exported from `@nestjs/platform-node`). They extend Node's `IncomingMessage` and `ServerResponse` with the Express-style properties and methods that middleware, exception filters, and `@Res()` handlers usually rely on, such as `req.get()`, `req.is()`, `req.route`, `req.ip`, `req.ips`, `req.hostname`, `res.status()`, `res.send()`, `res.json()`, `res.set()`, `res.type()`, `res.cookie()`, `res.redirect()`, `res.sendFile()`, and `res.locals`. Middleware runs in an Express-style stack and uses the same `(req, res, next)` signature.
 
 Popular Express middleware packages, such as `helmet`, `compression`, `cookie-parser`, `express-session`, `express-rate-limit`, `csrf-csrf`, `morgan`, and `passport` (along with the `@nestjs/passport` guards), work as they do with the Express adapter. When a chapter of this documentation shows separate instructions for Express and Fastify (for example, [Compression](/http/compression) or [Session](/http/session)), follow the Express ones.
 
@@ -62,11 +77,11 @@ The Node adapter deliberately differs from Express in a few places:
 - Paths are matched case-sensitively, for routes, middleware, and `exclude()` alike, as with Fastify.
 - A string returned from a route handler is sent as `text/plain`, not `text/html`.
 - `req.path` is the decoded path that the router matched, so a middleware that checks it sees the same path as the routes.
-- `res.set()` and `res.type()` don't append `; charset=utf-8` to the `Content-Type` header.
+- The adapter adds no `ETag` header, and a conditional request (`If-None-Match`, `If-Modified-Since`) gets the full response rather than a `304 Not Modified`, as with Fastify, even if the handler sets `ETag` or `Last-Modified` itself. `res.sendFile()` and `useStaticAssets()` still send an `ETag` and answer with `304`.
 - A route parameter longer than 100 characters doesn't match (see [Node adapter options](/http/performance#node-adapter-options)).
 - A JSON body with `__proto__` or `constructor.prototype` keys is rejected (see [Body parsers](/http/performance#body-parsers)).
 
-Some Express APIs are not available: `res.render()` (use the [`@Render()`](/http/mvc) decorator instead), `res.download()`, `res.format()`, `req.accepts()` and its variants, `req.route`, mounting an Express application with `app.use()`, and Express settings, for which the adapter takes [options](/http/performance#node-adapter-options) instead (`trustProxy` for the `trust proxy` setting, for example).
+Some Express APIs are not available: `res.render()` (use the [`@Render()`](/http/mvc) decorator instead), `res.download()`, `res.format()`, `res.attachment()`, `res.contentType()` (use `res.type()` instead), `res.jsonp()`, `res.links()`, `res.location()` (use `res.set('Location', url)` instead), `res.vary()`, `req.accepts()` and its variants, `req.fresh` and `req.stale`, `req.host`, `req.range()`, `req.subdomains`, `req.xhr`, mounting an Express application with `app.use()`, and Express settings, for which the adapter takes [options](/http/performance#node-adapter-options) instead (`trustProxy` for the `trust proxy` setting, for example).
 
 ##### Node adapter options
 
@@ -98,10 +113,21 @@ new NodeAdapter({ querystringParser: (str) => qs.parse(str) });
 
 The Node adapter comes with its own `json`, `urlencoded`, `text`, and `raw` body parsers, so it doesn't depend on the `body-parser` package. They take the same options as their `body-parser` counterparts, such as `limit`, `inflate`, `strict`, and `type`. As with Express, Nest registers the `json` and `urlencoded` parsers by default, and the `rawBody` option and the `useBodyParser()` method work as described in [Raw body](/faq/raw-body).
 
+The default body size limit is `100kb`, as with Express, while the Fastify adapter inherits Fastify's default of 1 MiB. A larger body is rejected with a `413 Payload Too Large` response. To raise the limit, see [Body parser size limit](/faq/raw-body#body-parser-size-limit).
+
 Like Fastify, the `json` parser rejects a body that tries to inject prototype properties: a body with a `__proto__` or `constructor.prototype` key gets a `400 Bad Request` response. To drop these keys instead, or to keep them (the `body-parser` behavior), set the `onProtoPoisoning` and `onConstructorPoisoning` options to `'remove'` or `'ignore'`. The `urlencoded` parser takes the same options.
 
 ```typescript
 app.useBodyParser('json', { onProtoPoisoning: 'remove' });
+```
+
+##### Server timeouts
+
+As with Express, the adapter keeps the defaults of Node's `http.Server`: an idle keep-alive connection is closed after 5 seconds (`keepAliveTimeout`), and a request has to arrive in full within 300 seconds (`requestTimeout`). Fastify sets these to 72 seconds and no limit. Behind a load balancer or a reverse proxy, keep `keepAliveTimeout` longer than the proxy's idle timeout, otherwise the proxy can reuse a connection the server is closing and answer `502 Bad Gateway`. Set the timeouts on the server before calling `listen()`:
+
+```typescript
+const server = app.getHttpServer();
+server.keepAliveTimeout = 72_000;
 ```
 
 ##### Static assets and views
@@ -191,7 +217,7 @@ Middleware functions receive the raw `req` and `res` objects instead of Fastify'
 ```typescript
 @@filename(logger.middleware)
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
@@ -211,6 +237,13 @@ export class LoggerMiddleware {
   }
 }
 ```
+
+This differs from Express in a few ways that matter when porting middleware:
+
+- The raw `res` has no Express helpers such as `res.status()` or `res.json()`, so calling them throws a `TypeError` and the request fails with a `500` response. To reject a request, throw an exception (for example, `throw new UnauthorizedException()`), and the [exceptions layer](/exception-filters) turns it into the matching response.
+- Middleware runs before Fastify parses the request body, and the raw `req` doesn't carry the route parameters, so `req.body` and `req.params` are `undefined` inside it. Checks that depend on them, such as verifying a signed body, belong in a [guard](/guards), which runs after both are available.
+
+> info **Hint** Guards, interceptors, and exception filters get Fastify's `FastifyRequest` and `FastifyReply` wrappers from `switchToHttp()`, not the raw objects that middleware receives. Use `reply.status()` and `reply.send()` there, or `reply.raw` for the underlying Node.js response.
 
 ##### Route Config
 

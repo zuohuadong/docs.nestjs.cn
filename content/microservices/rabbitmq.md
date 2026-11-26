@@ -2,6 +2,8 @@
 
 [RabbitMQ](https://www.rabbitmq.com/) is an open-source, lightweight message broker that supports multiple messaging protocols. It can be deployed in distributed and federated configurations to meet high-scale, high-availability requirements, and it is one of the most widely deployed message brokers, used by small startups and large enterprises alike.
 
+> info **Hint** For two complete services that talk over RabbitMQ, with events, request-response, retries, a dead-letter queue and messages that survive a crash, follow [Build microservices in Node.js with RabbitMQ](/tutorials/microservices-rabbitmq).
+
 #### Installation
 
 To start building RabbitMQ-based microservices, first install the required packages:
@@ -67,6 +69,10 @@ The `options` property is specific to the chosen transporter. The <strong>Rabbit
     <td>If <code>false</code>, enables manual acknowledgment mode. Defaults to <code>true</code></td>
   </tr>
   <tr>
+    <td><code>nackOnInternalError</code></td>
+    <td>If <code>true</code> (and <code>noAck</code> is <code>false</code>), negatively acknowledges a message without requeue when its handler fails with an internal error, so a dead letter exchange receives it (see <a href="/microservices/rabbitmq#message-acknowledgement">Message acknowledgement</a>). Defaults to <code>false</code></td>
+  </tr>
+  <tr>
     <td><code>consumerTag</code></td>
     <td>A name the server uses to distinguish message deliveries for the consumer; it must not already be in use on the channel. It's usually easier to omit it, in which case the server creates a random name and supplies it in the reply (see <a href="https://amqp-node.github.io/amqplib/channel_api.html#channel_consume" rel="nofollow" target="_blank"><code>channel.consume()</code> in the amqplib documentation</a>)</td>
   </tr>
@@ -118,7 +124,21 @@ The `options` property is specific to the chosen transporter. The <strong>Rabbit
     <td><code>maxConnectionAttempts</code></td>
     <td>Maximum number of connection attempts. Applies only to the consumer configuration. Defaults to <code>-1</code> (infinite)</td>
   </tr>
+  <tr>
+    <td><code>maxMessageSize</code></td>
+    <td>Maximum size of a message body, in bytes. The server logs and skips a larger message without decoding it (it is negatively acknowledged without requeue when <code>noAck</code> is <code>false</code>, and a request gets an error reply), and the client fails a request whose reply is larger. Set it to <code>Infinity</code> to lift the limit. A value that isn't a number, such as the <code>NaN</code> that <code>Number()</code> makes of an unset environment variable, gets the default. Defaults to <code>16777216</code> (16 MiB)</td>
+  </tr>
+  <tr>
+    <td><code>gracefulShutdown</code></td>
+    <td>Enables graceful shutdown. When enabled, closing the server first cancels its consumer, then waits for the requests and events being handled before it closes its channel and its connection. Applies only to the consumer configuration. Defaults to <code>false</code></td>
+  </tr>
+  <tr>
+    <td><code>gracePeriod</code></td>
+    <td>Longest time in milliseconds to wait for the requests and events being handled when <code>gracefulShutdown</code> is enabled. The server closes sooner when they are done before that. Applies only to the consumer configuration. Defaults to <code>10000</code></td>
+  </tr>
 </table>
+
+> info **Hint** A handler that returns a stream which never completes is still being handled, so closing the server then takes the whole `gracePeriod`. With `noAck` set to `false`, the broker requeues the messages that are still unacknowledged when the channel closes, so a message whose handler outlasts the `gracePeriod` is delivered again.
 
 #### Client
 
@@ -240,6 +260,30 @@ getNotifications(data, context) {
 }
 ```
 
+When a handler fails, the server leaves its message unacknowledged. The message keeps one of the `prefetchCount` slots until the channel closes, and the broker then delivers it again, so a payload that can never be handled comes back after every reconnect and never reaches a [dead letter exchange](https://www.rabbitmq.com/docs/dlx). To dead-letter such messages, set `nackOnInternalError` to `true` (available in `@nestjs/microservices` 12.6.1 and later):
+
+```typescript
+options: {
+  urls: ['amqp://localhost:5672'],
+  queue: 'orders',
+  noAck: false,
+  nackOnInternalError: true,
+  queueOptions: {
+    durable: true,
+    arguments: { 'x-dead-letter-exchange': 'orders.dlx' },
+  },
+},
+```
+
+With the option on, the server calls `nack(message, false, false)` when an event or request handler fails with an internal error: an exception other than an `RpcException`, which the default exception filter answers with "Internal server error". The message isn't requeued, so the queue's dead letter exchange receives it, or the broker drops it if the queue has none. A request still gets its error reply. The option leaves everything else as it was:
+
+- An `RpcException`, such as a "not found" from the handler or the "Forbidden resource" a guard throws, is a business error: the message stays unacknowledged.
+- A handler that succeeds still acknowledges its message itself.
+- A message the handler (or an interceptor) already acknowledged or rejected isn't settled a second time, which RabbitMQ would answer by closing the channel.
+- A custom exception filter that answers with its own payload, instead of calling `super.catch()` of `BaseRpcExceptionFilter`, doesn't count as an internal error.
+
+> info **Hint** Validation pipes throw a `BadRequestException`, which isn't an `RpcException`, so a payload that fails validation is dead-lettered: what you want for a poison message. To treat validation failures as business errors instead, give the pipe an `exceptionFactory` that returns an `RpcException`.
+
 #### Record builders
 
 To configure message options, use the `RmqRecordBuilder` class (this works for event-based flows as well). For example, to set the `headers` and `priority` properties, use the `setOptions()` method:
@@ -259,6 +303,8 @@ this.client.send('replace-emoji', record).subscribe(...);
 ```
 
 > info **Hint** The `RmqRecordBuilder` class is exported from the `@nestjs/microservices` package.
+
+AMQP carries some message properties as short strings, of at most 255 bytes: `contentType`, `contentEncoding`, `correlationId`, `replyTo`, `expiration`, `messageId`, `type`, `userId` and `appId`. The client fails a `send()` or `emit()` whose options set a longer one, or, with `wildcards` or a `fanout` exchange, whose pattern, which becomes the routing key, is longer than 255 bytes. A server doesn't reply to a request whose `replyTo` or `correlationId` is longer, and logs an error.
 
 You can read these values on the server side as well, by accessing the `RmqContext`:
 
@@ -399,3 +445,5 @@ this.client.send('cats.meow', { message: 'Meow!' }).subscribe((response) => {
   console.log(response);
 });
 ```
+
+A routing key holds at most 255 bytes, so a message whose pattern is longer than 255 characters matches no wildcard pattern.

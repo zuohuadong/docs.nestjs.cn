@@ -4,6 +4,8 @@ In addition to traditional (sometimes called monolithic) application architectur
 
 In Nest, a microservice is fundamentally an application that uses a different **transport** layer than HTTP.
 
+> info **Hint** For two complete services that talk over RabbitMQ, with events, request-response, retries, a dead-letter queue and messages that survive a crash, follow [Build microservices in Node.js with RabbitMQ](/tutorials/microservices-rabbitmq).
+
 <figure><img class="illustrative-image" src="/assets/Microservices_1.png" /></figure>
 
 Nest supports several built-in transport layer implementations, called **transporters**, which are responsible for transmitting messages between different microservice instances. Most transporters natively support both **request-response** and **event-based** message styles. Nest abstracts the implementation details of each transporter behind a canonical interface for both styles. This lets you switch from one transport layer to another (e.g., to take advantage of the reliability or performance features of a particular transport layer) without changing your application code.
@@ -71,11 +73,11 @@ The second argument of the `createMicroservice()` method is an `options` object 
 <table>
   <tr>
     <td><code>host</code></td>
-    <td>Connection hostname</td>
+    <td>Connection hostname (default: <code>'localhost'</code>). Starting with NestJS v12.5, an empty value (<code>undefined</code>, <code>null</code> or <code>''</code>) means <code>'localhost'</code> as well, so a server that other hosts connect to, e.g. one running in a container, has to set <code>'0.0.0.0'</code> or <code>'::'</code></td>
   </tr>
   <tr>
     <td><code>port</code></td>
-    <td>Connection port</td>
+    <td>Connection port (default: <code>3000</code>)</td>
   </tr>
   <tr>
     <td><code>retryAttempts</code></td>
@@ -103,21 +105,45 @@ The second argument of the `createMicroservice()` method is an `options` object 
   </tr>
   <tr>
     <td><code>maxBufferSize</code></td>
-    <td>Maximum size of the buffer for incoming messages, in characters (default: <code>(512 * 1024 * 1024) / 4</code>)</td>
+    <td>Maximum length of a single incoming packet, in characters (default: <code>16 * 1024 * 1024</code>). A packet declaring a greater length is rejected before any of it is buffered, and the connection is dropped. Starting with NestJS v12.5, it applies to each packet, and its default was lowered from <code>128 * 1024 * 1024</code>. A client applies its own <code>maxBufferSize</code> to the replies it receives</td>
   </tr>
   <tr>
     <td><code>incompleteMessageTimeout</code></td>
     <td>How long (ms) a peer may stay silent in the middle of a packet before the connection is dropped. Set to <code>0</code> to disable (default: <code>30000</code>)</td>
   </tr>
   <tr>
+    <td><code>messageReceiveTimeout</code></td>
+    <td>How long (ms) a peer may take to send a single packet, from its first character to its last, before the connection is dropped. Unlike <code>incompleteMessageTimeout</code>, further reads don't extend it. Set to <code>0</code> to disable (default: <code>300000</code>)</td>
+  </tr>
+  <tr>
     <td><code>maxSendBufferSize</code></td>
     <td>Maximum number of response bytes that may be queued for a peer that isn't reading them before the connection is dropped. Set to <code>0</code> to disable (default: 128MB)</td>
   </tr>
+  <tr>
+    <td><code>drainTimeout</code></td>
+    <td>How long (ms) the responses queued for a peer may go without any of them being written out before the connection is dropped. Set to <code>0</code> to disable (default: <code>30000</code>)</td>
+  </tr>
+  <tr>
+    <td><code>maxConcurrentMessages</code></td>
+    <td>How many messages of a single peer may be handled at the same time. A message counts until its handler, and the stream it returned, have settled. Later messages wait, and once more than <code>maxBufferSize</code> characters are waiting, reading from the peer is suspended. If none of the pending messages settles for <code>drainTimeout</code> after that, the connection is dropped. Set to <code>0</code> to disable (default: <code>1000</code>)</td>
+  </tr>
+  <tr>
+    <td><code>gracefulShutdown</code></td>
+    <td>Enables graceful shutdown. When enabled, closing the server keeps the connections that have requests or events being handled open until those are done, and takes no further message from them. The other connections are closed right away (default: <code>false</code>)</td>
+  </tr>
+  <tr>
+    <td><code>gracePeriod</code></td>
+    <td>Longest time before every connection is closed when <code>gracefulShutdown</code> is enabled (ms) (default: <code>10000</code>)</td>
+  </tr>
 </table>
+
+A `maxBufferSize`, `incompleteMessageTimeout`, `messageReceiveTimeout`, `maxSendBufferSize`, `drainTimeout` or `maxConcurrentMessages` that isn't a number, such as the `NaN` that `Number()` makes of an unset environment variable, gets its default.
 
 #### Message and Event Patterns
 
 Microservices recognize both messages and events by **patterns**. A pattern is a plain value, e.g., a literal object or a string. Patterns are automatically serialized and sent over the network along with the data portion of a message. This way, message senders and consumers can coordinate which requests are consumed by which handlers.
+
+Nest matches an object pattern to its handler by its keys and values, within fixed limits: at most 5 levels of nesting, 20 keys per object (or items per array), keys of up to 256 characters, string values of up to 4096 characters, and 100 keys in the whole pattern. A part of a pattern beyond these limits, or the whole pattern past 100 keys, is replaced with a marker such as `[TOO_MANY_KEYS]` before it's matched, so keep the patterns of your handlers within them. A pattern that arrives as JSON text longer than 1 MiB is matched as a plain string, without being parsed.
 
 #### Request-response
 
@@ -384,7 +410,7 @@ Request-scoped handlers and providers can inject `RequestContext` using the `@In
 
 ```typescript
 import { Injectable, Scope, Inject } from '@nestjs/common';
-import { CONTEXT, RequestContext } from '@nestjs/microservices';
+import { CONTEXT, type RequestContext } from '@nestjs/microservices';
 
 @Injectable({ scope: Scope.REQUEST })
 export class CatsService {
@@ -488,6 +514,29 @@ this.client
 > info **Hint** The `timeout` operator is imported from the `rxjs/operators` package.
 
 If the microservice doesn't respond within 5 seconds, the `Observable` errors with a `TimeoutError`.
+
+#### Sending metadata with every message
+
+To attach a value that is not part of the payload (a correlation id, a tenant, a locale) to every outgoing request and event, register a hook on the client with `setOnDispatchHook()`. The hook receives each packet right before it goes to the transport and may assign `packet.metadata`, a record of string values:
+
+```typescript
+client.setOnDispatchHook((packet) => {
+  packet.metadata = { 'x-correlation-id': getCorrelationId() };
+});
+```
+
+Do not replace `pattern` or `data` in the hook. On the receiving side, read the values with `getMetadata()` of the transport context (`TcpContext`, `RedisContext`, `NatsContext`, `RmqContext`, `MqttContext` or `KafkaContext`):
+
+```typescript
+@MessagePattern('orders.create')
+create(@Payload() data: CreateOrderDto, @Ctx() context: NatsContext) {
+  const correlationId = context.getMetadata()?.['x-correlation-id'];
+}
+```
+
+TCP and Redis carry the metadata inside the packet. NATS, Kafka, RabbitMQ, MQTT 5 and gRPC carry it as message headers (gRPC: call metadata) under the names given in the hook, and never in the payload. A header set on the record itself, such as with `NatsRecordBuilder`, `RmqRecordBuilder` or `MqttRecordBuilder`, wins over a metadata entry of the same name. MQTT 3 has no header channel, so the metadata does not travel over it.
+
+> info **Hint** On NATS, Kafka and RabbitMQ, `getMetadata()` returns only the headers with a single string value, and on MQTT only the user properties with a single value. Read the others with `getHeaders()` (NATS), `getMessage()` (Kafka, RabbitMQ) or `getPacket()` (MQTT).
 
 #### Tracing a request across services
 
@@ -595,3 +644,54 @@ async function bootstrap() {
 }
 await bootstrap();
 ```
+
+#### Talking to a server that is not Nest
+
+Most microservice setups talk to at least one system that knows nothing about Nest: a gateway already in production, a worker written in another language, a queue that other services also consume. The packets that travel over the TCP and Redis transports have a fixed shape, so that system can call a handler and answer a client without the `@nestjs/microservices` package.
+
+A request has three fields. `pattern` selects the handler (over Redis, the channel does, as described below), `data` is what the handler receives, and `id` ties the reply to its request. The `id` is a number or a string of at most 256 characters: a request with any other `id` gets no reply, and the server logs an error.
+
+```json
+{ "pattern": "sum", "data": [1, 2], "id": "b7e1c0" }
+```
+
+The reply repeats the `id` and carries either a `response` or an `err`. A successful reply also sets `isDisposed`, which is what tells a Nest client that the request is over:
+
+```json
+{ "id": "b7e1c0", "response": 3, "isDisposed": true }
+```
+
+Without `isDisposed` the value still reaches the caller, but `send()` never completes: `lastValueFrom()` and anything else waiting for the observable to close hangs. When a handler returns a stream, the Nest server sends one reply for each value it emits, and sets `isDisposed` on the last of them or, when the stream completes after its last value has been sent, in a reply of its own without a `response`.
+
+A failed request gets an `err` instead, which ends the request whether `isDisposed` is set or not:
+
+```json
+{ "id": "b7e1c0", "err": { "message": "Division by zero", "status": "error" } }
+```
+
+Leave any other field out of a reply. A Nest client takes a packet with a field it doesn't expect for a payload that isn't a Nest reply, and the whole packet becomes the response.
+
+A packet without an `id` is dispatched as an event: the handler runs and nothing travels back. That is the shape `emit()` sends:
+
+```json
+{ "pattern": "user_created", "data": { "id": 42 } }
+```
+
+A reply that arrives with a different `id`, or with none, matches no request, and the caller keeps waiting. `send()` has no default timeout: unless the caller pipes it through the `timeout()` operator (see [Handling timeouts](/microservices/basics#handling-timeouts)), it waits until the connection closes, and then fails with a `Connection closed` error. A `pattern` can also be an object instead of a string, which Nest matches by its keys and values, with the limits that [message and event patterns](/microservices/basics#message-and-event-patterns) lists. Over TCP, a Nest client sends such a pattern as an object in a request, but as a string, its route, in an event, where `{{ '{' }} cmd: 'sum' {{ '}' }}` arrives as `{{ '{' }}"cmd":"sum"{{ '}' }}`. A server that is not Nest should accept both forms.
+
+The TCP transport writes neither packet as bare JSON. `JsonSocket`, the socket the server and the client share, puts the length of the JSON text first, then a `#`, then the text itself:
+
+```typescript
+import { connect } from 'node:net';
+
+const packet = JSON.stringify({ pattern: 'sum', data: [1, 2], id: 'b7e1c0' });
+const socket = connect({ host: 'localhost', port: 3000 }, () => {
+  socket.write(`${packet.length}#${packet}`);
+});
+```
+
+That length counts the UTF-16 code units of the JSON text, which is what `String#length` returns in JavaScript, not its bytes. A peer that writes a byte count desynchronizes on any payload with a non-ASCII character, such as an accented letter, and one that counts Unicode code points, as `len()` does in Python, desynchronizes on characters outside the basic plane, such as emoji.
+
+The Redis transport publishes the packets as plain JSON text, and there the channel a packet is published on selects the handler, not its `pattern` field. A request or event for the `sum` pattern is published on the `sum` channel, and the replies to a request on the `sum.reply` channel. An object pattern uses its route as the channel name, such as `{{ '{' }}"cmd":"sum"{{ '}' }}`.
+
+Over TCP and Redis, the metadata a client attaches with `setOnDispatchHook()` travels in the packet's `metadata` field, a record of string values. The other transports carry it as headers, as [sending metadata with every message](/microservices/basics#sending-metadata-with-every-message) describes.

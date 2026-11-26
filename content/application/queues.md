@@ -10,6 +10,8 @@ Nest provides the `@nestjs/bullmq` package for BullMQ integration and the `@nest
 
 Both BullMQ and Bull use [Redis](https://redis.io/) to persist job data, so you need a running Redis instance. Because they are Redis-backed, your queue architecture can be fully distributed and platform-independent. For example, you can run some queue <a href="application/queues#producers">producers</a>, <a href="application/queues#consumers">consumers</a>, and <a href="application/queues#event-listeners">listeners</a> in Nest on one or more nodes, and other producers, consumers, and listeners on other Node.js platforms on other network nodes.
 
+> info **Hint** To see a queue send email in a complete application, with retries and no duplicate sends, follow [Send emails and run background jobs in Node.js](/tutorials/background-jobs).
+
 This chapter covers the `@nestjs/bullmq` and `@nestjs/bull` packages. For more background and implementation details, see the [BullMQ documentation](https://docs.bullmq.io/) and the [Bull reference](https://github.com/OptimalBits/bull/blob/master/REFERENCE.md).
 
 #### BullMQ installation
@@ -17,7 +19,7 @@ This chapter covers the `@nestjs/bullmq` and `@nestjs/bull` packages. For more b
 To begin using BullMQ, install the required dependencies.
 
 ```bash
-$ npm install --save @nestjs/bullmq bullmq
+$ npm install --save @nestjs/bullmq bullmq ioredis
 ```
 
 Once the installation process is complete, import the `BullModule` into the root `AppModule`.
@@ -43,6 +45,7 @@ export class AppModule {}
 The `forRoot()` method registers a `bullmq` configuration object that all queues registered in the application use (unless specified otherwise). The following are a few of the configuration properties:
 
 - `connection: ConnectionOptions` - Options to configure the Redis connection. See [Connections](https://docs.bullmq.io/guide/connections) for more information.
+- `backendFactory: BullMQBackendFactory` - Factory function for pluggable backends (e.g., PostgreSQL). See [Pluggable backends](/application/queues#pluggable-backends) for more information.
 - `prefix: string` - Prefix for all queue keys (defaults to `bull`).
 - `defaultJobOptions: DefaultJobOptions` - Default settings for new jobs. See [DefaultJobOptions](https://docs.bullmq.io/api/interfaces/v6.DefaultJobOptions.html) for more information. These don't take effect for jobs added through a `FlowProducer`; see [bullmq#1034](https://github.com/taskforcesh/bullmq/issues/1034) for an explanation.
 - `settings: AdvancedRepeatOptions` - Advanced settings for repeatable jobs. These should usually not be changed. See [AdvancedRepeatOptions](https://docs.bullmq.io/api/interfaces/v6.AdvancedRepeatOptions.html) for more information.
@@ -113,6 +116,38 @@ BullModule.registerQueue({
   name: 'video',
 });
 ```
+
+#### Pluggable backends (PostgreSQL)
+
+BullMQ supports pluggable storage backends (such as PostgreSQL) through custom backend factories. The PostgreSQL backend needs the `pg` package (`npm install --save pg`) instead of `ioredis`. You can configure a `backendFactory` globally in `BullModule.forRoot()` or per-queue in `BullModule.registerQueue()`.
+
+```typescript
+@@filename(app.module)
+import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
+import { createPostgresBackend } from 'bullmq';
+
+@Module({
+  imports: [
+    BullModule.forRoot({
+      backendFactory: createPostgresBackend,
+      connection: {
+        host: 'localhost',
+        port: 5432,
+        user: 'postgres',
+        password: 'password',
+        database: 'mydb',
+        migrate: true,
+      },
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+`migrate: true` creates BullMQ's tables at startup, in a `bullmq` schema of their own. Without it, the application fails on a database that doesn't have them yet.
+
+The configured `backendFactory` is automatically propagated across all underlying BullMQ components (`Queue`, `Worker`, `QueueEvents`, and `FlowProducer`), including `@Processor()` and `@QueueEventsListener()` worker hosts.
 
 #### Producers
 
@@ -610,7 +645,7 @@ Job producers add jobs to queues. Producers are typically application services (
 
 ```typescript
 import { Injectable } from '@nestjs/common';
-import { Queue } from 'bull';
+import type { Queue } from 'bull';
 import { InjectQueue } from '@nestjs/bull';
 
 @Injectable()
@@ -711,7 +746,7 @@ Within a consumer class, declare job handlers by decorating handler methods with
 
 ```typescript
 import { Processor, Process } from '@nestjs/bull';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 
 @Processor('audio')
 export class AudioConsumer {
@@ -770,7 +805,7 @@ Event listeners must be declared within a <a href="application/queues#consumers"
 
 ```typescript
 import { Processor, Process, OnQueueActive } from '@nestjs/bull';
-import { Job } from 'bull';
+import type { Job } from 'bull';
 
 @Processor('audio')
 export class AudioConsumer {

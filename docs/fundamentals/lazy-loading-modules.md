@@ -1,22 +1,23 @@
 <!-- 此文件从 content/fundamentals/lazy-loading-modules.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:20:29.325Z -->
+<!-- 生成时间: 2026-11-26T22:34:06.000Z -->
 <!-- 源文件: content/fundamentals/lazy-loading-modules.md -->
+<!-- 源哈希: 6fdc5d31e27a88bf3e0da5718ea6af88 -->
 
 ### 延迟加载模块
 
-默认情况下，模块是**立即加载**的，这意味着一旦应用程序加载，所有模块都会加载，无论它们是否立即需要。虽然这对大多数应用程序来说没问题，但对于在**无服务器环境**中运行的应用程序/工作进程来说，这可能成为瓶颈，因为启动延迟（"冷启动"）至关重要。
+默认情况下，模块是急切加载的：应用程序加载时，无论是否立即需要，所有模块都会被加载。这对于大多数应用程序是足够的，但对于在**无服务器环境**中运行的应用程序和工作进程来说，这可能成为瓶颈，因为启动延迟（“冷启动”）至关重要。
 
-延迟加载可以通过仅加载特定无服务器函数调用所需的模块来帮助减少启动时间。此外，一旦无服务器函数"预热"，您还可以异步加载其他模块，以进一步加快后续调用的启动时间（延迟模块注册）。
+延迟加载可以通过仅加载特定无服务器函数调用所需的模块来减少引导时间。您还可以在无服务器函数“预热”后异步加载其他模块，以进一步加快后续调用的引导时间（延迟模块注册）。
 
-> 提示 **提示** 如果您熟悉 **[Angular](https://angular.dev/)** 框架，您可能之前见过"[lazy-loading modules](https://angular.dev/guide/ngmodules/lazy-loading#lazy-loading-basics)"这个术语。请注意，此技术在 Nest 中**功能上有所不同**，因此请将其视为一个共享类似命名约定的完全不同的功能。
+> info **提示** 如果您熟悉 **[Angular](https://angular.dev/)** 框架，您可能以前见过“[lazy-loading modules](https://angular.dev/guide/ngmodules/lazy-loading#lazy-loading-basics)”这个术语。在 Nest 中，这种技术在**功能上是不同的**，所以请将其视为一个碰巧同名但完全不同的特性。
 
-> 警告 **警告** 请注意，[lifecycle hooks methods](/fundamentals/lifecycle-events) 不会在延迟加载的模块和服务中调用。
+> warning **警告** [Lifecycle hook methods](/fundamentals/lifecycle-events) 不会在延迟加载的模块和服务中被调用。
 
 #### 入门
 
-要按需加载模块，Nest 提供了 `LazyModuleLoader` 类，可以以常规方式注入到类中：
+要按需加载模块，Nest 提供了 `LazyModuleLoader` 类，您可以像注入任何其他依赖项一样将其注入到类中：
 
-```typescript
+```typescript title="cats.service.ts"
 @Injectable()
 export class CatsService {
   constructor(private lazyModuleLoader: LazyModuleLoader) {}
@@ -24,9 +25,9 @@ export class CatsService {
 
 ```
 
-> 提示 **提示** `LazyModuleLoader` 类从 `@nestjs/core` 包中导入。
+> info **提示** `LazyModuleLoader` 类是从 `@nestjs/core` 包导入的。
 
-或者，您可以从应用程序引导文件（`main.ts`）中获取 `LazyModuleLoader` 提供者的引用，如下所示：
+或者，您可以在应用程序引导文件（`main.ts`）内部获取对 `LazyModuleLoader` 提供者的引用：
 
 ```typescript
 // "app" represents a Nest application instance
@@ -34,15 +35,15 @@ const lazyModuleLoader = app.get(LazyModuleLoader);
 
 ```
 
-有了这个，您现在可以使用以下结构加载任何模块：
+有了这个设置，您可以使用以下构造加载任何模块：
 
 ```typescript
-const { LazyModule } = await import('./lazy.module');
+const { LazyModule } = await import('./lazy.module.js');
 const moduleRef = await this.lazyModuleLoader.load(() => LazyModule);
 
 ```
 
-> 提示 **提示** "延迟加载"的模块在首次调用 `LazyModuleLoader#load` 方法时会被**缓存**。这意味着，每次后续尝试加载 `LazyModule` 都会**非常快**，并返回缓存实例，而不是再次加载模块。
+> info **提示** 延迟加载的模块在第一次调用 `LazyModuleLoader#load` 方法时会被**缓存**。因此，后续尝试加载 `LazyModule` 时**非常快**，它返回缓存的实例而不是重新加载模块。
 >
 > ```bash
 > Load "LazyModule" attempt: 1
@@ -54,13 +55,15 @@ const moduleRef = await this.lazyModuleLoader.load(() => LazyModule);
 > ```
 
 >
-> 此外，"延迟加载"的模块与应用程序引导时立即加载的模块以及稍后在应用中注册的其他延迟模块共享相同的模块图。
+> 此外，延迟加载的模块与应用程序引导时急切加载的模块以及应用程序中稍后注册的任何其他延迟模块具有相同的模块图。
 
-其中 `lazy.module.ts` 是一个导出**常规 Nest 模块**的 TypeScript 文件（无需额外更改）。
+在这里，`lazy.module.ts` 是一个导出**常规 Nest 模块**的 TypeScript 文件（无需额外更改）。
 
-`LazyModuleLoader#load` 方法返回 `LazyModule` 的 [module reference](/fundamentals/module-reference)，它允许您浏览内部提供者列表，并使用注入令牌作为查找键获取任何提供者的引用。
+`LazyModuleLoader#load` 方法返回 [module reference](/fundamentals/module-reference)（来自 `LazyModule`），这允许您使用其注入令牌作为查找键来遍历内部提供者列表并获取任何提供者的引用。
 
-例如，假设我们有一个 `LazyModule`，其定义如下：
+> info **提示** `load()` 方法接受一个可选的第二个参数，即一个选项对象。将其 `logger` 属性设置为 `false` 可抑制 Nest 在加载模块时生成的日志。
+
+例如，假设我们有一个具有以下定义的 `LazyModule`：
 
 ```typescript
 @Module({
@@ -71,20 +74,20 @@ export class LazyModule {}
 
 ```
 
-> 提示 **提示** 延迟加载的模块不能注册为**全局模块**，因为这根本没有意义（因为它们是按需延迟注册的，此时所有静态注册的模块已经被实例化）。同样，注册的**全局增强器**（守卫/拦截器等）也**无法正常工作**。
+> info **提示** 延迟加载的模块不能注册为**全局模块**，因为它们是在所有静态注册的模块实例化之后，按需延迟注册的。同样，注册的**全局增强器**（守卫、拦截器等）**也不会**正常工作。
 
-有了这个，我们可以获取 `LazyService` 提供者的引用，如下所示：
+有了这个，我们可以获取对 `LazyService` 提供者的引用：
 
 ```typescript
-const { LazyModule } = await import('./lazy.module');
+const { LazyModule } = await import('./lazy.module.js');
 const moduleRef = await this.lazyModuleLoader.load(() => LazyModule);
 
-const { LazyService } = await import('./lazy.service');
+const { LazyService } = await import('./lazy.service.js');
 const lazyService = moduleRef.get(LazyService);
 
 ```
 
-> 警告 **警告** 如果您使用 **Webpack**，请确保更新您的 `tsconfig.json` 文件 - 将 `compilerOptions.module` 设置为 `"esnext"`，并添加 `compilerOptions.moduleResolution` 属性，值为 `"node"`：
+> warning **警告** 如果您使用 **webpack**，请更新您的 `tsconfig.json` 文件：将 `compilerOptions.module` 设置为 `"esnext"`，并添加 `compilerOptions.moduleResolution` 属性，其值为 `"node"`：
 >
 > ```json
 > {
@@ -97,20 +100,20 @@ const lazyService = moduleRef.get(LazyService);
 > ```
 
 >
-> 设置好这些选项后，您将能够利用 [code splitting](https://webpack.js.org/guides/code-splitting/) 功能。
+> 设置了这些选项后，您可以使用 webpack 的 [code splitting](https://webpack.js.org/guides/code-splitting/) 功能。
 
 #### 延迟加载控制器、网关和解析器
 
-由于 Nest 中的控制器（或 GraphQL 应用程序中的解析器）代表一组路由/路径/主题（或查询/变更），您**无法使用** `LazyModuleLoader` 类**延迟加载它们**。
+因为 Nest 中的控制器（或 GraphQL 应用程序中的解析器）代表一组路由、路径或主题（或查询和变更），所以您**不能使用** `LazyModuleLoader` 类来延迟加载它们。
 
-> 错误 **警告** 在延迟加载的模块中注册的控制器、[resolvers](/graphql/resolvers-map) 和 [gateways](/websockets/gateways) 将无法按预期工作。同样，您也无法按需注册中间件函数（通过实现 `MiddlewareConsumer` 接口）。
+> error **警告** 延迟加载模块内部注册的控制器、[resolvers](/graphql/resolvers-map) 和 [gateways](/websockets/gateways) 不会按预期工作。类似地，您不能按需注册中间件（通过使用 `NestModule` 接口的 `configure()` 方法并传入 `MiddlewareConsumer`）。
 
-例如，假设您正在构建一个底层使用 Fastify 驱动的 REST API（HTTP 应用程序）（使用 `@nestjs/platform-fastify` 包）。Fastify 不允许您在应用程序就绪/成功监听消息后注册路由。这意味着即使我们分析了模块控制器中注册的路由映射，所有延迟加载的路由也无法访问，因为没有办法在运行时注册它们。
+例如，假设您正在使用 Fastify 作为底层（使用 `@nestjs/platform-fastify` 包）构建一个 REST API（HTTP 应用程序）。Fastify 不允许在应用程序准备就绪并正在监听后注册路由。因此，即使 Nest 分析了模块控制器中注册的路由映射，延迟加载的路由也无法访问，因为没有运行时注册它们的方法。
 
-同样，我们在 `@nestjs/microservices` 包中提供的一些传输策略（包括 Kafka、gRPC 或 RabbitMQ）需要在建立连接之前订阅/监听特定的主题/通道。一旦您的应用程序开始监听消息，框架将无法订阅/监听新的主题。
+同样，`@nestjs/microservices` 包提供的某些传输策略（包括 Kafka、gRPC 和 RabbitMQ）在建立连接之前必须订阅特定的主题或通道。一旦您的应用程序开始监听消息，框架就无法订阅新主题。
 
-最后，`@nestjs/graphql` 包在启用代码优先方法时会根据元数据自动生成 GraphQL 模式。这意味着它需要预先加载所有类。否则，将无法创建适当且有效的模式。
+最后，`@nestjs/graphql` 包在启用代码优先方法时，会根据元数据即时生成 GraphQL 模式。这要求所有类都预先加载；否则，它无法创建有效的模式。
 
 #### 常见用例
 
-最常见的情况是，当您的工作进程/定时任务/lambda 和无服务器函数/webhook 必须根据输入参数（路由路径/日期/查询参数等）触发不同的服务（不同的逻辑）时，您会看到延迟加载的模块。另一方面，对于启动时间不太重要的单体应用程序，延迟加载模块可能没有太大意义。
+当工作进程、定时任务、lambda 或其他无服务器函数需要根据其输入参数（路由路径、日期、查询参数等）触发不同的服务（不同逻辑）时，延迟加载模块最为常见。对于启动时间基本不重要的单体应用程序来说，延迟加载模块的意义不大。
