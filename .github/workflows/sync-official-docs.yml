@@ -102,7 +102,11 @@ jobs:
           # Create/switch to temp branch for snapshot
           git checkout --orphan upstream-sync-temp
           git rm -rf .
-          
+
+          # git rm 只删除已跟踪文件，本次新同步进来的新文件仍是未跟踪状态；
+          # 若 content/ 残留，下面的 cp 会把内容嵌到 content/content/ 并带入重复文件。
+          rm -rf content
+
           # Copy fresh content from official-docs
           cp -r official-docs/content ./content
           
