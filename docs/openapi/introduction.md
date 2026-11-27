@@ -1,7 +1,7 @@
 <!-- 此文件从 content/openapi/introduction.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-11-26T22:59:14.878Z -->
+<!-- 生成时间: 2026-11-27T10:43:25.123Z -->
 <!-- 源文件: content/openapi/introduction.md -->
-<!-- 源哈希: 05f6cbe16459939dc7bc9c4adc3d508c -->
+<!-- 源哈希: 1aac9a63751cc39304b50f868ac26896 -->
 
 ### 简介
 
@@ -49,7 +49,7 @@ await bootstrap();
 
 ```
 
-> 信息 **提示** 将 `SwaggerModule.createDocument()` 包装在工厂函数中，会延迟文档生成直到首次请求文档，从而节省初始化时间。生成的文档是一个符合 [OpenAPI Document](https://swagger.io/specification/#openapi-document) 规范的可序列化对象。您不一定需要通过 HTTP 提供它，也可以将其保存为 JSON 或 YAML 文件并在其他地方使用。
+> 信息 **提示** 将 `SwaggerModule.createDocument()` 包装在工厂函数中，会延迟文档生成直到首次请求文档时，从而节省初始化时间。生成的文档是一个符合 [OpenAPI Document](https://swagger.io/specification/#openapi-document) 规范的可序列化对象。您不一定需要通过 HTTP 提供它，也可以将其保存为 JSON 或 YAML 文件并在其他地方使用。
 
 > 警告 **警告** 如果您急切地调用 `createDocument()`（而不是像上面所示的工厂函数），请确保 `app.enableVersioning()` 先运行。否则，生成的 `paths` 将缺少版本前缀。工厂模式不受影响，因为文档直到首次请求时才构建。
 
@@ -57,7 +57,7 @@ await bootstrap();
 
 接下来，调用 `setup()` 方法。它接受：
 
-1. 要挂载 Swagger UI 的路径
+1. 挂载 Swagger UI 的路径
 2. 一个应用程序实例
 3. 文档对象，或返回该对象的工厂函数（如上所示）
 4. 一个可选的配置对象（参见 [setup options](/openapi/introduction#设置选项)）
@@ -87,7 +87,7 @@ $ npm run start
 >
 > 这将其暴露在 `http://localhost:3000/swagger/json`。
 
-> 警告 **警告** `setup()` 在 `/api` 处提供 Swagger UI，文档在 `/api-json` 和 `/api-yaml`（或您使用 `jsonDocumentUrl` 和 `yamlDocumentUrl` 设置的路径）处提供，对任何可以访问应用程序的人都有效，在所有环境中都是如此。[Guards](/overview/guards) 不对这些路由运行，因此全局 守卫 不会保护它们；在使用 Express 和 Node 适配器时，只有在调用 `setup()` 之前注册时，[middleware](/overview/middlewares) 才会对它们运行。仅在非生产环境中注册 `setup()`，或者在所有三个路径前放置您自己的中间件，因为仅有 `app.use('/api', ...)` 会使另外两个路径开放：
+> 警告 **警告** `setup()` 在 `/api` 处提供 Swagger UI，在 `/api-json` 和 `/api-yaml`（或您使用 `jsonDocumentUrl` 和 `yamlDocumentUrl` 设置的路径）提供文档，对任何可以访问应用程序的人，在所有环境中都是如此。[Guards](/overview/guards) 不对这些路由运行，因此全局 守卫 不会保护它们；在使用 Express 和 Node 适配器时，只有在调用 `setup()` 之前注册时，[middleware](/overview/middlewares) 才会对它们运行。仅在非生产环境中注册 `setup()`，或者在所有三个路径前放置您自己的中间件，因为仅有 `app.use('/api', ...)` 会使另外两个路径开放：
 >
 > ```typescript
 > if (process.env.NODE_ENV !== 'production') {
@@ -97,7 +97,7 @@ $ npm run start
 
 > 信息 **提示** Swagger UI 与 Nest 内置 [security headers](/security/helmet) 的默认 [Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) 配合使用。如果您通过 `customJs`/`customJsStr` 添加脚本，或者在本地开发外部通过纯 HTTP 提供 Swagger UI，请参阅 [Swagger UI and GraphQL IDEs](/security/helmet#swagger-ui-and-graphql-ides) 以了解调整的指令。
 
-> 警告 **警告** 如果您直接使用 Fastify 注册 `helmet`，其 [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) 可能会阻止 Swagger UI。要解决此冲突，请按如下方式配置 CSP：
+> 警告 **警告** 如果您直接使用 Fastify 注册 `helmet`，其 [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) 可能会阻止 Swagger UI。要解决此冲突，请按如下所示配置 CSP：
 >
 > ```typescript
 > app.register(helmet, {
@@ -203,7 +203,7 @@ export interface SwaggerDocumentOptions {
 
 ```
 
-例如，要生成操作名称如 `createUser` 而不是 `UsersController_createUser`，请设置以下内容：
+例如，要生成像 `createUser` 这样的操作名称而不是 `UsersController_createUser`，请设置以下内容：
 
 ```typescript
 const options: SwaggerDocumentOptions =  {
@@ -241,7 +241,7 @@ export class CatsController {
 
 ```
 
-Swagger 模块会拾取这些模式，并将其转换为生成的文档中的请求体和参数。
+Swagger 模块会拾取这些模式，并将其转换为生成文档中的请求体和参数。
 
 ##### 无需配置的库
 
@@ -357,7 +357,7 @@ const documentOptions: SwaggerDocumentOptions = {
 
 > warning **警告** 调用特定于库的转换器之前，务必先按 vendor 缩小范围。将 Valibot 模式传递给 `createSchema()`（反之亦然）会在文档生成时抛出错误，而不是优雅地失败。
 
-> info **提示** 当您的模式执行转换时，`schemaType` 很重要：`input` 形状是客户端发送的，而 `output` 形状是您的处理器在解析后接收到的。Nest 会请求适合正在记录位置的变体，因此请将值直接传递给您的转换器，而不是硬编码一个。
+> info **提示** 当您的模式执行转换时，`schemaType` 很重要：`input` 形状是客户端发送的，而 `output` 形状是您的处理器在解析后接收到的。Nest 会请求适合正在被文档化的位置的变体，因此请将值直接传递给您的转换器，而不是硬编码一个。
 
 #### 设置选项
 
@@ -501,7 +501,7 @@ export interface SwaggerCustomOptions {
 > ```
 
 >
-> 在这种情况下，`http://localhost:3000/api-json` 仍然可访问，但 `http://localhost:3000/api`（Swagger UI）不可访问。
+> 在这种情况下，`http://localhost:3000/api-json` 仍然可访问，但 `http://localhost:3000/api`（Swagger UI）不可用。
 
 #### 示例
 
