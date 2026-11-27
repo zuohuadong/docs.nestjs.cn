@@ -183,7 +183,7 @@ $ npm run format
 
 #### 编码代理
 
-由 `nest new` 生成的项目已为 Codex、Cursor 和 Claude Code 等编码代理做好设置。它们包含一个 `AGENTS.md` 文件，该文件向代理介绍项目并指向本文档和官方 [NestJS agent skills](https://github.com/nestjs/agent-skills)。这些 [Agent Skills](https://agentskills.io) 涵盖了项目启动、添加功能、**认证** 和 **授权**、数据、测试和生产，包括当前 API 和仍能通过测试的错误。当任务匹配时，代理会自动加载技能。代理也可以将本文档作为 markdown 读取：[llms.txt](./llms.txt) 索引了每个章节。
+由 `nest new` 生成的项目已为 Codex、Cursor 和 Claude Code 等编码代理做好设置。它们包含一个 `AGENTS.md` 文件，该文件向代理介绍项目并指向本文档和官方 [NestJS agent skills](https://github.com/nestjs/agent-skills)。这些 [Agent Skills](https://agentskills.io) 涵盖了项目启动、添加功能、**认证** 和 **授权**、数据、测试和生产，包括当前 API 和仍能通过测试的错误。当任务匹配时，代理会自动加载技能。代理也可以将本文档作为 markdown 读取：[llms.txt](https://docs.nestjs.com/llms.txt) 索引了每个章节。
 
 默认情况下，`nest new` 为 Codex、Cursor 和 Claude Code 将技能添加到 `.agents/skills` 和 `.claude/skills`。要选择代理，请传递 `--skills`（例如 `--skills cursor` 或 `--skills claude,agents`），或者传递 `--skip-skills` 以排除技能。请参阅 [the `new` command's options](/cli/usages#nest-new)。
 
