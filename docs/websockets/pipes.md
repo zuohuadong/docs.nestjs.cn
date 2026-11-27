@@ -27,7 +27,7 @@ handleEvent(client: Client, data: unknown): WsResponse<unknown> {
 
 #### 基于模式的验证
 
-与 HTTP 参数装饰器一样，`@MessageBody()` 接受一个包含 `schema` 属性的选项对象。模式可以来自任何兼容 [Standard Schema](https://standardschema.dev/) 的库，例如 Zod、Valibot 或 ArkType。内置的 `StandardSchemaValidationPipe` 根据该模式验证负载，并且不带模式的参数保持不变。有关详细信息，请参阅 [Schema-based validation](/techniques/validation#基于模式的验证)。
+与 HTTP 参数装饰器一样，`@MessageBody()` 接受一个包含 `schema` 属性的选项对象。模式可以来自任何兼容 [Standard Schema](https://standardschema.dev/) 的库，例如 Zod、Valibot 或 ArkType。内置的 `StandardSchemaValidationPipe` 根据该模式验证负载，并且不带模式的参数保持不变。有关详细信息，请参阅 [Schema-based validation](/techniques/validation#使用内置的-standardschemavalidationpipe)。
 
 ```typescript
 @UsePipes(
