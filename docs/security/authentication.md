@@ -1,21 +1,21 @@
 <!-- 此文件从 content/security/authentication.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-11-27T00:44:08.374Z -->
+<!-- 生成时间: 2026-11-27T10:48:45.765Z -->
 <!-- 源文件: content/security/authentication.md -->
-<!-- 源哈希: 376209150d7760f905de738b59e0b3ba -->
+<!-- 源哈希: cfb16bb58747521a5f77005388d16b93 -->
 
 ### 认证
 
-`@nestjs/authentication` 用于用户登录，并告知您的应用程序其他部分用户的身份。它注册一个全局守卫，提供装饰器和一个可注入的上下文来读取当前用户，并提供每个登录流程所需的组件：服务器端会话、密码哈希、电子邮件验证和密码重置链接、TOTP 双因素认证、魔术链接、OpenID Connect、访问和刷新令牌以及 API 密钥。所有这些都基于 Node.js 内置功能构建，并通过您针对文档化接口编写的存储在您的数据库中保持状态，并使用包的测试进行检查。您编写的是只有您的应用程序才知道的内容：如何加载用户、哪些路由是公开的以及您登录流程的端点。
+`@nestjs/authentication` 用于用户登录，并告知您的应用程序其他部分用户的身份。它注册一个全局守卫，提供装饰器和一个可注入的上下文以读取当前用户，并提供每个登录流程所需的组件：服务器端会话、密码哈希、电子邮件验证和密码重置链接、TOTP 双因素认证、魔术链接、OpenID Connect、访问和刷新令牌以及 API 密钥。所有这些都基于 Node.js 内置功能构建，并且它们通过您针对文档化接口编写的存储在您的数据库中保持状态，可以使用包的测试来检查。您编写的是只有您的应用程序才知道的内容：如何加载用户、哪些路由是公开的以及您登录流程的端点。
 
 > info **提示** 要构建一个基于令牌登录的完整 API，从空项目到生产环境，请遵循 [Build a REST API with JWT authentication in Node.js](/tutorials/rest-api-jwt-authentication)。
 
-在本教程中，您将为在线猫粮和用品商店的 API 添加登录功能。到最后，它将实现：
+在本教程中，您将为在线猫粮和用品商店的 API 添加登录功能。到最后，它将：
 
 - 使用密码、Google 或通过电子邮件发送的链接登录客户，并使用会话 Cookie 使 Web 应用程序保持登录状态。
 - 确认客户的电子邮件地址，并允许他们重置忘记的密码。
 - 为移动应用程序提供短期存续的 Bearer 令牌和轮换刷新令牌。
 - 提供使用身份验证器应用的双因素认证，并要求更改账户的电子邮件地址。
-- 允许客户查看他们登录的位置，并在所有地方注销。
+- 允许客户查看他们登录的位置，并在所有地方登出。
 - 限制任何人猜测密码的速度。
 - 将会话、令牌和待处理链接保存在 PostgreSQL 中，通过 Drizzle（或 TypeORM）。
 - 允许合作伙伴系统和客户脚本使用客户创建和撤销的密钥调用 API。
@@ -44,7 +44,7 @@ $ npm i --save @nestjs/authentication
 
 ```
 
-请求体使用您的应用程序已使用的任何方式进行验证。本页面上的每个 DTO 都出现两次：一次是带有装饰器的类，一次是 Zod 模式，因此请选择您已有的风格并跳过另一个列表。
+请求体使用您的应用程序已使用的任何方式进行验证。本页面上的每个 DTO 都出现两次，一次是带有装饰器的类，一次是 Zod 模式，因此请选择您已有的风格并跳过另一个列表。
 
 本教程将用户保存在内存中，在一个 `UsersRepository` 类后面。用 Prisma、Drizzle、TypeORM 或您的应用程序使用的任何内容替换其方法体；其余代码只看到纯 `User` 对象。认证状态（会话、令牌、身份验证器、待处理链接）在 [Keep sessions and tokens in your database](/security/authentication#keep-sessions-and-tokens-in-your-database) 中移动到 PostgreSQL。
 
@@ -185,7 +185,7 @@ export class SessionAuth extends SessionCookieProvider<User> {
 
 ```
 
-提供者是普通的 `@Injectable()` 类，因此它们注入所需的任何内容，并注册自身：构造函数将 `this` 传递给 `AuthenticationRegistry`，即包提供的提供者列表，守卫会查询此列表。基类通过基于属性的注入接收 `SessionService`，这就是构造函数只列出 `UsersRepository` 和注册表的原因。由于 `validate()` 在每个已认证的请求上运行，被删除的用户会立即失去访问权限，而不是在会话过期时。当用户与会话位于同一数据库中时，存储可以在同一查询中读取用户并将其作为 `session.extra` 传递给 `validate()`，因此一个请求只需一次读取而不是两次；[Keep sessions and tokens in your database](/security/authentication#keep-sessions-and-tokens-in-your-database) 展示了如何实现。
+提供者是普通的 `@Injectable()` 类，因此它们注入所需的任何内容，并注册自身：构造函数将 `this` 传递给 `AuthenticationRegistry`（包的提供者列表），守卫会查询此列表。基类通过基于属性的注入接收 `SessionService`，这就是构造函数只列出 `UsersRepository` 和注册表的原因。由于 `validate()` 在每个已认证的请求上运行，被删除的用户会立即失去访问权限，而不是在会话过期时。当用户与会话位于同一数据库中时，存储可以读取同一查询中的用户并将其作为 `session.extra` 传递给 `validate()`，因此一个请求只需一次读取而不是两次；[Keep sessions and tokens in your database](/security/authentication#keep-sessions-and-tokens-in-your-database) 展示了如何实现。
 
 在您自己的模块中提供它。`AuthModule` 将在 `src/auth` 下包含本教程添加的所有内容：
 
@@ -226,7 +226,7 @@ export class AppModule {}
 
 ```
 
-`forRoot()` 只接受值：生命周期、密钥、客户端 ID 以及电子邮件链接的页面。选项中不包含任何类。凭证提供者、后续部分添加的处理程序以及 [database store](/security/authentication#keep-sessions-and-tokens-in-your-database) 都是您自己模块的提供者，每个都从其构造函数注册自身，因此它与它注入的内容相邻，并且模块的选项保持纯数据。生命周期是毫秒，或诸如 `'15m'` 和 `'14d'` 这样的字符串，最长可达 100 年。`@nestjs/jwt` 计数的是秒，因此小于一分钟的数字生命周期会在启动时记录警告：`3600` 在此处是 3.6 秒，而不是一小时。
+`forRoot()` 只接受值：生命周期、密钥、客户端 ID、您的电子邮件链接到的页面。选项中不包含任何类。凭证提供者、后续部分添加的处理程序以及 [database store](/security/authentication#keep-sessions-and-tokens-in-your-database) 都是您自己模块的提供者，每个都从其构造函数注册自身，因此它与它注入的内容相邻，并且模块的选项保持纯数据。生命周期是毫秒，或诸如 `'15m'` 和 `'14d'` 这样的字符串，最长可达 100 年。`@nestjs/jwt` 计数的是秒，因此小于一分钟的数字生命周期会在启动时记录警告：`3600` 在此处是 3.6 秒，而不是一小时。
 
 在启动时，每个提供者的构造函数运行完毕后，注册表会锁定并记录它将尝试的链：
 
@@ -235,13 +235,13 @@ LOG [AuthenticationModule] AuthenticationRegistry: providers SessionAuth
 
 ```
 
-该模块还会注册一个全局守卫。从现在起，**每个路由都需要已登录用户**，而对其他任何人则返回 `401 Unauthorized`。如果您的应用程序已经有必须保持开放的路由，例如健康检查或产品目录，请使用 `@Public()` 进行标记，下一节将介绍此功能。
+该模块还会注册一个全局守卫。从现在起，**每个路由都需要已登录用户**，而对其他任何人则返回 `401 Unauthorized`。如果您的应用程序已经有必须保持开放的路由，例如健康检查或产品目录，请使用 `@Public()` 标记它们，下一节将介绍此项。
 
-> info **提示** 会话存储在内存中，直到提供者注册一个存储为止，如果将 `NODE_ENV` 设置为 `production`，模块将拒绝以这种方式启动。一个 [later section](/security/authentication#keep-sessions-and-tokens-in-your-database) 会将它们移动到您的数据库。
+> info **提示** 会话存储在内存中，直到提供者注册一个存储；如果将 `NODE_ENV` 设置为 `production`，模块将拒绝以这种方式启动。[later section](/security/authentication#keep-sessions-and-tokens-in-your-database) 将会话移动到您的数据库。
 
 #### 添加注册和登录
 
-首先验证请求体。注册强制要求最小密码长度；登录则不强制，这样使用旧规则设置的密码仍然有效：
+首先验证请求体。注册强制执行最小密码长度；登录则不强制，这样使用旧规则设置的密码仍然有效：
 
 ```typescript title="src/auth/auth.dto.ts"
 import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
@@ -285,7 +285,7 @@ export type SignInDto = z.infer<typeof signInSchema>;
 
 ```
 
-`PasswordHasher` 使用 scrypt（在 libuv 线程池上，因此不阻塞事件循环）使用 OWASP 推荐的参数默认对密码进行哈希。一个服务封装了控制器所需的两个东西：
+`PasswordHasher` 使用 scrypt（在 libuv 线程池上，因此不阻塞事件循环）使用 OWASP 推荐的参数默认对密码进行哈希。一个服务封装了控制器所需的两个部分：
 
 ```typescript title="src/auth/credentials.service.ts"
 import { ConflictException, Injectable } from '@nestjs/common';
@@ -328,8 +328,8 @@ export class CredentialsService {
 
 ```
 
-- `verify()` 没有存储的哈希会根据虚拟哈希检查密码。未知电子邮件和错误的密码耗时相同并产生相同的结果，因此两者都不会泄露哪些电子邮件有账户。
-- 密码使用 scrypt 从 `node:crypto` 进行哈希，使用 OWASP 推荐的参数（N=2^17, r=8, p=1：每个哈希约 128 MiB 内存），在 libuv 线程池上。这是一个内存密集型函数，bcrypt 不是，并且不需要原生依赖。每个哈希都会记录其生成时使用的参数（`$scrypt$ln=17,r=8,p=1$...`）。当您使用 `password` 选项提高成本时，`needsRehash()` 会告诉您需要升级哪些存储的哈希，而唯一可以执行此操作的时机是在用户登录时。在此之前，`verify()` 会将旧的、成本较低的哈希检查提升到新参数的工作量，因此仍然耗时与未知电子邮件相同。不能通过这种方式隐藏降低成本：使用成本更高的参数生成的哈希在升级之前需要更长时间进行检查。成本有一个上限，即 1 GiB 内存和默认工作量的 16 倍，因此当 `r` 为 8 时，`logN` 停止在 20。超出此范围的参数在启动时失败，并且使用这些参数创建的存储哈希永远无法验证。
+- `verify()`（无存储哈希）将密码与虚拟哈希进行比较。未知电子邮件和错误的密码耗时相同并产生相同的结果，因此两者都不会泄露哪些电子邮件有账户。
+- 密码使用 scrypt 从 `node:crypto` 进行哈希，使用 OWASP 推荐的参数（N=2^17, r=8, p=1：每个哈希约 128 MiB 内存），在 libuv 线程池上。这是一个内存密集型函数，bcrypt 不是，并且不需要原生依赖。每个哈希都会记录其生成时使用的参数（`$scrypt$ln=17,r=8,p=1$...`）。当您使用 `password` 选项提高成本时，`needsRehash()` 会告诉您需要升级哪些存储的哈希，而唯一可以执行此操作的时机是在用户登录时。在此之前，`verify()` 会将旧的、成本较低的哈希检查提升到新参数的工作量，因此仍然耗时与未知电子邮件相同。不能通过这种方式隐藏降低成本：使用成本更高的参数生成的哈希在升级之前需要更长的时间进行检查。成本有一个上限，即 1 GiB 内存和默认工作量的 16 倍，因此当 `r` 为 8 时，`logN` 停止在 20。超出此范围的参数在启动时失败，并且使用这些参数创建的存储哈希永远无法验证。
 - `register()` 保持地址未验证状态。在注册表单中输入电子邮件并不能证明您拥有它。
 
 控制器将验证的密码转换为会话：
@@ -369,11 +369,11 @@ export class AuthController {
 
 ```
 
-`@Public()` 在类上跳过了两个路由的认证。`SignInService.signIn()` 是第一个因子变为会话的唯一地方：此步骤在密码之后调用它，Google 和魔术链接步骤也会经过它。它创建会话，并在响应本身上设置会话 Cookie，无论是在 Express 还是 Fastify 上，因此控制器不需要 `@Req()` 也不需要 `@Res()`：
+`@Public()` 在类上跳过了两个路由的认证。`SignInService.signIn()` 是第一个因子变为会话的唯一地方：此步骤在密码之后调用它，Google 和魔术链接步骤也会经过它。它创建会话，并在响应本身上设置会话 Cookie，无论是在 Express 还是 Fastify 上，因此控制器不需要 `@Req()` 或 `@Res()`：
 
-- Cookie `__Host-sid` 包含一个随机的 256 位令牌，并且是 `HttpOnly`、`Secure` 和 `SameSite=Lax`。`__Host-` 前缀告诉浏览器仅从该主机接受它，因此另一个子域上的页面不能植入自己的会话 Cookie。只存储令牌的 SHA-256 哈希，因此泄露的会话存储无法被重放为 Cookie。
+- Cookie `__Host-sid` 包含一个随机的 256 位令牌，它是 `HttpOnly`、`Secure` 和 `SameSite=Lax`。`__Host-` 前缀告诉浏览器仅从该主机接受它，因此另一个子域的页面不能植入自己的会话 Cookie。只存储令牌的 SHA-256 哈希，因此泄露的会话存储无法被重放为 Cookie。
 - 它会删除该浏览器之前拥有的会话，这防御了会话固定攻击。
-- 它会拒绝来自其他网站页面的登录请求，返回 403。否则该页面可能会将客户的浏览器登录到攻击者选择的账户（登录 CSRF）。
+- 它拒绝来自其他网站页面的登录请求，返回 403。否则该页面可能会将客户的浏览器登录到攻击者选择的账户（登录 CSRF）。
 - `method` 会记录在审计跟踪中，该部分在 [managing sessions](/security/authentication#let-customers-manage-their-sessions) 中提到。
 - `mfaRequired` 在您 [add a second factor](/security/authentication#add-two-factor-authentication) 之前保持 `false`。
 
@@ -413,24 +413,24 @@ export class AuthModule {}
 
 ```
 
-> info **提示** DTO 仅由验证管道强制执行：全局绑定 `ValidationPipe`，作为 `APP_PIPE` 类型的 `AppModule` 提供者或在 `main.ts` 中使用 `useGlobalPipes()`。使用 Zod 模式时，以相同方式绑定 `StandardSchemaValidationPipe`：应用程序使用其中一个。[validation](/techniques/validation) 页面提供了每种选项。
+> info **提示** DTO 仅由验证管道强制执行：全局绑定 `ValidationPipe`，作为 `APP_PIPE` 类型的 `AppModule` 提供者，或在 `main.ts` 中使用 `useGlobalPipes()`。使用 Zod 模式时，以相同方式绑定 `StandardSchemaValidationPipe`：应用程序使用其中一个。[validation](/techniques/validation) 页面有两者的选项。
 
-> info **提示** Chrome、Firefox 和 curl 将 `http://localhost` 视为安全源，并接受来自该源的 `Secure` 和 `__Host-` Cookie，因此在开发过程中不需要 HTTPS。在另一个通过纯 HTTP 的主机上，例如局域网地址，请在 `session` 选项中将 `cookie.secure` 设置为 `false`；此时 Cookie 的名称为 `sid`。
+> info **提示** Chrome、Firefox 和 curl 将 `http://localhost` 视为安全源，并接受来自该源的 `Secure` 和 `__Host-` Cookie，因此在开发期间不需要 HTTPS。在另一个纯 HTTP 主机上，例如 LAN 地址，请在 `session` 选项中将 `cookie.secure` 设置为 `false`；此时 Cookie 的名称为 `sid`。
 
-会话 Cookie 也受到跨站请求伪造的保护。除了 `SameSite=Lax`，该模块还会忽略来自其他源的 `POST`、`PUT`、`PATCH` 和 `DELETE` 请求以及 WebSocket 握手上的 Cookie，判断依据是 `Sec-Fetch-Site`、`Origin` 和 `Host` 标头，因此这些请求是匿名的。发送了 `Sec-Fetch-Site` 和 `Origin` 的客户端（例如 curl 和您的移动应用）不受影响。如果您的 Web 应用程序运行在与 API 不同的源上，请在 `session.trustedOrigins` 中列出它。
+会话 Cookie 也受到跨站请求伪造的保护。除了 `SameSite=Lax`，该模块还会忽略来自其他源的 `POST`、`PUT`、`PATCH` 和 `DELETE` 请求以及 WebSocket 握手请求，判断依据是 `Sec-Fetch-Site`、`Origin` 和 `Host` 标头，因此这些请求是匿名的。发送 neither `Sec-Fetch-Site` nor `Origin` 的客户端（如 curl 和您的移动应用）不受影响。如果您的 Web 应用程序运行在与 API 不同的源上，请在 `session.trustedOrigins` 中列出它。
 
 在 Nest 12.1 或更高版本上，还在 `main.ts` 中调用 `app.enableCsrfProtection()`。它对每个路由做出相同的决定，包括没有会话保护的公共路由，返回 403。将与 `session` 选项相同的 `trustedOrigins` 传递给它。
 
 #### 验证电子邮件地址
 
-任何人都可以将任何地址输入到注册表单中。直到客户通过打开发送到该地址的链接来证明该地址属于他们之前，商店将其视为未验证：它不会接收收据会发送到该地址的订单，也不会允许 Google 账户或魔术链接进入该账户，如下文所示。该包创建和检查链接。您的应用程序使用您选择的邮件库发送它们；商店使用 `@nestjs/mail`：
+任何人都可以将任何地址输入到注册表单中。直到客户通过打开发送到该地址的链接来证明该地址属于他们之前，商店都将其视为未验证：它不会接收收据会发送到该地址的订单，也不会允许 Google 账户或魔术链接进入该账户，如下文所示。该包创建和检查链接。您的应用程序使用您选择的邮件库发送它们；商店使用 `@nestjs/mail`：
 
 ```bash
 $ npm i --save @nestjs/mail
 
 ```
 
-从这一步开始，应用程序从环境变量中读取设置。将应用程序的公共 URL 添加到 `.env`。电子邮件中的链接指向 Web 应用的页面：
+从这一步开始，应用程序从环境变量中读取设置。将应用程序的公共 URL 添加到 `.env`。电子邮件中的链接指向该 Web 应用的页面：
 
 ```bash
 APP_URL=http://localhost:3000
@@ -439,7 +439,7 @@ APP_URL=http://localhost:3000
 
 > info **提示** 教程直接读取 `process.env` 以保持简洁。在应用程序中，请通过 [`@nestjs/config`](/application/configuration) 使用验证模式加载环境，这样缺失或格式错误的变量会在启动时而不是在第一个请求时停止应用程序，然后从 `ConfigService` 读取值。
 
-在 `AppModule` 中注册 `MailModule`。这两个模块现在都读取环境变量，因此 `AuthenticationModule` 切换到 `forRootAsync()`：其工厂在引导时运行，而 `forRoot()` 的参数在导入文件时求值，这在所有值都是字面量时是可行的。使用 `@nestjs/config`，添加 `inject: [ConfigService]` 并从注入的服务中读取值。在开发中，`LogMailTransport` 将每封电子邮件打印到应用程序日志中，因此您可以跟踪链接；将 `SMTP_URL` 设置为发送真实电子邮件。`FileTemplateEngine` 从 `src/mail/templates` 中的 HTML 文件渲染电子邮件正文，每封邮件一个文件：
+在 `AppModule` 中注册 `MailModule`。这两个模块现在都读取环境变量，因此 `AuthenticationModule` 切换到 `forRootAsync()`：它的工厂在引导时运行，而 `forRoot()` 的参数在导入文件时求值，这在所有值都是字面量时是可行的。使用 `@nestjs/config`，添加 `inject: [ConfigService]` 并从注入的服务中读取值。在开发中，`LogMailTransport` 将每封电子邮件打印到应用程序日志中，因此您可以跟踪链接；将 `SMTP_URL` 设置为发送真实电子邮件。`FileTemplateEngine` 从 `src/mail/templates` 中的 HTML 文件渲染电子邮件正文，每封邮件一个文件：
 
 ```typescript title="src/app.module.ts"
 import { FileTemplateEngine, LogMailTransport, MailModule, SmtpTransport } from '@nestjs/mail';
@@ -517,7 +517,7 @@ export class EmailVerificationMailer extends EmailVerificationHandler {
 
 ```
 
-`markVerified()` 仅标记链接发送到的地址。如果客户自那时起更改了地址，该链接不会验证任何内容。仓储仅在地址匹配时更新行，在 SQL 中这是一个条件更新（`UPDATE users SET email_verified = true WHERE id = $1 AND email = $2`）：
+`markVerified()` 只标记链接发送到的地址。如果客户自那时起更改了地址，该链接不会验证任何内容。仓储仅在地址匹配时更新行，在 SQL 中这是一个条件更新（`UPDATE users SET email_verified = true WHERE id = $1 AND email = $2`）：
 
 ```typescript title="src/users/users.repository.ts"
 /** Only if `email` is still the user's address: a link sent to an old one verifies nothing. */
@@ -532,7 +532,7 @@ async markEmailVerified(id: string, email: string): Promise<boolean> {
 
 ```
 
-一个特性有两个部分：其处理器和其选项。在 `AuthModule` 中提供处理器，并配置链接打开的页面。缺少其中一个部分会在启动时失败，并以一个命名缺失部分的消息显示：
+一个特性有两个部分：其处理器和其选项。在 `AuthModule` 中提供处理器，并配置链接打开的页面。缺少其中一个部分会导致启动失败，并以名称指明缺失的部分：
 
 ```typescript title="src/auth/auth.module.ts"
 providers: [
@@ -613,9 +613,9 @@ export class EmailVerificationController {
 
 ```
 
-- `EmailVerificationService.send()` 存储随机 256 位令牌的 SHA-256 哈希值，以及客户 ID 和地址，并将链接传递给您的处理器。令牌本身只存在于电子邮件中。
-- 链接只有效一次，有效期为 24 小时（`emailVerification.ttl`），并且仅对发送到的地址有效。`verify()` 对未知、已使用或已过期的令牌，以及自那时起已更改的地址返回 `null`，路由返回 400。
-- `resend` 不是 `@Public()`：只有已登录的客户才能请求新链接，并且只能针对自己的地址，因此该路由不会泄露关于其他账户的任何信息。
+- `EmailVerificationService.send()` 存储随机 256 位令牌的 SHA-256 哈希、客户 ID 和地址，并将链接传递给您的处理器。令牌本身只存在于电子邮件中。
+- 链接只有效一次，有效期为 24 小时（`emailVerification.ttl`），并且仅对发送到的地址有效。`verify()` 对未知、已使用或已过期的令牌，以及自那时起已更改的地址返回 `null`，并且路由返回 400。
+- `resend` 不是 `@Public()`：只有已登录的客户才能请求新链接，并且只能针对他们自己的地址，因此该路由不会泄露关于其他账户的任何信息。
 
 注册控制器：
 
@@ -627,7 +627,7 @@ controllers: [
 
 ```
 
-该包也可以在路由上要求已验证的地址：`@Authenticate()` 配合 `verifiedEmail: true` 会对未验证地址的已登录客户返回 403。[Read the current user](/security/authentication#read-the-current-user) 使用它来下订单。
+该包也可以在路由上要求验证的地址：`@Authenticate()` 配合 `verifiedEmail: true` 会对未验证地址的已登录客户返回 403。[Read the current user](/security/authentication#read-the-current-user) 使用它来下订单。
 
 > info **提示** `LogMailTransport` 在 `debug` 级别记录每封电子邮件的文本，包括链接，因此切勿在日志被传输的地方使用它。在生产环境中，设置 `SMTP_URL`，或传递另一个传输器，例如 `ResendTransport`。[Mail](/application/mail) 教程涵盖了选项。
 
@@ -690,9 +690,9 @@ export class PasswordResetMailer extends PasswordResetHandler {
 
 ```
 
-`findUser()` 返回账户 ID、其存储的地址和其存储的密码哈希，对于没有密码的账户返回 `null`。链接会发送到存储的地址，而不是输入表单的地址：查找忽略重音或点的操作，就像 MySQL 的默认排序规则所做的那样，否则会将一个客户的链接发送给输入了相似地址的任何人。链接仅在地址和哈希未更改时有效，因此任何方式的密码更改都会使之前发送的链接失效。省略地址或哈希是一个错误，该包会记录该错误而不是发送链接。
+`findUser()` 返回账户 ID、其存储的地址和其存储的密码哈希，对于没有密码的账户返回 `null`。链接会发送到该存储的地址，而不是输入表单的地址：查找忽略重音或点的操作，就像 MySQL 的默认排序规则所做的那样，否则会将一个客户的链接发送给输入了相似地址的任何人。链接仅在地址和哈希未更改时有效，因此任何方式的密码更改都会使之前发送的链接失效。省略地址或哈希是一个错误，该包会记录该错误而不是发送链接。
 
-如果您的应用程序使用除 `PasswordHasher` 以外的（例如 argon2 或 bcrypt）方法对密码进行哈希，请给处理器一个 `hashPassword()` 方法。然后 `reset()` 存储它返回的哈希而不是 scrypt 哈希，因此新密码的格式与您的登录检查一致：
+如果您的应用程序使用除 `PasswordHasher` 以外的算法（例如 argon2 或 bcrypt）对密码进行哈希，请给处理器提供一个 `hashPassword()` 方法。然后 `reset()` 存储它返回的哈希而不是 scrypt 哈希，因此新密码的格式与您的登录检查一致：
 
 ```typescript title="src/auth/password-reset.mailer.ts"
 import * as argon2 from 'argon2';
@@ -703,7 +703,7 @@ hashPassword(password: string) {
 
 ```
 
-它接收客户输入的密码，前提是 `reset()` 已接受它：不为空且最多 4 KiB。您的哈希器的更严格限制，例如 bcrypt 的 72 字节，由您检查。当 `hashPassword()` 抛出时，密码和登录状态保持不变，链接再次有效。
+它接收客户输入的密码，前提是 `reset()` 已接受它：非空且最多 4 KiB。您哈希器的更严格限制，例如 bcrypt 的 72 字节，由您检查。当 `hashPassword()` 抛出时，密码和登录状态保持不变，链接再次有效。
 
 在电子邮件验证旁边启用密码重置，在 `AuthModule` 中的处理器和选项中的页面：
 
@@ -728,7 +728,7 @@ AuthenticationModule.forRootAsync({
 
 ```
 
-一个端点接收地址，另一个端点接收令牌和新密码，后者遵循注册规则：
+一个端点接收地址，另一个端点接收令牌和新密码，遵循注册规则：
 
 ```typescript title="src/auth/auth.dto.ts"
 // ...
@@ -798,12 +798,12 @@ export class PasswordResetController {
 
 ```
 
-- 在查找地址之前，`request()` 返回。找到账户、存储令牌和发送电子邮件发生在响应之后，因此一个未注册地址的请求会得到与客户相同的 202 响应，路由无法告知任何人是否有账户。这就是为什么 `forgot` 不做 `await` 任何事情。响应之后的失败，例如邮件服务器宕机，会被记录下来。
-- 一个链接只有效一次，持续一小时（`passwordReset.ttl`），并且仅在账户仍拥有发送链接时所拥有的地址和密码时有效。
-- `reset()` 存储新密码的哈希，使客户的其他重置链接失效，并在应用程序 [issues them](/security/authentication#issue-tokens-to-the-mobile-app) 时结束该账户的所有会话和所有刷新令牌，因此知道旧密码的人在所有地方都会被登出。[API keys](/security/authentication#issue-api-keys-to-partners) 存在于您自己的表中并保持有效：要切断它们，请在 `password-reset` 事件上撤销它们。如果密码为空或超过 4 KiB，则会 `null`，而不会消耗链接，这样客户就可以重试。使用 `signIn: true`，它会通过 `SignInService` 在此浏览器上登录客户，因此拥有 [two-factor authentication](/security/authentication#add-two-factor-authentication) 的客户仍需要输入代码。
-- 该链接也验证了地址，因此 `reset()` 通过您的 `markVerified()` 标记其已验证。这也拯救了其他人使用客户地址注册的账户：重置会替换陌生人的密码并将其登出。
+- 在查找地址之前返回 `request()`。找到账户、存储令牌和发送电子邮件发生在响应之后，因此一个未注册地址的请求会得到与客户相同的 202 响应；路由无法告知任何人是否有账户。这就是为什么 `forgot` 不做 `await` 任何事情。响应之后的失败，例如邮件服务器宕机，会被记录下来。
+- 链接只有效一次，持续一小时（`passwordReset.ttl`），并且仅在账户仍拥有发送链接时所拥有的地址和密码时有效。
+- `reset()` 存储新密码的哈希，使客户的其他重置链接失效，并在应用程序 [issues them](/security/authentication#issue-tokens-to-the-mobile-app) 时终止账户的所有会话和所有刷新令牌，因此知道旧密码的人在所有地方都会被登出。[API keys](/security/authentication#issue-api-keys-to-partners) 存在于您自己的表中并保持有效：要切断它们，请在 `password-reset` 事件上撤销它们。密码为空或超过 4 KiB 时，会得到 `null` 而不消耗链接，以便客户可以重试。使用 `signIn: true`，然后通过 `SignInService` 在此浏览器上登录客户，因此拥有 [two-factor authentication](/security/authentication#add-two-factor-authentication) 的客户仍需要输入代码。
+- 链接也验证了地址，因此 `reset()` 通过您的 `markVerified()` 标记其已验证。这也拯救了其他人使用客户地址注册的账户：重置会替换陌生人的密码并将其登出。
 
-使用 Zod 模式时：
+使用 Zod 模式：
 
 ```typescript title="src/auth/password-reset.controller.ts"
 import { emailSchema, resetPasswordSchema, type EmailDto, type ResetPasswordDto } from './auth.schemas.js';
@@ -852,9 +852,9 @@ export class MeController {
 
 ```
 
-`@CurrentUser('id')` 注入单个属性。`@CurrentSession()` 注入提供者认为的会话内容：在这里是存储的会话记录。
+`@CurrentUser('id')` 注入单个属性。`@CurrentSession()` 注入提供者认为的会话内容：这里是存储的会话记录。
 
-> info **提示** 可选：一次告诉包您的用户类型，其类型将随之确定。在 `declare module` 块中增强 `@nestjs/authentication` 的 `AuthenticationTypes` 接口，使用 `user: User`（教程将其保留在 `src/auth/auth-types.ts`）。从那时起，`@CurrentUser('key')` 只接受 `User` 的键，并被类型化为返回该属性，并且 `AuthenticationContext.user` 和 `.session` 也被类型化。一个 `sessionExtra` 键类型 `SessionRecord.extra`，即会话存储在每次会话中读取的内容（导出为 `SessionExtra`、`unknown`，不包含键）。它不类型化参数本身：参数装饰器对注解没有发言权，因此 `user: User` 保持在参数上。它是整个应用程序的单一用户类型，因此具有两种主体类型的应用程序会保留注解。相同的接口对一个 [turns refresh tokens off](/security/authentication#issue-tokens-to-the-mobile-app) 的应用程序使用 `refreshTokens: false`。
+> info **提示** 可选：一次告诉包您的用户类型，其类型将随之确定。在 `declare module` 块中增强 `@nestjs/authentication` 的 `AuthenticationTypes` 接口，使用 `user: User`（教程将其保留在 `src/auth/auth-types.ts`）。从那时起，`@CurrentUser('key')` 只接受 `User` 的键，并被类型化为返回该属性，并且 `AuthenticationContext.user` 和 `.session` 也被类型化。一个 `sessionExtra` 键类型 `SessionRecord.extra`，即会话存储在每次会话中读取的内容（导出为 `SessionExtra`、`unknown`，不带键）。它不类型化参数本身：参数装饰器对注解没有发言权，因此 `user: User` 保持在参数上。它是整个应用程序的单一用户类型，因此具有两种主体类型的应用程序会保留注解。相同的接口对一个 [turns refresh tokens off](/security/authentication#issue-tokens-to-the-mobile-app) 的应用程序使用 `refreshTokens: false`。
 
 ```typescript title="src/users/users.module.ts"
 @Module({
@@ -953,7 +953,7 @@ export class OrdersController {
 
 ```
 
-`@Authenticate()` 配合 `verifiedEmail: true` 仅允许拥有已验证地址的客户下订单。任何其他已登录用户都会收到 403 错误，其 `error` 为 `email_unverified`，告诉 Web 应用程序要求客户打开 [verification link](/security/authentication#verify-email-addresses) 或重新发送。这是 403 而不是 401：再次登录无济于事。`GET /orders` 没有此要求。默认情况下，守卫从 `validate()` 加载的用户中读取 `emailVerified`；如果您的用户类型以不同的方式存储它，则您的 `EmailVerificationHandler` 可以覆盖 `isVerified(user)`。
+`@Authenticate()` 配合 `verifiedEmail: true` 仅允许拥有已验证地址的客户下订单。任何其他已登录用户都会收到 403 响应，其 `error` 为 `email_unverified`，这告诉 Web 应用程序要求客户打开 [verification link](/security/authentication#verify-email-addresses) 或重新发送。这是 403 而不是 401：再次登录无济于事。`GET /orders` 没有此要求。默认情况下，守卫从 `validate()` 加载的用户中读取 `emailVerified`；如果您的用户类型以不同方式存储它，则可以使用您的 `EmailVerificationHandler` 覆盖 `isVerified(user)`。
 
 ```typescript title="src/orders/orders.module.ts"
 import { Module } from '@nestjs/common';
@@ -977,13 +977,13 @@ OrdersModule,
 
 ```
 
-`AuthenticationContext` 是单例。它从模块围绕每个处理器打开的 `AsyncLocalStorage` 中读取当前 ⟦Request⟧ 的用户，因此无论处理器调用或等待多少次，它在任何地方都是正确的。`requireUser()` 返回用户，或抛出 `AuthenticationError`，模块对任何传输都以 401 响应。在请求外部，在队列消费者或定时任务中，`AuthenticationContext` 为空，其 `run()` 方法将一个函数作为给定用户运行。它在在处理器外部运行的中间件、守卫和异常过滤器中也是空的。
+`AuthenticationContext` 是单例。它从模块围绕每个处理程序打开的 `AsyncLocalStorage` 中读取当前 ⟦Request⟧ 的用户，因此无论处理程序调用或等待多少次，它都是正确的。`requireUser()` 返回用户或抛出 `AuthenticationError`，模块对任何传输都以 401 响应。在请求外部，在队列消费者或定时任务中，`AuthenticationContext` 为空，其 `run()` 方法以给定用户运行一个函数。它在在处理程序外部运行的中间件、守卫和异常过滤器中也是空的。
 
 #### 向移动应用程序颁发令牌
 
 存储的移动应用程序使用持有者令牌而不是 Cookie 进行认证。它在 `Authorization` 头部发送一个短期 JWT 访问令牌，并使用长期刷新令牌进行续订。
 
-向 `.env` 添加一个签名密钥。它必须至少为 32 字节。如果没有它，应用程序将拒绝启动，将该选项命名为：需要 `accessToken.key`。
+向 `.env` 添加一个签名密钥。它必须至少为 32 字节。如果没有它，应用程序将拒绝启动，将该选项命名为：`accessToken.key` 是必需的。
 
 ```bash
 # Generate with: openssl rand -base64 32
@@ -1010,7 +1010,7 @@ AuthenticationModule.forRootAsync({
 
 ```
 
-使用密钥作为密钥，令牌使用 HS256 进行签名。第二个凭证提供者验证它们。`JwtBearerProvider` 读取 `Authorization` 头部，将签名与 `accessToken` 密钥进行检查，并 `exp`、`iss` 和 `aud`，然后将验证的声明传递给您的 `validate()`：
+使用密钥作为密钥时，令牌使用 HS256 签名。第二个凭证提供者验证它们。`JwtBearerProvider` 读取 `Authorization` 头部，将签名与 `accessToken` 密钥进行检查，并 `exp`、`iss` 和 `aud`，然后将验证的声明传递给您的 `validate()`：
 
 ```typescript title="src/auth/jwt-auth.provider.ts"
 import { Injectable } from '@nestjs/common';
@@ -1039,7 +1039,7 @@ export class JwtAuth extends JwtBearerProvider<User> {
 
 ```
 
-> info **提示** 使用共享密钥的 HS256 适用于同时颁发和验证令牌的 API。如果其他服务也验证它们，请将 `accessToken` 密钥设置为 ES256 私钥：`JwtAuth` 然后使用其公钥部分验证，它们也可以这样做。要接受来自另一个颁发者的令牌，请将 `super()` 传递其 `jwks` URL，该 URL 必须是 https（localhost 上仅限纯 http），或其公钥 `key`，使用 `issuer` 和 `audience`：两者都必需的，因为身份提供者使用相同的密钥对所有客户端的令牌进行签名。对于没有受众的令牌，请传递 `audience: false` 并检查在 `validate()` 中命名您的客户端的声明。添加 `clockTolerance: '30s'` 用于另一个颁发者的时钟，并添加 `maxAge: '1h'` 以拒绝签发时间更早的令牌。一个 `jwks` 默认接受 `RS256` 和 `ES256`：如果您的颁发者使用其他算法签名，请在 `algorithms` 中列出，例如 `['PS256']`。使用 `HS` 算法将使用 `jwks` 拒绝。要在一个密钥集中共享多个提供者，请将 `JwksClient` 作为 `jwks` 而不是 URL 传递；它接受 `cacheTtl`（默认 `'10m'`）、`cooldown`（默认 `'30s'`）和 `timeout`（默认 `'5s'`）。密钥是 PEM 文本或 `KeyObject`；使用 `createPublicKey()` 从 `node:crypto` 导入 JWK，将 JWK 作为 `key`，将 `'jwk'` 作为 `format`。空的 `key` 或 `jwks`，例如未设置的环境变量，会在启动时失败，而不是回退到 `accessToken` 选项。一个仅验证令牌的服务可以完全省略 `accessToken` 并向 `super()` 提供其验证所使用的内容：共享的 `key`，或带有 `issuer` 和 `audience` 的 `jwks`。
+> info **提示** 使用共享密钥的 HS256 适用于同时颁发和验证令牌的 API。如果其他服务也验证它们，请将 `accessToken` 密钥设置为 ES256 私钥：`JwtAuth` 然后使用其公钥部分验证，它们也可以这样做。要接受来自另一个颁发者的令牌，请将 `super()` 传递其 `jwks` URL，该 URL 必须是 https（仅在 localhost 上是纯 http），或其公钥 `key`，并使用 `issuer` 和 `audience`：两者都是必需的，因为身份提供者使用相同的密钥对所有客户端的令牌进行签名。对于没有受众的令牌，请传递 `audience: false` 并检查在 `validate()` 中命名您的客户端的声明。添加 `clockTolerance: '30s'` 用于另一个颁发者的时钟，并添加 `maxAge: '1h'` 以拒绝签发时间更早的令牌。一个 `jwks` 默认接受 `RS256` 和 `ES256`：如果您的颁发者使用其他算法签名，请在 `algorithms` 中列出，例如 `['PS256']`。使用 `HS` 算法将拒绝 `jwks`。要在多个提供者之间共享一组密钥，请将 `JwksClient` 作为 `jwks` 而不是 URL 传递；它接受 `cacheTtl`（默认 `'10m'`）、`cooldown`（默认 `'30s'`）和 `timeout`（默认 `'5s'`）。密钥是 PEM 文本或 `KeyObject`；使用 `createPublicKey()` 从 `node:crypto` 导入 JWK，将 JWK 作为 `key`，将 `'jwk'` 作为 `format`。空的 `key` 或 `jwks`，例如未设置的环境变量，在启动时失败，而不是回退到 `accessToken` 选项。一个仅验证令牌的服务可以完全省略 `accessToken` 并向 `super()` 提供它验证的凭证：共享的 `key`，或带有 `issuer` 和 `audience` 的 `jwks`。
 
 在 `AuthModule` 中提供它：
 
@@ -1052,7 +1052,7 @@ providers: [
 
 ```
 
-对于每个 ⟦Request⟧，守卫按升序询问提供者，第一个返回用户的获胜。使用默认顺序注册的 `order`、`SessionAuth` 和请求 `0` 寻求 `JwtAuth`，因此带有会话 Cookie 的请求由 `1` 登录，而带有无 Cookie 的持有者令牌的请求从 `SessionAuth` 获得 `null` 并由 `SessionAuth` 处理。顺序是在注册时给出的，而不是留给 Nest 构建提供者的顺序：后者遵循模块图，当提供者移动到另一个模块或添加导入时会更改。要求相同顺序的两个提供者在启动时失败，并命名两者。没有其中任何一个的请求会收到带有 `JwtAuth` 作为其 `missing_credentials` 的 401；其 `errorCode` 头部列出了提供者接受的内容：`WWW-Authenticate`。验证失败的令牌会收到一个说明原因的 401，如 RFC 6750 所述，例如 `Bearer realm="store"`。这告诉移动应用程序刷新。
+对于每个 ⟦Request⟧，守卫按升序 `order` 询问提供者，第一个返回用户的获胜。默认顺序注册的 `SessionAuth`、`0` 和 `JwtAuth` 请求 `1`，因此带有会话 Cookie 的请求由 `SessionAuth` 登录，而带有无 Cookie 的持有者令牌的请求从 `SessionAuth` 获得 `null` 并由 `JwtAuth` 处理。顺序是在注册时给定的，而不是由 Nest 构建提供者的顺序决定的：后者遵循模块图，当提供者移动到另一个模块或添加导入时会更改。要求相同顺序的两个提供者在启动时失败，并命名两者。没有其中任何一个的请求会收到带有 `missing_credentials` 作为其 `errorCode` 的 401；其 `WWW-Authenticate` 头部列出了提供者接受的内容：`Bearer realm="store"`。验证失败的令牌会收到一个说明原因的 401，例如 RFC 6750 所述的 `error="invalid_token", error_description="token expired"`。这告诉移动应用程序刷新。
 
 现在颁发令牌的端点：
 
@@ -1094,11 +1094,11 @@ export class TokensController {
 
 ```
 
-`TokenService.issue()` 使用 `accessToken` 选项签署访问令牌，启动刷新令牌，并返回两者，同时返回 `expiresIn`，即访问令牌的生命周期（秒）。刷新令牌是不透明的，并以哈希形式存储。每个令牌只使用一次：`refresh()` 消耗它并返回其后继令牌，以及一个新的访问令牌。一个签入的后继令牌构成一个家族。如果返回一个已消耗的令牌，则意味着两个方持有它——一个窃贼和一个应用，因此服务撤销整个家族，双方都必须重新签入。未知、过期或重用的刷新令牌会抛出 `RefreshTokenError`，一个 `AuthenticationError`，模块对此作出响应 401，因此 `refresh` 无需自行进行错误处理。
+`TokenService.issue()` 使用 `accessToken` 选项签署访问令牌，启动刷新令牌，并返回两者，同时返回 `expiresIn`，即访问令牌的生命周期（秒）。刷新令牌是不可见的，并以哈希形式存储。每个令牌只用一次：`refresh()` 使用它并返回其后继令牌，以及一个新的访问令牌。一个签入的后继令牌构成一个家族。如果返回一个已使用的令牌，则有双方持有它，即窃贼和应用程序，因此服务撤销整个家族，双方都必须重新签入。未知、过期或重用的刷新令牌会抛出 `RefreshTokenError`，一个 `AuthenticationError`，模块对此作出响应 401，因此 `refresh` 无需自行进行错误处理。
 
-`amr` 声明记录了用户如何签入，而 [two-factor authentication](/security/authentication#add-two-factor-authentication) 依赖于此。`issue()` 将 `claims` 与刷新令牌家族一起存储，而 `refresh()` 将它们放入它签发的每个访问令牌中，因此刷新后的令牌描述的是相同的签入过程。将可能更改的事实（如角色）排除在 `claims` 之外：它们将保留在令牌中，直到家族生命周期结束。`validate()` 在每个请求上加载当前用户。
+`amr` 声明记录了用户如何签入，而 [two-factor authentication](/security/authentication#add-two-factor-authentication) 依赖于此。`issue()` 将 `claims` 与刷新令牌家族一起存储，`refresh()` 将它们放入它签发的每个访问令牌中，因此刷新后的令牌描述的是相同的签入。将可能更改的事实，如角色，排除在 `claims` 之外：它们将保持在令牌中，直到家族生命周期结束。`validate()` 在每个请求上加载当前用户。
 
-一些声明描述的是会话而不是用户，例如多租户应用所在的工作空间。要更改其中一个，请将 `refresh()` 传递给一个 `claims` 函数。它接收家族声明的副本和用户 ID，并返回新访问令牌以及家族后续每次刷新的声明。它可以是异步的，并且可以抛出以拒绝更改，这会使刷新令牌未被消耗：
+一些声明描述的是会话而不是用户，例如多租户应用所在的工作空间。要更改其中一个，请将 `refresh()` 一个 `claims` 函数。它接收家族声明和用户 ID 的副本，并返回新访问令牌以及家族后续每次刷新的声明。它可以是异步的，也可以抛出以拒绝更改，这会使刷新令牌未被使用：
 
 ```typescript
 @Post('workspace')
@@ -1116,9 +1116,9 @@ switchWorkspace(@Body() { refreshToken, workspaceId }: SwitchWorkspaceDto) {
 
 ```
 
-服务忽略函数返回中的 `amr`、`auth_time` 以及注册的 JWT 声明（`sub`、`iss`、`exp` 及其他声明）：`amr` 和 `auth_time` 保留签入时的值，而服务在每次刷新时将其他声明设置为固定值，因此切换操作不能更改用户或添加第二因素。与同一个令牌的两次刷新一样，同时发送的切换和刷新被视为重用，因此客户端应等待其中一个完成后再开始另一个。
+服务忽略 `amr`、`auth_time` 以及注册的 JWT 声明（`sub`、`iss`、`exp` 及其他声明）在函数返回的内容中：`amr` 和 `auth_time` 保留签入时的值，服务在每次刷新时设置其他声明，因此切换操作不能更改用户或添加第二因素。与同一个令牌的两次刷新一样，同时发送的切换和刷新被视为重用，因此客户端应等待其中一个完成后再开始另一个。
 
-一个签发短期访问令牌且客户端需要重新签入的服务可以关闭刷新令牌。当 `refreshToken` 设置为 `false` 时，`issue()` 只返回 `accessToken` 和 `expiresIn`，不存储任何内容，因此应用不需要 `RefreshTokenStore`。令牌端点的响应中不包含刷新令牌：当访问令牌过期时，客户端重新签入。`refresh()` 和 `revoke()` 抛出异常，说明刷新令牌已禁用，而 `revokeAll()` 不执行任何操作。第二因素和 `amr` 声明按原样工作。也在 `AuthenticationTypes` 上声明 `refreshTokens: false`，以便 `issue()` 被类型化为返回 `AccessTokenResult` 而不是 `TokenPair`：
+一个签发短期访问令牌且客户端需要重新签入的服务可以关闭刷新令牌。当 `refreshToken` 设置为 `false` 时，`issue()` 只返回 `accessToken` 和 `expiresIn`，不存储任何内容，因此应用程序不需要 `RefreshTokenStore`。令牌端点的响应中没有刷新令牌：当访问令牌过期时，客户端重新签入。`refresh()` 和 `revoke()` 抛出异常，说明刷新令牌已禁用，而 `revokeAll()` 不执行任何操作。第二因素和 `amr` 声明按原样工作。也在 `AuthenticationTypes` 上声明 `refreshTokens: false`，以便 `issue()` 被类型化为返回 `AccessTokenResult` 而不是 `TokenPair`：
 
 ```typescript title="src/app.module.ts"
 AuthenticationModule.forRootAsync({
@@ -1143,7 +1143,7 @@ declare module '@nestjs/authentication' {
 
 ```
 
-执行的是选项；声明仅告知编译器。一个设置了选项但没有声明的应用在运行时不会获得刷新令牌，其类型为字符串，并且 `refresh()` 会在其上抛出异常。`refreshToken` 设置为 `false` 但没有 `accessToken` 不会改变任何内容，并在启动时记录警告。
+是选项决定了什么运行；声明只告诉编译器。一个设置了选项但没有声明的应用程序在运行时不会获得刷新令牌，其类型为字符串，并且 `refresh()` 会在其上抛出异常。`refreshToken` 设置为 `false` 但没有 `accessToken` 不会改变任何内容，并在启动时记录警告。
 
 注册控制器：
 
@@ -1159,7 +1159,7 @@ controllers: [
 
 #### 添加双因素认证
 
-客户可以使用身份验证器应用（基于时间的一次性密码，或 TOTP）保护其账户。在 `AppModule` 中配置 `mfa`：
+客户可以使用身份验证器应用（基于时间的单次密码，或 TOTP）保护其账户。在 `AppModule` 中配置 `mfa`：
 
 ```typescript title="src/app.module.ts"
 AuthenticationModule.forRootAsync({
@@ -1174,9 +1174,9 @@ AuthenticationModule.forRootAsync({
 
 ```
 
-服务器必须读取 TOTP 密钥才能检查代码，因此与密码不同，它不能被哈希。`MfaService` 在密钥到达存储之前使用 AES-256-GCM 加密每个密钥，将其绑定到其用户，并且仅在验证代码时解密。任何持有数据库副本但没有密钥的人都无法生成代码。需要密钥：在没有 `encryption` 的情况下配置 `mfa` 会在启动时抛出异常。（`encryption: false` 故意存储明文，用于测试。）少于 128 位的密钥永远无法验证：`enroll()` 生成 160 位，但从其他系统导入的密钥可能更短，其用户需要重新注册。
+服务器必须读取 TOTP 密钥才能检查代码，因此与密码不同，它不能被哈希。`MfaService` 在密钥到达存储之前使用 AES-256-GCM 加密每个密钥，将其绑定到其用户，并且仅在验证代码时才解密。任何持有数据库副本但没有密钥的人都无法生成代码。需要密钥：在没有 `encryption` 的情况下配置 `mfa` 会在启动时抛出异常。（`encryption: false` 故意存储明文，用于测试。）少于 128 位的密钥永远无法验证：`enroll()` 生成 160 位，但从其他系统导入的密钥可能更短，并且其用户需要重新注册。
 
-将密钥添加到 `.env`。字符串密钥必须至少包含 32 个随机字符的数据：
+将密钥添加到 `.env`。字符串密钥必须至少包含 32 个随机字符：
 
 ```bash
 # Generate with: openssl rand -base64 32
@@ -1184,9 +1184,9 @@ TOTP_ENCRYPTION_KEY=
 
 ```
 
-> info **提示** 要轮换密钥，首先将新密钥放入 `keys`，并在其后保留旧密钥。第一个密钥负责加密，所有列出的密钥负责解密，并且在使用时会使用新密钥重新加密密钥。一旦没有任何内容使用旧密钥，即可移除旧密钥。密钥不需要名称：每个加密的密钥都会记录一个从其密钥派生的 ID。
+> info **提示** 要轮换密钥，首先将新密钥放入 `keys`，然后保留旧密钥。第一个密钥负责加密，所有列出的密钥负责解密，并且在使用时会使用新密钥重新加密密钥。一旦没有任何内容使用旧密钥，就删除旧密钥。密钥不需要名称：每个加密的密钥都记录一个从其密钥派生的 ID。
 
-除非配置了 `mfa`，否则双因素认证是关闭的。如果没有它，`MfaService.isEnrolled()` 会在不读取存储的情况下响应 `false`，因此签入过程从不要求代码，并且所有其他 `MfaService` 方法在触及存储之前都会抛出 `MFA is not configured`。从选项中移除 `mfa` 会为每位客户关闭双因素认证，包括那些已经注册了身份验证器的客户。
+除非配置了 `mfa`，否则双因素认证是关闭的。如果没有它，`MfaService.isEnrolled()` 会在不读取存储的情况下响应 `false`，因此签入永远不会要求代码，并且所有其他 `MfaService` 方法在触及存储之前都会抛出 `MFA is not configured`。从选项中移除 `mfa` 会为每位客户关闭双因素认证，包括那些已经注册了身份验证器的客户。
 
 MFA 端点用于注册身份验证器、确认它并完成签入：
 
@@ -1245,12 +1245,12 @@ export class MfaController {
 
 ```
 
-- `enroll()` 存储一个新的、未确认的密钥，并返回一个 `otpauth://` URI，该 URI 由 Web 应用显示为二维码。一旦身份验证器被确认，`enroll()` 会拒绝覆盖它并抛出 `MfaAlreadyEnrolledError`，模块对此作出响应 409，`Authenticator already enrolled`。覆盖它将关闭双因素认证，直到新密钥被确认。
-- `replace` 处理新电话。`enroll()` 配合 `replace: true` 暂存第二个密钥，并且当前身份验证器会继续工作，直到 `confirm()` 从新密钥接收到代码。`@Authenticate()` 配合 `mfa: true` 使路由要求经过验证的第二因素，因此仅凭被盗密码无法替换成别人的身份验证器。
-- `SignInService.confirmMfa()` 在身份验证器生成有效代码后激活它，因此错误的密钥不会锁定任何人。该代码还证明了此浏览器拥有身份验证器，因此会话变为已验证状态，使用新的 Cookie：客户可以立即使用需要第二因素的路由，而无需再次签入。使用不含会话的 bearer 令牌发送的确认仅激活身份验证器。该路由返回的十个恢复代码仅显示一次，并以使用客户 ID 加盐的慢速哈希存储，因此数据库副本不会泄露它们。
-- 一旦身份验证器被确认，`SignInService.signIn()` 会为该用户创建**待定**会话。待定会话在任何地方都没有签入：需要用户响应的路由会响应 401 和 `"errorCode": "mfa_required"`，指示 Web 应用要求输入代码。这就是 `verify` 为 `@Public()` 的原因。`completeMfa()` 从此浏览器的 Cookie 中读取会话，检查代码或恢复代码，并使用 `mfa: 'verified'` 将会话轮换到新的 ID，设置新的 Cookie。待定会话在 10 分钟后（`mfa.pendingTtl`）过期，而不是 `session.absoluteTtl` 的 14 天：待定 Cookie 仅是凭证的一半。验证代码会赋予会话完整的生命周期。
-- `completeMfa()` 只作用于会话 Cookie。带有 bearer 令牌且无 Cookie 的请求会收到 401。
-- 代码在当前时间前后 30 秒内有效，每个代码只使用一次。在 15 分钟内输入 5 次错误代码后，账户将拒绝所有代码（包括正确的），直到时间窗口过去。每次尝试在检查之前都会被计数，因此并行发送猜测不会绕过限制。
+- `enroll()` 存储一个新的、未确认的密钥，并返回一个 `otpauth://` URI，该 URI 由 Web 应用程序显示为二维码。一旦身份验证器被确认，`enroll()` 会拒绝覆盖它并抛出 `MfaAlreadyEnrolledError`，模块对此作出响应 409，`Authenticator already enrolled`。覆盖它将关闭双因素认证，直到新密钥被确认。
+- `replace` 处理新电话。`enroll()` 配合 `replace: true` 暂存第二个密钥，当前身份验证器在 `confirm()` 收到来自新密钥的代码之前继续工作。`@Authenticate()` 配合 `mfa: true` 使路由要求经过验证的第二因素，因此仅凭被盗密码无法替换成别人的身份验证器。
+- `SignInService.confirmMfa()` 在身份验证器生成有效代码后激活它，因此错误的密钥无法锁定任何人。该代码也证明此浏览器拥有身份验证器，因此会话变为已验证状态，使用新的 Cookie：客户可以立即使用需要第二因素的路由，而无需再次签入。使用不含会话的令牌发送的确认仅激活身份验证器。路由返回的十个恢复代码仅显示一次，并以使用客户 ID 进行加盐的慢速哈希存储，因此数据库副本不会泄露它们。
+- 一旦身份验证器被确认，`SignInService.signIn()` 会为该用户创建**待定**会话。待定会话在任何地方都没有签入：需要用户的路由会响应 401 和 `"errorCode": "mfa_required"`，指示 Web 应用程序要求输入代码。这就是 `verify` 为 `@Public()` 的原因。`completeMfa()` 从此浏览器的 Cookie 中读取会话，检查代码或恢复代码，并使用 `mfa: 'verified'` 将会话轮换到新的 ID，设置新的 Cookie。待定会话在 10 分钟后（`mfa.pendingTtl`）过期，而不是 `session.absoluteTtl` 的 14 天：待定 Cookie 只是凭证的一半。验证代码会赋予会话完整的生命周期。
+- `completeMfa()` 只作用于会话 Cookie。带有令牌但没有 Cookie 的请求会收到 401。
+- 代码在当前时间前后 30 秒内有效，每个代码只用一次。在 15 分钟内输入 5 次错误代码后，账户将拒绝所有代码（包括正确的），直到时间窗口过去。每次尝试在检查之前都会被计数，因此并行发送猜测不会绕过限制。
 
 也可以为单个路由要求经过验证的第二因素，这称为升级认证。存储要求它来更改电子邮件地址，因为这是恢复账户的方式。新地址会出现在 [Reset forgotten passwords](/security/authentication#reset-forgotten-passwords) 的 `EmailDto` 中。添加路由，使用 `@Authenticate()`：
 
@@ -1305,11 +1305,11 @@ async changeEmail(@CurrentUser('id') userId: string, @Body({ schema: emailSchema
 
 ```
 
-每个路由都要求已登录用户；`@Authenticate()` 调整了实现方式。使用 `mfa: true`，验证后会通过 Cookie 会话。尚未注册身份验证器的客户无法通过此验证，因此 Web 应用程序会提示他们先注册。
+每个路由都要求已登录用户；`@Authenticate()` 调整了实现方式。使用 `mfa: true`，一旦验证通过，Cookie 会话就会通过。尚未注册身份验证器的客户无法通过此验证，因此 Web 应用程序会要求他们先注册。
 
-新地址未经验证，因此路由会向其发送验证链接，客户在使用该链接之前无法下订单。发送到旧地址的链接将失效：它们仅验证发送到的地址。
+新地址是未经验证的，因此路由会向其发送验证链接，客户在使用该链接之前无法下订单。发送到旧地址的链接将失效：它们只验证发送到的地址。
 
-移动应用程序不得成为绕过第二因子的途径，也不能是：像 `signIn()` 和 `TokenService.issue()` 那样，不带代码的已确认身份验证器的客户不会获得令牌。它以 `"errorCode": "mfa_required"` 响应 401，提示应用程序要求提供代码。应用程序随后再次发送密码，并附带代码。将代码添加到请求体中：
+移动应用程序不得成为绕过第二因素的途径，它也不能是：像 `signIn()` 一样，`TokenService.issue()` 会向已确认身份验证器的客户返回无令牌的 401 响应。它使用 `"errorCode": "mfa_required"` 响应 401，指示应用程序要求提供代码。然后应用程序再次发送密码，并附带代码。将代码添加到请求体中：
 
 ```typescript title="src/auth/auth.dto.ts"
 import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
@@ -1371,7 +1371,7 @@ async issue(@Body({ schema: tokenRequestSchema }) body: TokenRequestDto) {
 
 ```
 
-没有代码的请求不计为失败尝试，因此应用程序可以判断是否需要代码。验证后的代码将向 `amr` 声明添加 `mfa`。`JwtBearerProvider` 将包含 `mfa`、`otp` 或 `hwk` 的令牌视为已验证，从而通过 `mfa: true` 路由。刷新令牌携带与启动其家族的登录相同的 `amr`，因此使用代码登录的移动应用程序会保持验证状态，直到其刷新令牌过期或被撤销。`issue()` 绝不会从您自己的 `claims` 中获取这三个值：它会丢弃它们，并在日志中发出警告，仅在验证了代码后才添加 `mfa`，因此应用程序不会意外地铸造一个已验证的令牌。
+没有代码的请求不计为失败尝试，因此应用程序可以判断是否需要代码。验证后的代码将向 `amr` 声明添加 `mfa`。`JwtBearerProvider` 将包含 `mfa`、`otp` 或 `hwk` 的令牌视为已验证，因此它会通过 `mfa: true` 路由。刷新令牌携带与启动其家族的登录相同的 `amr`，因此使用代码登录的移动应用程序会保持验证状态，直到其刷新令牌过期或被撤销。`issue()` 绝不会从您自己的 `claims` 中获取这三个值：它会丢弃它们，并在日志中发出警告，仅在验证了代码后才添加 `mfa`，因此应用程序不会意外地铸造一个已验证的令牌。
 
 注册控制器：
 
@@ -1410,15 +1410,15 @@ async disable(
 
 ```
 
-- `@Authenticate()` 配合 `mfa: true` 是最基本的：没有它，仅凭被盗密码就可能关闭第二因子。API 密钥永远不会通过它。但这并不能证明客户当前在键盘前：会话会保持验证状态直到其整个生命周期结束。因此，该路由也要求提供代码。`verifyTotp()` 对错误的代码解析 `false`，计入与登录相同的锁定次数，并且每个代码仅使用一次。
+- `@Authenticate()` 配合 `mfa: true` 是最基本的：没有它，仅凭被盗密码就可能关闭第二因素。API 密钥永远不会通过它。但这并不证明客户当前在键盘前：会话会保持验证状态直到其整个生命周期结束。因此，该路由也要求提供代码。`verifyTotp()` 会为错误的代码解析 `false`，计入与登录相同的锁定次数，并且每个代码只用一次。
 - `disable()` 会删除所有恢复代码以及身份验证器，并丢弃由 `replace` 暂存但从未确认的替换项。重新注册将从头开始，并获得新批次的恢复代码。
-- `disable()` 不动会话和令牌。客户的其他已验证会话将继续通过 `mfa: true` 路由，其刷新令牌家族也会如此，因为其 `amr` 在每次刷新时都会保留 `mfa`。该路由会终止它们，但保留当前浏览器的会话。已签发的访问令牌在过期前保持有效。通过 bearer 令牌发送的请求没有会话 ID 需要保留：所有会话都结束了，并且 `TokenService.revokeAll()` 也会使该客户端登出。
-- 仍在等待第二因子的会话无法完成验证，因为没有身份验证器可以检查代码。`revokeAll()` 会与其它会话一起终止它。
-- 尚未确认注册的客户没有已验证的会话，因此此路由会拒绝他们。要取消此类注册，请在没有该路由的情况下调用 `disable()`，同时 `isEnrolled()` 为 `false`，或者再次调用 `enroll()`。
+- `disable()` 不动会话和令牌。客户的其他已验证会话将继续通过 `mfa: true` 路由，其刷新令牌家族也会如此，因为其 `amr` 在每次刷新时都会保留 `mfa`。该路由会终止它们，但保留此浏览器的会话。已签发的访问令牌在过期前保持有效。通过携带者令牌发送的请求没有会话 ID 需要保留：每个会话都结束了，并且 `TokenService.revokeAll()` 也会使该客户端登出。
+- 仍在等待第二因素的会话无法完成它，因为没有身份验证器可以检查代码。`revokeAll()` 会与其它会话一起终止它。
+- 尚未确认注册的客户没有已验证的会话，因此此路由会拒绝他们。要取消此类注册，请在 `isEnrolled()` 为 `false` 的无此注册的路由中调用 `disable()`，或再次调用 `enroll()`。
 
 #### 添加“使用 Google 登录”
 
-> info **提示** 此部分使用会话 Cookie 为浏览器登录。对于使用 bearer 令牌的 API，即 Web 或移动应用程序从 Google 自身的登录库获取 ID 令牌，然后 API 将其交换为自己的 JWT，请遵循 [Add Google login to a Node.js API](/tutorials/google-login)。
+> info **提示** 此部分使用会话 Cookie 登录浏览器。对于使用携带者令牌的 API，其中 Web 或移动应用程序从 Google 自身的登录库获取 ID 令牌，然后 API 将其交换为自己的 JWT，请遵循 [Add Google login to a Node.js API](/tutorials/google-login)。
 
 在 Google Cloud 控制台中，创建一个类型为 **Web application** 的 OAuth 客户端 ID，并添加此授权重定向 URI（以及部署时的生产 URI）：
 
@@ -1435,7 +1435,7 @@ GOOGLE_CLIENT_SECRET=
 
 ```
 
-首次使用 Google 登录时，您的应用程序必须决定该 Google 账户属于哪个本地账户。将链接存储为 (provider, subject) 对，其中 subject 是 Google 为该账户的稳定 ID。电子邮件会改变；subject 不会。向仓储添加一个身份表：
+首次使用 Google 登录时，您的应用程序必须决定该 Google 账户属于哪个本地账户。将链接存储为 (提供者, 主题) 对，其中主题是 Google 为该账户的稳定 ID。电子邮件会改变；主题不会。向仓储添加一个身份表：
 
 ```typescript title="src/users/users.repository.ts"
 @Injectable()
@@ -1458,7 +1458,7 @@ export class UsersRepository {
 
 ```
 
-该包向一个 `OidcAccountResolver` 请求该决策：
+该包向 `OidcAccountResolver` 请求该决策：
 
 ```typescript title="src/auth/account-linker.ts"
 import { ConflictException, ForbiddenException, Injectable } from '@nestjs/common';
@@ -1519,14 +1519,14 @@ export class AccountLinker extends OidcAccountResolver {
 
 ```
 
-通过电子邮件关联需要双方验证地址：
+通过电子邮件关联需要双方都验证了地址：
 
 - **Google 必须已验证**（`profile.emailVerified`）。否则，任何人都可以使用客户的地址创建一个 Google 账户，并在商店接管其账户。返回 `null` 会以 403 拒绝登录。
-- **商店账户也必须已验证**（`existing.emailVerified`）。否则，有人可以先使用客户的地址和选择的密码注册，并在客户使用 Google 登录后保持访问权限。这称为账户预劫持。使用密码创建的账户在所有者打开 [verification link](/security/authentication#verify-email-addresses) 或 [resets the password](/security/authentication#reset-forgotten-passwords) 之前未经验证。在此之前，它会收到 403 错误，要求客户使用密码登录并从其账户连接 Google。
+- **商店账户也必须已验证**（`existing.emailVerified`）。否则，有人可以先使用客户的地址和自己选择的密码注册，并在客户使用 Google 登录后保持访问权限。这称为账户预劫持。使用密码创建的账户在所有者打开 [verification link](/security/authentication#verify-email-addresses) 或 [resets the password](/security/authentication#reset-forgotten-passwords) 之前未经验证。在此之前，它会收到一个 403 响应，要求客户使用密码登录并从其账户连接 Google。
 
-将 Google 连接到客户已登录的账户完全不需要电子邮件匹配。该包称之为链接流程：Web 应用程序的“使用 Google 登录”按钮指向 `GET /auth/oidc/google/login?link=true`。该包仅对完全已登录的会话启动它，而不是从其他网站的页面启动，后者会收到 403：链接会附加当前浏览器中已登录的任何 Google 账户。在回调时，它会检查同一会话是否仍然有效，然后使用 `linkTo`（已登录用户）调用 `resolveUser()`。解析器将 Google 账户链接到该用户，除非它已属于另一个客户。会话保持不变，浏览器被重定向到 `redirectTo`。
+将 Google 连接到客户已登录的账户完全不需要电子邮件匹配。该包称之为链接流程：Web 应用程序的“使用 Google 登录”按钮指向 `GET /auth/oidc/google/login?link=true`。该包仅对完全已登录的会话启动它，而不是从其他网站的页面启动，后者会收到 403：链接会附加当前浏览器中已登录的任何 Google 账户。在回调时，它会检查同一会话是否仍然有效，然后调用 `resolveUser()`，传入已登录用户 `linkTo`。解析器将 Google 账户链接到该用户，除非它已属于其他客户。会话保持不变，浏览器被重定向到 `redirectTo`。
 
-使用 `google()` 预设和 Google 发送回浏览器的 URL 启用 OpenID Connect。`:provider` 代表提供者的名称，因此一个回调路由服务于您添加的每个提供者：
+使用 `google()` 预设和 Google 将浏览器重定向回的 URL 启用 OpenID Connect。`:provider` 代表提供者的名称，因此一个回调路由服务于您添加的每个提供者：
 
 ```typescript title="src/app.module.ts"
 AuthenticationModule.forRootAsync({
@@ -1547,7 +1547,7 @@ AuthenticationModule.forRootAsync({
 
 ```
 
-路由归您所有，因此它们位于您的其他路由之下，在您的前缀、版本和节流设置中。`OidcService.start()` 构建重定向到 Google，`finish()` 处理回调；一个控制器暴露这两个：
+路由归您所有，因此它们与您的其他路由一起，位于您的前缀、版本和节流之下。`OidcService.start()` 构建到 Google 的重定向，而 `finish()` 处理回调；一个控制器暴露这两个：
 
 ```typescript title="src/auth/oidc.controller.ts"
 import { Controller, Get, Param, Query, Redirect } from '@nestjs/common';
@@ -1576,8 +1576,8 @@ export class OidcController {
 
 ```
 
-- `GET /auth/oidc/google/login?redirectTo=/orders` 将浏览器重定向到 Google。Web 应用程序的“使用 Google 登录”按钮是一个指向它的纯链接。`start()` 使用带 PKCE 的授权码流程，一个 `state` 和一个 `nonce`。登录交易存储在服务器端，位于 `state` 下，浏览器获得一个秘密，其 SHA-256 哈希是 `state`，存储在名为 `__Host-oidc_tx` 的 `HttpOnly` Cookie 中，有效期 10 分钟。
-- `GET /auth/oidc/google/callback` 是 Google 将浏览器重定向回来的地方。`finish()` 检查查询中的 `state` 是否是浏览器 Cookie 中秘密的哈希值（这样即使从日志或浏览器历史记录中读取回调 URL，也无法完成未在当前浏览器中开始的登录），交换代码，根据 Google 公布的密钥验证 ID 令牌的签名，并检查其发行者、受众、过期时间和 nonce。如果无法访问 Google 或返回的端点不是 https，则响应是 502，而不是 401。然后它调用 `resolveUser()`，通过 `SignInService` 为用户登录（这样拥有身份验证器的客户会获得一个待定会话），并返回重定向到 `redirectTo` 或 `/`。仅接受相对路径作为 `redirectTo`，因此登录不能变成开放重定向。
+- `GET /auth/oidc/google/login?redirectTo=/orders` 将浏览器重定向到 Google。Web 应用程序的“使用 Google 登录”按钮是一个指向它的纯链接。`start()` 使用带 PKCE 的授权码流程，一个 `state` 和一个 `nonce`。登录交易存储在服务器端，位于 `state` 下，浏览器获得一个秘密，其 SHA-256 哈希是 `state`，存储在一个名为 `__Host-oidc_tx` 的 `HttpOnly` Cookie 中，有效期 10 分钟。
+- `GET /auth/oidc/google/callback` 是 Google 将浏览器重定向回来的地方。`finish()` 检查查询中的 `state` 是否是浏览器 Cookie 中秘密的哈希值（因此，即使从日志或浏览器历史记录中读取回调 URL，也无法完成未在该浏览器中开始的登录），交换代码，验证 ID 令牌的签名是否与 Google 公布的密钥匹配，并检查其发行者、受众、过期时间和 nonce。如果无法到达 Google 或返回的端点不是 https，则响应是 502，而不是 401。然后它调用 `resolveUser()`，通过 `SignInService` 为用户登录（因此拥有身份验证器的客户会获得一个待定会话），并返回重定向到 `redirectTo` 或 `/`。仅接受相对路径作为 `redirectTo`，因此登录不能变成开放重定向。
 - 两者都通过 Nest 的 HTTP 适配器读取请求并设置其 Cookie，并返回 `@Redirect()` 所期望的内容，因此控制器在 Express 和 Fastify 上都能工作，而无需 `@Req()` 或 `@Res()`。
 
 在 `AuthModule` 中注册控制器和解析器：
@@ -1596,9 +1596,9 @@ providers: [
 
 ```
 
-`github()` 预设也以相同方式工作。`microsoft()` 还将您目录的租户 ID 作为其 `tenant` 选项，与 `clientId` 和 `clientSecret` 并列：来自 Microsoft Entra 管理中心概览页的 GUID，例如 `process.env.ENTRA_TENANT_ID`。域名或多租户 `common`、`organizations` 和 `consumers` 在启动时会失败：对于这些情况，Microsoft 会发布一个与请求的不同的发行者，因此每次登录都会失败。将它们添加到 `google` 中的 `providers`，并使用名称替换 `google` 将回调 URL 注册到每一个中。
+`github()` 预设也以相同的方式工作。`microsoft()` 还将您目录的租户 id 作为其 `tenant` 选项，与 `clientId` 和 `clientSecret` 并列：来自 Microsoft Entra 管理中心概述页的 GUID，例如 `process.env.ENTRA_TENANT_ID`。域名或多租户 `common`、`organizations` 和 `consumers` 在启动时会失败：对于这些情况，Microsoft 会发布一个与请求的不同的发行者，因此每次登录都会失败。将它们添加到 `google` 中的 `providers`，并使用其名称替换 `google`，将回调 URL 注册到每一个中。
 
-在多个域名下提供服务的应用程序，例如每个客户一个域名，无法指定单个回调 URL：在一个域名上开始的登录必须返回到该域名。请将请求的函数作为 `callbackUrl` 传递。`start()` 在登录时调用它，`finish()` 在回调时再次调用它，因此必须为两者返回相同的 URL。请将主机与您自己的域名列表进行比较，而不是信任头部，并为它可能返回的每个 URL 注册到每个提供者：
+在多个域名下提供服务的应用程序，例如每个客户一个域名，无法指定单个回调 URL：在一个域名上开始的登录必须返回到该域名。请将请求的函数作为 `callbackUrl` 传递。`start()` 在登录时调用它，`finish()` 在回调时再次调用它，因此必须为两者返回相同的 URL。请将主机与您自己的域名列表进行比较，而不是信任头部，并使用每个提供者注册它可以返回的每个 URL：
 
 ```typescript title="src/app.module.ts"
 oidc: {
@@ -1616,9 +1616,9 @@ oidc: {
 
 ```
 
-该函数也可以是 `async`，用于在您的数据库中查找域名。它抛出的任何内容都是登录的答案，例如上面针对应用程序未服务的域的 404，以及一个非绝对 URL 会因一个命名该函数的错误而导致登录失败。`__Host-oidc_tx` Cookie 属于设置它的域名，因此登录在开始的域名上完成。如果该函数在回调时返回了另一个 URL，提供者将拒绝代码，回调将收到 401。在重写主机的代理后面，请读取它转发的头部，例如 `X-Forwarded-Host`，并且仅来自您信任的代理。
+该函数也可以是 `async`，以便在您的数据库中查找域名。它抛出的任何内容都是登录的答案，例如上面针对应用程序不服务的域的 404，以及一个非绝对 URL 会因名称该函数的错误而导致登录失败。`__Host-oidc_tx` cookie 属于设置它的域名，因此登录在开始的域名上完成。如果该函数在回调时返回了另一个 URL，提供者将拒绝代码，回调将收到 401。在重写主机的代理后面，请读取它转发的头部，例如 `X-Forwarded-Host`，并且仅来自您信任的代理。
 
-有些应用程序仅在运行时了解其提供者。销售给企业的应用程序可能为每个客户提供自己的 OIDC 客户端，或者允许他们带来自己的身份提供者，该提供者通过管理页面设置并在您的数据库中存储。请将提供者名称的函数作为 `providers` 传递。`start()` 在登录时调用它，`finish()` 在回调时再次调用它。返回提供者的配置，或者对于您不服务的名称返回 `undefined`，这将返回 404：
+有些应用程序仅在运行时了解其提供者。销售给企业的应用程序可能为每个客户提供自己的 OIDC 客户端，或者允许他们使用从管理页面设置并存储在您数据库中的自己的身份提供者。请将提供者名称的函数作为 `providers` 传递。`start()` 在登录时调用它，`finish()` 在回调时再次调用它。返回提供者的配置，或者对于您不服务的名称返回 `undefined`，这将返回 404：
 
 ```typescript title="src/app.module.ts"
 AuthenticationModule.forRootAsync({
@@ -1639,16 +1639,16 @@ AuthenticationModule.forRootAsync({
 
 ```
 
-配置是在回调时再次查找的，而不是与登录一起存储的，因此即使在正在进行的登录中，也会使用您在数据库中轮换的密钥从下一次调用开始使用。该函数返回的每个配置都会经过对象形式在启动时获得的检查：缺少 `clientId` 或缺少 `clientSecret`，除非其 `tokenEndpointAuthMethod` 是 `'none'`，否则会因一个命名该函数的错误而导致登录失败。该函数在每次登录和回调时运行，因此如果查找缓慢，请进行缓存。该包按发行者缓存每个提供者的发现文档和密钥，因此通过同一提供者登录的客户会共享它们。
+配置在回调时再次查找，而不是与登录一起存储，因此即使在登录进行中，也会使用您在数据库中轮换的密钥从下一次调用开始使用。该函数返回的每个配置都会经过启动时对象形式所经过的检查：没有 `clientId` 的配置，或者没有 `clientSecret` 的配置，除非其 `tokenEndpointAuthMethod` 是 `'none'`，否则将因名称该函数的错误而导致登录失败。该函数在每次登录和回调时运行，因此如果查找缓慢，请进行缓存。该包按发行者缓存每个提供者的发现文档和密钥，因此通过同一提供者登录的客户会共享它们。
 
-身份通过 (提供者, 主体) 关联，提供者是名称，因此每个名称必须代表一个提供者的一个客户端。请像上面 `acme` 那样在名称中放入客户信息，而不是为每个客户的提供者使用一个名称，例如 `okta`：两个客户的提供者可以提供相同的主体。当客户带来自己的身份提供者时，还有两点变化：
+身份通过 (提供者, subject) 关联，提供者是名称，因此每个名称必须代表一个提供者的一个客户端。请像上面的 `acme` 那样在名称中放入客户信息，而不是为每个客户的提供者使用一个名称，例如 `okta`：两个客户的提供者可以提供相同的 subject。当客户带来自己的身份提供者时，另外两件事发生了变化：
 
-- **其提供者会认可其喜欢的任何地址。** 它可以将任何地址标记为已验证，包括另一个客户用户的地址。上述解析器通过已验证的电子邮件链接账户。对于客户控制的提供者，仅按电子邮件链接到该客户自己的账户，或者不链接。
-- **发行者是用户输入。** 该包从配置命名的 URL 获取发现文档、密钥和令牌，没有任何请求会离开您自己的网络。在存储之前，请将客户输入的发行者与您支持的提供者进行检查。
+- **他们的提供者会验证任何它喜欢的地址。** 它可以将任何地址标记为已验证，包括另一个客户用户的地址。上述解析器通过已验证的电子邮件链接账户。对于客户控制的提供者，仅按电子邮件链接到该客户自己的账户，或者不链接。
+- **发行者是用户输入。** 该包从配置名称的 URL 获取发现文档、密钥和令牌，没有任何内容会阻止这些请求离开您自己的网络。在存储之前，请将客户输入的发行者与您支持的提供者进行检查。
 
 #### 添加魔术链接登录
 
-魔术链接允许客户从收件箱登录，无需密码。该包创建和检查链接；交付取决于您，通过 `MagicLinkHandler`。存储会像验证链接一样通过电子邮件发送给他们，使用自己的模板和邮件类：
+魔术链接允许客户从收件箱登录，无需密码。该包创建和检查链接；交付取决于您，通过 `MagicLinkHandler`。存储会像验证链接一样通过模板和自己的邮件类将它们通过电子邮件发送：
 
 ```html
 <p><a href="{{ url }}">Sign in to the store</a></p>
@@ -1707,7 +1707,7 @@ export class MagicLinkMailer extends MagicLinkHandler {
 
 ```
 
-启用魔术链接：在 `AuthModule` 中的处理程序，以及选项中链接指向的 URL：
+启用魔术链接：`AuthModule` 中的处理程序，以及链接指向的选项中的 URL：
 
 ```typescript title="src/auth/auth.module.ts"
 providers: [
@@ -1728,9 +1728,9 @@ AuthenticationModule.forRootAsync({
 
 ```
 
-`MagicLinkService.create()` 生成一个随机的 256 位令牌，有效期 15 分钟，只能使用一次，并将链接传递给您的处理程序。它存储令牌的 SHA-256 哈希值，该哈希值与仅此浏览器交易 Cookie 持有的密钥（见下文）结合，因此从日志中读取或转发的链接不会找到任何内容，即使使用了伪造的 Cookie。使用 `bindToBrowser: false` 时，它只存储令牌的哈希值。该令牌作为 `token` 查询参数添加到 URL 中，否则您的代码永远不会看到它。
+`MagicLinkService.create()` 生成一个随机的 256 位令牌，有效期为 15 分钟，可使用一次，并将链接传递给您的处理程序。它存储令牌的 SHA-256 哈希值，该哈希值与仅此浏览器交易 cookie 持有的密钥结合（见下文），因此从日志中读取或转发的链接不会找到任何内容，即使使用了伪造的 cookie。使用 `bindToBrowser: false` 时，它仅存储令牌的哈希值。该令牌作为 `token` 查询参数添加到 URL 中，否则您的代码永远不会看到它。
 
-将链接指向您 Web 应用的页面，而不是 API。该页面从其 URL 读取令牌并将其 POST 回去。邮件扫描器和链接预览会使用 GET 请求跟踪邮件中的链接，从而在客户点击之前用完令牌。该页面必须与 API 在同一站点：请求链接会设置一个 Cookie，浏览器会随令牌将其传回。
+将链接指向您 Web 应用的页面，而不是 API。该页面从其 URL 读取令牌并将其 POST 回去。电子邮件扫描器和链接预览会使用 GET 请求跟踪电子邮件中的链接，从而在客户点击之前用完令牌。该页面必须与 API 位于同一站点：请求链接会设置一个 Cookie，浏览器会随令牌将其传回。
 
 ```typescript title="src/auth/magic-link.controller.ts"
 import { Body, Controller, HttpCode, Post, UnauthorizedException } from '@nestjs/common';
@@ -1764,11 +1764,11 @@ export class MagicLinkController {
 
 ```
 
-- 请求路由会返回 202，无论地址是否有账户，账户仅在链接被使用后才创建。从其他站点页面发出的请求会收到 403，类似于登录：否则该页面可以为链接到其作者地址设置此浏览器的交易 Cookie，然后让客户打开它（登录 CSRF）。
-- `consume()` 消耗令牌，调用 `resolveUser()`，并通过 `SignInService` 为用户登录，后者设置了 Cookie，因此仍然适用双因素认证。`resolveUser()` 返回带有其存储的 `email` 的账户，并且只有当链接发送到的地址与该地址匹配（经过修剪、小写化和 Unicode NFC 比较）时，链接才会登录该账户。忽略重音或点的查找（如 MySQL 的默认排序规则）不能将一个邮箱分配给另一个客户的账户：`consume()` 返回 `null`。
-- 链接仅在请求它的浏览器中有效。`create()` 设置一个交易 Cookie，`__Host-magic_link_tx`，`consume()` 在查找任何内容之前拒绝没有该 Cookie 的令牌：它抛出一个 `MagicLinkError`，模块以 401 响应，其 `error` 是 `not_this_browser`，消息告知客户在请求它的浏览器中打开最新链接，或在此处请求新链接。否则，任何人都可以请求其自己的地址的链接，并让客户打开它，这将使客户的浏览器登录到攻击者的账户（登录 CSRF）。被拒绝的链接在请求它的浏览器中保持有效，并且响应不会透露任何关于令牌的信息，因为伪造的令牌也会得到相同的响应。该 Cookie 保留了浏览器请求的最近五个链接，因此点击“重新发送”然后打开第一封邮件的客户仍然已登录；早于这五个的链接将获得相同的 401。因此，在笔记本电脑上请求链接并在手机上打开邮件的客户将被告知在笔记本电脑上打开，或在手机上请求新链接，然后该链接在手机上有效；一个更希望链接本身在手机上生效的应用程序将在 `magicLink` 选项中设置 `bindToBrowser: false`。未知的、已使用和已过期的链接，以及处理程序拒绝的地址，都会获得控制器的一个通用响应：`consume()` 对所有这些返回 `null`，只有 `magic-link-refused` 事件会说明是哪一个。
-- 使用链接证明了地址，因此由链接创建的账户已验证。使用密码创建的账户不同，但其地址未经验证：链接证明了谁现在拥有该地址，而不是谁选择了密码，因此处理程序会以 403 拒绝它，而不是将其预先劫持的账户交给其所有者。一旦所有者使用了 [verification link](/security/authentication#verify-email-addresses) 或 [reset the password](/security/authentication#reset-forgotten-passwords)，魔术链接对该账户也有效。
-- `redirectTo` 仅在是相对路径（例如 `/orders`）时才能在往返中存活。
+- 请求路由会返回 202，无论地址是否有账户，账户仅在链接被使用后创建。从其他站点页面发出的请求会收到 403，就像登录一样：否则该页面可以为链接到其作者地址设置此浏览器的交易 Cookie，然后诱导客户打开它（登录 CSRF）。
+- `consume()` 消耗令牌，调用 `resolveUser()`，并通过 `SignInService` 为用户登录，后者设置了 Cookie，因此仍然适用双因素认证。`resolveUser()` 返回带有其存储的 `email` 的账户，并且只有当链接发送到的地址与账户地址（经过修剪、小写化和 Unicode NFC 比较）相同时，链接才会登录该账户。忽略重音或点的查找（如 MySQL 的默认排序规则）不能将一个邮箱分配给另一个客户的账户：`consume()` 返回 `null`。
+- 链接仅在发起请求的浏览器中有效。`create()` 设置一个交易 Cookie，`__Host-magic_link_tx`，`consume()` 在查找任何内容之前拒绝没有该 Cookie 的令牌：它抛出一个 `MagicLinkError`，模块以 401 响应，其 `error` 为 `not_this_browser`，消息告知客户在发起请求的浏览器中打开最新链接，或在此处请求新链接。否则，任何人都可以请求自己地址的链接，并诱导客户打开它，这将使客户的浏览器登录到攻击者的账户（登录 CSRF）。被拒绝的链接在发起请求的浏览器中保持有效，并且响应不会透露任何关于令牌的信息，因为伪造的令牌也会得到相同的响应。该 Cookie 会保留浏览器请求的最近五个链接，因此点击“重新发送”然后打开第一封电子邮件的客户仍然处于登录状态；早于这五个的链接将获得相同的 401。因此，在笔记本电脑上请求链接并在手机上打开电子邮件的客户会被告知在笔记本电脑上打开，或在手机上请求新链接，然后该链接在手机上有效；一个更希望链接本身在手机上生效的应用程序会在 `magicLink` 选项中设置 `bindToBrowser: false`。未知的、已使用和已过期的链接，以及处理程序拒绝的地址，都会获得控制器的一个通用响应：`consume()` 对所有这些都返回 `null`，只有 `magic-link-refused` 事件会说明是哪一个。
+- 使用链接证明了地址，因此由链接创建的账户是已验证的。使用密码创建的账户不同，因为其地址未经验证：链接证明了谁现在拥有该地址，而不是谁选择了密码，因此处理程序会以 403 拒绝它，而不是将其预先劫持的账户交给所有者。一旦所有者使用了 [verification link](/security/authentication#verify-email-addresses) 或 [reset the password](/security/authentication#reset-forgotten-passwords)，魔术链接对该账户也有效。
+- `redirectTo` 仅在是相对路径（例如 `/orders`）时才能在往返过程中保持有效。
 
 使用 Zod 模式：
 
@@ -1796,7 +1796,7 @@ controllers: [
 
 #### 让客户管理会话
 
-会话存储在服务器上，因此客户可以看到他们登录了哪里，并结束任何会话。为了区分这些会话，请记录每个会话所属的浏览器。`session.metadata` 在客户使用密码、Google 或魔术链接登录时运行，其返回值与新会话一起存储：
+会话存储在服务器上，因此客户可以看到他们登录的位置并结束任何这些会话。为了区分这些会话，请记录每个会话所属的浏览器。`session.metadata` 在客户使用密码、Google 或魔术链接登录时运行，其返回值与新会话一起存储：
 
 ```typescript title="src/app.module.ts"
 AuthenticationModule.forRootAsync({
@@ -1874,11 +1874,11 @@ export class SessionsController {
 
 ```
 
-- 会话 ID 是 Cookie 令牌的 SHA-256 哈希值。将其显示给所有者是安全的，因为不能从一个 Cookie 推导出另一个。`revoke()` 接收用户和 ID，并且只结束属于他们的会话，因此 URL 中的 ID 不能结束另一个客户的会话。
-- `sign-out` 是 `@Public()`，类似于 [two-factor authentication](/security/authentication#add-two-factor-authentication) 中的 `verify`，因此从未完成第二因子的客户仍可以注销。`signOut()` 在此浏览器 Cookie 中结束会话并清除 Cookie。如果没有会话，它返回 `false`，并且路由返回 401：这里的 bearer 令牌不会注销任何内容。
-- `signOutEverywhere()` 结束所有会话，并在应用程序颁发时，结束用户的每个刷新令牌，并清除此浏览器的 Cookie。已颁发的访问令牌在过期前保持有效，这就是它们只持续 15 分钟的原因。
+- 会话 ID 是 Cookie 令牌的 SHA-256 哈希。向所有者显示它们是安全的，因为不能从一个 Cookie 推导出另一个。`revoke()` 接收用户和 ID，并且只结束属于他们的会话，因此 URL 中的 ID 不能结束另一个客户的会话。
+- `sign-out` 是 `@Public()`，类似于 [two-factor authentication](/security/authentication#add-two-factor-authentication) 中的 `verify`，因此从未完成第二因子的客户仍然可以注销。`signOut()` 在此浏览器 Cookie 中结束会话并清除 Cookie。如果没有会话，它返回 `false`，并且路由返回 401：这里的 bearer 令牌无法注销任何内容。
+- `signOutEverywhere()` 结束所有会话，并在应用程序颁发它们时，结束用户的每个刷新令牌，并清除此浏览器的 Cookie。已颁发的访问令牌在过期前保持有效，这就是它们只持续 15 分钟的原因。
 
-移动应用通过撤销其刷新令牌注销一个设备。向 `TokensController` 添加一个路由。`TokenService.revoke()` 结束令牌的家族：令牌、其前驱和其后继：
+移动应用程序通过撤销其刷新令牌注销一个设备。向 `TokensController` 添加一个路由。`TokenService.revoke()` 结束令牌的家族：令牌、其前驱和其后继：
 
 ```typescript title="src/auth/tokens.controller.ts"
 // Signs the mobile app out on this device. Unknown tokens get the same
@@ -1938,7 +1938,7 @@ export class AuthModule {}
 
 ```
 
-每当权限发生变化时（例如密码更改或客户成为工作人员后），都轮换会话：`SignInService.rotateSession()` 为此浏览器的会话分配一个新 ID 并设置新 Cookie；`completeMfa()` 已经执行此操作。当浏览器没有会话或在此期间丢失会话时，它解析 `null`，并且不设置 Cookie：全局注销、密码重置或先轮换的另一个请求。
+每当权限发生变化时（例如密码更改或客户成为员工后），都应轮换会话：`SignInService.rotateSession()` 为此浏览器的会话分配一个新的 ID 并设置新 Cookie；`completeMfa()` 已经执行此操作。当浏览器没有会话或在此期间丢失会话时，它解析 `null`，并且不设置 Cookie：全局注销、密码重置或先轮换的另一个请求。
 
 #### 速率限制登录
 
@@ -1949,7 +1949,7 @@ $ npm i --save @nestjs/throttler
 
 ```
 
-仅按 IP 地址限制是不够精细的，因为同一网络地址后的客户会共享该限制，因此无法设置足够低的限制来阻止一个客户端猜测一个账户。请使用两个 [throttler definitions](/security/rate-limiting#多重限流器定义)；每个请求都计入两者。`default` 按 IP 地址在每个路由上计数。`account` 按电子邮件和 IP 地址在请求体中指定账户的任何位置计数：
+仅按 IP 地址限制是不够精细的，因为同一网络地址后的客户会共享该限制，因此无法设置足够低的限制来阻止一个客户端猜测一个账户。使用两个 [throttler definitions](/security/rate-limiting#多重限流器定义)；每个请求都计入两者。`default` 按 IP 地址在每个路由上计数。`account` 按电子邮件和 IP 地址在请求体中指定账户的任何位置计数：
 
 ```typescript title="src/auth/account-email.ts"
 /** The address the request body names, trimmed, lowercased and in Unicode NFC, or `''`. */
@@ -1993,9 +1993,9 @@ export class AppModule {}
 
 ```
 
-该守卫在验证之前运行，因此 `accountEmail()` 检查 `email` 是否为字符串。`normalizeIp()` 按其 `/64` 前缀分组 IPv6 地址，就像节流器自身的跟踪器所做的那样，这样客户端就不能为其子网中的每个地址获得一个新的计数器。
+守卫在验证之前运行，因此 `accountEmail()` 检查 `email` 是否为字符串。`normalizeIp()` 按其 `/64` 前缀分组 IPv6 地址，就像节流器自身的跟踪器所做的那样，这样客户端就不能为其子网中的每个地址获得一个新的计数器。
 
-该守卫在根模块中注册，因此它在认证守卫之前运行。全局守卫按模块顺序运行，根模块排在最前面。这意味着猜测的 bearer token 也会计入限制，而不仅仅是返回 401 错误。
+守卫在根模块中注册，因此它在认证守卫之前运行。全局守卫按模块顺序运行，根模块排在最前面。这意味着猜测的 bearer token 也会计入限制，而不仅仅是返回 401 错误。
 
 最后，收紧检查密码或发送电子邮件的路由的限制。每个 `@Throttle()` 按路由计数，并设置两个限制：按 IP 地址和按账户：
 
@@ -2044,23 +2044,23 @@ import { accountEmail } from './account-email.js';
 
 ```
 
-`Throttle`、`SkipThrottle`、`minutes` 和 `hours` 从 `@nestjs/throttler` 导入。按 IP 地址的限制是一个判断，因为办公室和移动运营商会将许多客户置于一个地址后。`account` 限制适用于请求体包含 `email` 的每个路由，限制为每 15 分钟 5 个请求，除非该路由设置了自己的限制；`@SkipThrottle({ account: true })` 会排除某个路由。
+`Throttle`、`SkipThrottle`、`minutes` 和 `hours` 从 `@nestjs/throttler` 导入。按 IP 地址的限制是一个判断，因为办公室和移动运营商会将许多客户置于一个地址后。`account` 限制适用于请求体包含 `email` 的每个路由，限制为每 15 分钟 5 个请求，除非该路由设置了自己的限制；`@SkipThrottle({ account: true })` 会排除一个路由。
 
-- `forgot` 按地址计数，无论 IP 地址如何，这样任何人都不能从一个 IP 地址或多个 IP 地址向客户的收件箱中填充重置链接。消耗该限制的人只会延迟客户自己的请求：他们引起的链接已发送到客户，任何一个都有效。
-- 魔术链接请求将电子邮件和 IP 地址绑定在一起。链接仅在请求它的浏览器中有效，因此仅按地址的限制会允许任何人从自己的浏览器使用客户的链接，从而阻止客户登录。
-- 注册时会为新地址命名，因此会跳过 `account` 限制，而按 IP 地址的限制会起到作用。否则，几次密码验证失败的客户将被拒绝。
+- `forgot` 按地址计数，无论 IP 地址如何，因此没有人可以从一个 IP 地址或多个 IP 地址向客户的收件箱中填充重置链接。消耗该限制的人只会延迟客户自己的请求：他们引起的链接已发送给客户，任何一个都有效。
+- 魔术链接请求将电子邮件和 IP 地址保持在一起。链接仅在请求它的浏览器中有效，因此仅按地址的限制会允许任何人从自己的浏览器中使用客户的链接，从而阻止客户登录。
+- 注册时会为每次指定一个新的地址，因此它会跳过 `account` 限制，而按 IP 地址的限制会完成工作。否则，几次密码验证失败的客户将被拒绝。
 
-双因素代码不需要单独的节流：该包在任何 IP 地址、路由或传输中，在 5 次失败后锁定账户代码。`POST /auth/password/reset` 也是如此：猜测的 token 消耗一次查找，而其组合有 2^256 种。
+双因素代码不需要单独的节流：该包在任何 IP 地址、路由或传输中，在 5 次失败后锁定账户的代码。`POST /auth/password/reset` 也是如此：猜测的 token 消耗一次查找，而它们的数量是 2^256。
 
-> info **提示** 在负载均衡器或反向代理后，每个请求似乎都来自代理。启用 `trust proxy`，如节流器 [Proxies](/security/rate-limiting#代理) 部分所述，以便跟踪器可以看到客户端地址。
+> info **提示** 在负载均衡器或反向代理后，每个请求似乎都来自代理。启用 `trust proxy`，如节流器的 [Proxies](/security/rate-limiting#代理) 部分所述，以便跟踪器看到客户端地址。
 
 #### 将会话和 token 保存在数据库中
 
-该包存储的所有内容到目前为止都存在于内存中：会话、刷新令牌、认证器和恢复代码，以及待处理的链接和登录。重启时会丢失，并且 API 的第二个实例看不到它。该包本身不与您的数据库通信。它描述了其存储的内容为六个接口：`SessionStore`、`RefreshTokenStore`、`MfaStore`、`MagicLinkStore`、`OidcStateStore` 和 `EmailTokenStore`，您的应用程序使用已有的数据库访问来实现它们，然后注册该实现。
+该包存储的所有内容到目前为止都存储在内存中：会话、刷新令牌、认证器和恢复代码，以及待处理的链接和登录。重启后会丢失，并且 API 的第二个实例看不到它。该包本身不与您的数据库通信。它描述了其存储的内容为六个接口：`SessionStore`、`RefreshTokenStore`、`MfaStore`、`MagicLinkStore`、`OidcStateStore` 和 `EmailTokenStore`，您的应用程序使用已有的数据库访问来实现它们，然后注册该实现。
 
-此步骤展示了两次实现，用于该系列教程使用的两个 ORM：首先是 Drizzle（教程的路径），然后在步骤末尾的“使用 TypeORM”下，为 ORM 是 TypeORM 的应用程序使用相同的存储。选择其中一个。
+此步骤展示了两次实现，对应于该系列教程使用的两个 ORM：首先是 Drizzle（教程的路径），然后在步骤末尾的“使用 TypeORM”下，是针对 ORM 为 TypeORM 的应用程序的相同存储。选择其中一个。
 
-该存储使用 Drizzle 通过 [`@nestjs/drizzle`](https://docs.nestjs.com/data/drizzle) 与 PostgreSQL 配合使用，此步骤假设您的应用程序已具备此功能。`DrizzleModule` 从数据库 URL 打开一个 `pg` 池并提供 Drizzle 数据库，并在应用程序关闭时关闭该池，前提是该包已完成其仍在进行中的工作（例如，一个重置链接正在发送中）。将 URL 添加到 `.env`，并在 `AppModule` 中注册模块：
+该存储使用 Drizzle 通过 [`@nestjs/drizzle`](https://docs.nestjs.com/data/drizzle) 与 PostgreSQL 配合使用，此步骤假设您的应用程序已具备此条件。`DrizzleModule` 从数据库 URL 打开一个 `pg` 池并提供 Drizzle 数据库，并在应用程序关闭时关闭该池，此时该包已完成所有挂起的工作（例如，一个重置链接正在发送中）。将 URL 添加到 `.env`，并在 `AppModule` 中注册模块：
 
 ```bash
 DATABASE_URL=postgres://localhost:5432/store
@@ -2211,8 +2211,8 @@ export const emailTokens = pgTable(
 
 ```
 
-- 会话、令牌和链接以 Cookie 和电子邮件值的 SHA-256 哈希形式存储；TOTP 密钥以您的密钥加密到达（参见 [two-factor authentication](/security/authentication#add-two-factor-authentication)）；恢复代码以 scrypt 哈希到达。这些表中的任何内容都不能被重放。
-- `revoked` 位于每个刷新令牌上，而不是在家族表中：当其任何令牌被撤销时，该家族即被视为已撤销。这涵盖了在撤销后通过丢失竞速的刷新保存的令牌。
+- 会话、令牌和链接以 Cookie 和电子邮件值的 SHA-256 哈希形式存储；TOTP 密钥以您的密钥加密到达（参见 [two-factor authentication](/security/authentication#add-two-factor-authentication)）；恢复代码以 scrypt 哈希形式到达。这些表中的任何内容都不能被重放。
+- `revoked` 存在于每个刷新令牌上，而不是在家族表中：当其任何令牌被撤销时，该家族即被视为已撤销。这涵盖了在撤销后通过丢失竞速的刷新保存的令牌。
 
 从模式生成迁移，并应用它：
 
@@ -2239,7 +2239,7 @@ Using 'pg' driver for database querying
 
 ```
 
-现在是存储。它像任何其他提供者一样：它注入 Drizzle 数据库，使用 Drizzle 的查询构建器实现六个接口，并通过其构造函数向该包的 `AuthenticationStorage` 注册自身：
+现在是存储。它是一个像其他任何一样提供者：它注入 Drizzle 数据库，使用 Drizzle 的查询构建器实现六个接口，并通过其构造函数将其注册到该包的 `AuthenticationStorage`：
 
 ```typescript title="src/auth/drizzle-authentication.store.ts"
 import { Injectable } from '@nestjs/common';
@@ -2260,7 +2260,7 @@ import {
   type TotpRecord,
 } from '@nestjs/authentication';
 import { InjectDrizzle } from '@nestjs/drizzle';
-import { and, desc, eq, gt, isNull, lt, lte, or, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNull, lt, lte, or, sql, type SQL } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import {
   emailTokens,
@@ -2348,7 +2348,15 @@ export class DrizzleAuthenticationStore
 
   async saveRefreshToken(record: RefreshTokenRecord): Promise<void> {
     await this.db.insert(refreshTokens).values(record);
-    await this.db.delete(refreshTokens).where(lte(refreshTokens.familyExpiresAt, record.createdAt));
+    // Locked in id order, like the revocations: otherwise revoking an expired family, which
+    // this deletes, can deadlock with it.
+    const expired = this.db
+      .select({ id: refreshTokens.id })
+      .from(refreshTokens)
+      .where(lte(refreshTokens.familyExpiresAt, record.createdAt))
+      .orderBy(refreshTokens.id)
+      .for('update');
+    await this.db.delete(refreshTokens).where(inArray(refreshTokens.id, expired));
   }
 
   async markRefreshTokenUsed(id: string, at: Date): Promise<boolean> {
@@ -2362,7 +2370,7 @@ export class DrizzleAuthenticationStore
   }
 
   async revokeRefreshTokenFamily(familyId: string): Promise<void> {
-    await this.db.update(refreshTokens).set({ revoked: true }).where(eq(refreshTokens.familyId, familyId));
+    await this.revokeRefreshTokens(eq(refreshTokens.familyId, familyId));
   }
 
   async isRefreshTokenFamilyRevoked(familyId: string): Promise<boolean> {
@@ -2375,7 +2383,17 @@ export class DrizzleAuthenticationStore
   }
 
   async revokeUserRefreshTokens(userId: string): Promise<void> {
-    await this.db.update(refreshTokens).set({ revoked: true }).where(eq(refreshTokens.userId, userId));
+    await this.revokeRefreshTokens(eq(refreshTokens.userId, userId));
+  }
+
+  /**
+   * Locks the rows in id order before updating them. Parallel refreshes of a reused token each
+   * revoke the family, and two multi-row UPDATEs that lock the same rows in different orders
+   * deadlock: the loser would answer with a 500 instead of a 401.
+   */
+  private async revokeRefreshTokens(rows: SQL): Promise<void> {
+    const locked = this.db.select({ id: refreshTokens.id }).from(refreshTokens).where(rows).orderBy(refreshTokens.id).for('update');
+    await this.db.update(refreshTokens).set({ revoked: true }).where(inArray(refreshTokens.id, locked));
   }
 
   // Authenticators, recovery codes and failed attempts
@@ -2536,7 +2554,7 @@ function withoutNulls<T extends object>(row: T): WithoutNulls<T> {
 
 ```
 
-将其添加到 `AuthModule` 的提供者中，就像凭证提供者和处理器一样。在构造函数中注册就足够了：Nest 在启动时创建提供者，在第一个请求之前。
+将其添加到 `AuthModule` 的提供者中，就像凭证提供者和处理程序一样。在构造函数中注册就足够了：Nest 在启动时，在第一个请求之前创建该提供者。
 
 ```typescript title="src/auth/auth.module.ts"
 import { DrizzleAuthenticationStore } from './drizzle-authentication.store.js';
@@ -2557,14 +2575,14 @@ LOG [AuthenticationModule] AuthenticationStorage: DrizzleAuthenticationStore
 
 ```
 
-- **一个提供者或多个。** `registerSource()` 按名称接收接口，因此一个类可以实现所有六个，如此处所示，或者多个类可以拆分它们：一个 `RedisSessionStore` 注册 `sessions`，而该类注册其余五个。对同一名称的第二个存储在启动时失败，并命名这两个类。
-- **某些方法必须是单个语句。** 决定某事只执行一次的逻辑是一个单一的条件语句，绝不是先读取后写入。`touchSession()` 只更新仍然存在的会话，因此一个请求与登出竞争时不会恢复会话。`deleteSession()` 解析是否删除了行，因此对于一个会话的两次轮换，或一次轮换和一次登出，恰好有一个获胜。`markRefreshTokenUsed()`、`claimTotpStep()` 和 `consumeRecoveryCode()` 计数它们更改的行，这三个 `consume` 方法是一个 `DELETE … RETURNING`。`saveTotp()` 与 `greatest()` 保留更大的时间步长，这是存储手动写入 SQL 的唯一地方。`recordMfaFailure()` 先插入后计数，不在事务中，因此并行猜测的突发无法全部看到低计数。存储接口的每个方法都在其文档注释中说明了其规则以及它防止的竞争。
-- **记录活动是尽力而为的。** 如果 `touchSession()` 失败（锁超时、只读副本），请求和登出仍然成功。会话被保留，`lastActiveAt` 不移动，除非后续请求记录活动，否则会话在之前的截止日期时处于空闲状态。每次失败都会发出一个 `session-touch-failed` 事件；日志在失败开始时记录一个警告，在持续期间不记录任何内容，在下一次成功触达时记录一行及其计数。
-- **表保持有界。** 任何人都可以请求一个魔术链接或重置链接，因此每次保存都会删除已过期的记录，并且在表中超过 100,000 条待处理记录时，先过期的记录会被删除。已过期的会话和刷新令牌家族会在写入新记录时被清除。
-- **密码重置和电子邮件验证保持不变地工作。** 它们的链接现在是 `email_tokens` 中的行，并且它们的邮件发送仍然通过 `@nestjs/mail` 发送。
-- **生产环境拒绝内存。** 当 `NODE_ENV` 设置为 `production` 时，如果配置的功能使用的存储未注册，模块将不会启动，并且会命名需要实现的接口。每个功能只需要它使用的存储：`MfaStore` 仅使用 `mfa`，而当刷新令牌开启时，`RefreshTokenStore` 仅使用 `accessToken`。[The store contract](/security/authentication#the-store-contract) 列出了它们。一个未被任何配置功能使用的存储会在第一次读取时失败。模块选项中的 `allowInMemoryStorage: true` 无论如何都在内存中运行，但每次重启或部署都会使所有用户登出并忘记已注册的认证器，实例之间互不共享任何信息。
+- **一个提供者或多个。** `registerSource()` 按名称接收接口，因此一个类可以实现所有六个，如此处所示，或者多个类可以拆分它们：一个 `RedisSessionStore` 注册 `sessions`，另一个类注册其余五个。对相同名称的第二个存储在启动时因命名冲突而失败。
+- **某些方法必须是单个语句。** 决定某事只执行一次的逻辑是一个单一的条件语句，绝不是先读取后写入。`touchSession()` 只更新仍然存在的会话，因此一个请求与登出竞争时无法恢复会话。`deleteSession()` 解析是否删除了行，因此对于一个会话的两次轮换，或一次轮换和一次登出，恰好只有一个获胜。`markRefreshTokenUsed()`、`claimTotpStep()` 和 `consumeRecoveryCode()` 计数它们更改的行，这三个 `consume` 方法是一个 `DELETE … RETURNING`。`saveTotp()` 保留较大的时间步长与 `greatest()` 一起，这是存储手动写入 SQL 的唯一地方。`recordMfaFailure()` 先插入后计数，不在事务中，因此并行猜测的突发无法全部看到低计数。存储接口的每个方法都在其文档注释中说明了其规则以及它防止的竞争。
+- **记录活动是尽力而为的。** 如果 `touchSession()` 失败（锁超时、只读副本），请求和登出仍然成功。会话被保留，`lastActiveAt` 不移动，除非后续请求记录活动，否则会话在之前的截止时间到达时处于空闲状态。每次失败都会发出一个 `session-touch-failed` 事件；日志在失败开始时记录一条警告，持续期间不记录，在下一次成功触达时记录一行及其计数。
+- **表保持有界。** 任何人都可以请求魔术链接或重置链接，因此每次保存都会删除已过期的记录，并且在表中超过 100,000 条待处理记录时，先过期的记录被删除。已过期的会话和刷新令牌家族在新记录写入时被移除。
+- **密码重置和电子邮件验证保持不变地工作。** 它们的链接现在是 `email_tokens` 中的行，并且它们的邮件仍然通过 `@nestjs/mail` 发送。
+- **生产环境拒绝内存。** 当 `NODE_ENV` 设置为 `production` 时，如果配置的特性使用的存储未注册，并且未命名要实现的接口，模块将不会启动。每个特性只需要它使用的存储：`MfaStore` 仅使用 `mfa`，而当刷新令牌启用时，`RefreshTokenStore` 仅使用 `accessToken`。[The store contract](/security/authentication#the-store-contract) 列出了它们。一个未被任何配置的特性使用的存储会在第一次读取时失败。模块选项中的 `allowInMemoryStorage: true` 无论如何都在内存中运行，但每次重启或部署都会使所有人登出并忘记已注册的认证器，实例之间互不共享任何信息。
 
-如果您的用户位于同一数据库中，`getSession()` 可以在同一个查询中读取每个会话的用户，并将其作为 `extra` 传递，该 `SessionAuth` 的 `validate()` 接收：每个请求一次读取而不是两次。使用 `sessionExtra` 键放在 `user` 旁边（`users` 和 `toUser()` 分别代表您的表和排除密码哈希的映射）：
+如果您的用户位于同一数据库中，`getSession()` 可以在同一个查询中读取每个会话的用户，并将其作为 `extra` 传递，由 `SessionAuth` 的 `validate()` 接收：每个请求一次读取而不是两次。使用 `sessionExtra` 键放在 `user` 旁边（`users` 和 `toUser()` 分别代表您自己的表和不包含密码哈希的映射）：
 
 ```typescript title="src/auth/auth-types.ts"
 import type { User } from '../users/user.js';
@@ -2598,9 +2616,9 @@ validate(session: SessionRecord) {
 
 ```
 
-`extra` 绝不存储：`createSession()` 从未接收它，轮换时会排除它，`listUserSessions()` 不应设置它。它也不会暴露：`@CurrentSession()`、`request.session` 和 `AuthenticationContext.session` 在不包含它的情况下携带会话，因此处理程序所需的任何内容都包含在用户 `validate()` 返回中。不要将用户复制到会话行，而是进行连接：当用户更改时，复制的数据会过期。
+`extra` 从不存储：`createSession()` 从未接收它，轮换时会排除它，`listUserSessions()` 不应该设置它。它也不会暴露：`@CurrentSession()`、`request.session` 和 `AuthenticationContext.session` 在不包含它的情况下携带会话，因此处理程序所需的内容都应放入用户 `validate()` 返回中。不要将用户复制到会话行，而是进行连接：当用户更改时，复制的数据会过期。
 
-该包以测试的形式提供其规则。`authenticationStoreContract()` 从 `@nestjs/authentication/testing` 返回可与任何测试运行器配合工作的测试用例，而 `concurrent: true` 添加了竞争条件：一个令牌的并行刷新、一个代码或链接的并行使用、失败代码的突发、一个登出与请求竞争、一个会话的并行删除，以及一次轮换与登出或另一次轮换竞争。在 PGlite 上运行它们，在调用真正竞争的地方在 PostgreSQL 上运行：
+该包以测试的形式提供其规则。`authenticationStoreContract()` 从 `@nestjs/authentication/testing` 返回在任何测试运行器上都能工作的测试用例，而 `concurrent: true` 添加了竞争条件：一个令牌的并行刷新、一个代码或链接的并行使用、失败代码的突发、一个登出与请求竞争、一个会话的并行删除，以及一次轮换与登出或另一次轮换竞争。在 PGlite 上运行它们，在调用真正竞争的地方在 PostgreSQL 上运行：
 
 ```typescript title="test/drizzle-authentication.store.e2e-spec.ts"
 import { fileURLToPath } from 'node:url';
@@ -2668,9 +2686,9 @@ describe.skipIf(!postgres)(`DrizzleAuthenticationStore on PostgreSQL${reason ? `
 
 ```
 
-`CappedStore` 降低了待处理行的上限，以便 `maxPending: 3` 可以检查它。`startPostgres()` 是一个测试辅助函数，它在 PostgreSQL 服务器上创建一个临时数据库，或者在没有 PostgreSQL 的情况下跳过 PostgreSQL 测试用例。一个读取行然后写回该行的存储会通过其他测试但会失败这些测试。
+`CappedStore` 降低了待处理行的上限，以便 `maxPending: 3` 可以检查它。`startPostgres()` 是一个测试辅助工具，它在 PostgreSQL 服务器上创建一个临时数据库，或者在没有 PostgreSQL 的情况下跳过 PostgreSQL 测试用例。一个先读取行再写回行的存储会通过其他测试但会失败这些测试。
 
-**使用 TypeORM。** 针对 ORM 为 TypeORM 的应用程序，使用相同的存储和相同的八个表。Drizzle 保持教程的路径：使用此存储而不是上面那个，而不是旁边那个。表是实体，每个列都声明了其类型，因此 TypeORM CLI 在不加载装饰器元数据的情况下，看到的模式与应用程序的模式相同：
+**使用 TypeORM。** 针对 ORM 是 TypeORM 的应用程序，使用相同的八个表。Drizzle 保持教程的路径：使用此存储而不是上面那个，而不是旁边那个。表是实体，每个字段都声明了其类型，因此 TypeORM CLI 在不加载装饰器元数据的情况下看到与应用程序相同的模式：
 
 ```typescript title="src/typeorm/authentication.entities.ts"
 import type { EmailTokenPurpose, MfaState } from '@nestjs/authentication';
@@ -2914,7 +2932,7 @@ No changes in database schema were found
 
 ```
 
-它编写的迁移 `1790235914534-Authentication.ts` 是上面八个表的 `CREATE TABLE` 和 `CREATE INDEX` 语句，并且数据源中的 `migrations` 列出了它。现在，存储遵循与 Drizzle 相同的规则：
+它生成的迁移 `1790235914534-Authentication.ts` 是上面八个表的 `CREATE TABLE` 和 `CREATE INDEX` 语句，并且数据源中的 `migrations` 列出了它。现在，存储遵循与 Drizzle 相同的规则：
 
 ```typescript title="src/typeorm/typeorm-authentication.store.ts"
 import { Injectable } from '@nestjs/common';
@@ -3037,7 +3055,20 @@ export class TypeOrmAuthenticationStore
   async saveRefreshToken(record: RefreshTokenRecord): Promise<void> {
     const claims = (record.claims ?? null) as Record<string, Json> | null;
     await this.manager.insert(RefreshTokenEntity, { ...record, usedAt: record.usedAt ?? null, claims });
-    await this.manager.delete(RefreshTokenEntity, { familyExpiresAt: LessThanOrEqual(record.createdAt) });
+    // Locked in id order, like the revocations: otherwise revoking an expired family, which
+    // this deletes, can deadlock with it.
+    const expired = this.manager
+      .createQueryBuilder(RefreshTokenEntity, 'expired')
+      .select('expired.id')
+      .where('expired.familyExpiresAt <= :at', { at: record.createdAt })
+      .orderBy('expired.id')
+      .setLock('pessimistic_write');
+    await this.manager
+      .createQueryBuilder()
+      .delete()
+      .from(RefreshTokenEntity)
+      .where(`id IN (${expired.getQuery()})`, expired.getParameters())
+      .execute();
   }
 
   async markRefreshTokenUsed(id: string, at: Date): Promise<boolean> {
@@ -3047,7 +3078,7 @@ export class TypeOrmAuthenticationStore
   }
 
   async revokeRefreshTokenFamily(familyId: string): Promise<void> {
-    await this.manager.update(RefreshTokenEntity, { familyId }, { revoked: true });
+    await this.revokeRefreshTokens('familyId', familyId);
   }
 
   isRefreshTokenFamilyRevoked(familyId: string): Promise<boolean> {
@@ -3055,7 +3086,27 @@ export class TypeOrmAuthenticationStore
   }
 
   async revokeUserRefreshTokens(userId: string): Promise<void> {
-    await this.manager.update(RefreshTokenEntity, { userId }, { revoked: true });
+    await this.revokeRefreshTokens('userId', userId);
+  }
+
+  /**
+   * Locks the rows in id order before updating them. Parallel refreshes of a reused token each
+   * revoke the family, and two multi-row UPDATEs that lock the same rows in different orders
+   * deadlock: the loser would answer with a 500 instead of a 401.
+   */
+  private async revokeRefreshTokens(column: 'familyId' | 'userId', value: string): Promise<void> {
+    const locked = this.manager
+      .createQueryBuilder(RefreshTokenEntity, 'locked')
+      .select('locked.id')
+      .where(`locked.${column} = :value`, { value })
+      .orderBy('locked.id')
+      .setLock('pessimistic_write');
+    await this.manager
+      .createQueryBuilder()
+      .update(RefreshTokenEntity)
+      .set({ revoked: true })
+      .where(`id IN (${locked.getQuery()})`, locked.getParameters())
+      .execute();
   }
 
   // Authenticators, recovery codes and failed attempts
@@ -3221,12 +3272,12 @@ function withoutNulls<T extends object>(row: T): WithoutNulls<T> {
 ```
 
 - **条件更新和删除** 将条件放在 `update()` 和 `delete()` 的标准中，使用 `LessThan()`、`IsNull()` 和 `Or()`，并读取 `affected`。绝不使用 `save()`：那样会写回一个刚刚被登出删除的会话。
-- **`saveTotp()`** 使用 `GREATEST()` 保留冲突行中更大的时间步长，upsert API 无法表达这一点，因此它通过 `manager.query()` 以 SQL 形式写入单个语句。
-- **`consume` 方法** 是带有 `returning('*')` 的删除查询构建器。它返回数据库列名称下的原始行，因此 `deleteReturning()` 通过实体元数据将其映射回实体属性。
+- **`saveTotp()`** 使用 `GREATEST()` 保持冲突行的较大时间步长，upsert API 无法表达这一点，因此它通过 `manager.query()` 以 SQL 形式写入单个语句。
+- **`consume` 方法** 是带有 `returning('*')` 的删除查询构建器。它返回数据库列名称下的原始行，因此 `deleteReturning()` 通过实体元数据将它们映射回实体属性。
 - **`recordMfaFailure()`** 在 `dataSource.manager` 上是两个语句，每个语句单独提交，而 `saveRecoveryCodes()` 是 `dataSource.transaction()` 中的唯一方法。
-- **使用它** 代替 Drizzle 存储：在 `AppModule` 中使用 `TypeOrmModule.forRoot(dataSourceOptions)` 而不是 `DrizzleModule`，在 `AuthModule` 的提供者中使用 `TypeOrmAuthenticationStore` 而不是 `DrizzleAuthenticationStore`。它注入了 `DataSource`，该 `TypeOrmModule` 提供。
+- **使用它** 代替 Drizzle 存储：在 `AppModule` 中使用 `TypeOrmModule.forRoot(dataSourceOptions)` 而不是 `DrizzleModule`，并在 `AuthModule` 的提供者中使用 `TypeOrmAuthenticationStore` 而不是 `DrizzleAuthenticationStore`。它注入了 `DataSource`，该 `TypeOrmModule` 提供。
 
-契约套件在不更改的情况下运行。TypeORM 通过 `pg` 连接，因此该套件需要一个 PostgreSQL 服务器，否则会被跳过。另外两个案例检查实体和迁移是否一致（`migration:generate --check` 检查的内容），以及当在模块中提供时，存储是否注册了所有六个契约：
+契约套件在不更改的情况下运行。TypeORM 通过 `pg` 连接，因此该套件需要一个 PostgreSQL 服务器，否则会被跳过。另外两个用例检查实体和迁移是否一致（`migration:generate --check` 检查的内容），以及在模块中提供所有六个契约时存储是否注册了所有契约：
 
 ```typescript title="test/typeorm-authentication.store.e2e-spec.ts"
 /**
@@ -3305,11 +3356,11 @@ describe.skipIf(!postgres)(`TypeOrmAuthenticationStore on PostgreSQL${reason ? `
 
 ```
 
-> info **提示** 使用 Prisma？[The store contract](/security/authentication#the-store-contract)，在教程之后，列出了每个契约必须保证的内容以及 Prisma 如何表达原子方法。请使用相同的案例测试您的存储。
+> info **提示** 使用 Prisma？[The store contract](/security/authentication#the-store-contract) 在教程后列出了每个契约必须保证的内容以及 Prisma 如何表达原子方法。请使用相同的用例测试您的存储。
 
 #### 向合作伙伴颁发 API 密钥
 
-猫咪收容所和宠物店从自己的库存系统中批量补货，有些客户使用脚本重新订购。脚本无法填写登录表单，而每次使用都会更改的刷新令牌不适合夜间任务。请给他们 API 密钥：客户在 Web 应用程序中创建的、具有长期有效性的秘密，并在不再需要时撤销。脚本将密钥作为 bearer token 发送，并充当创建该密钥的客户。
+猫舍和宠物店从自己的库存系统中批量补货，有些客户会使用脚本进行重新订购。脚本无法填写登录表单，而每次使用都会更改的刷新令牌不适合夜间任务。请给他们 API 密钥：客户在 Web 应用程序中创建的、具有长期有效性的秘密，并在不再需要时撤销。脚本将密钥作为 bearer token 发送，并充当创建该密钥的客户。
 
 该包会检查密钥，您的数据库会保存它们。向模式添加一个表：
 
@@ -3380,9 +3431,9 @@ export class ApiKeyAuth extends ApiKeyProvider<User> {
 
 ```
 
-一个密钥读取 `cat_<id>_<secret>`：前缀、一个 16 个十六进制字符的公有 id 和一个 256 个随机位的秘密。`findKey()` 查找 id，提供者完成其余工作。它以恒定时间和对不存在的 id 做相同的工作来比较整个密钥的 SHA-256 与存储的 `hash`，并拒绝来自 `expiresAt` 的密钥。像密码的 scrypt 这样的慢速哈希在这里没有任何作用，因为没有人会猜测 256 个随机位，而且它会减慢每个请求。错误的、过期的或已撤销的密钥会收到 401 响应，如错误的访问令牌。
+一个密钥读取 `cat_<id>_<secret>`：前缀、一个 16 个十六进制字符的公有 id 和一个 256 个随机位的秘密。`findKey()` 查找 id，提供者完成其余工作。它以恒定时间和对不存在的 id 采用相同的工作量，将整个密钥的 SHA-256 与存储的 `hash` 进行比较，并拒绝来自 `expiresAt` 的密钥。像密码的 scrypt 这样的慢速哈希在这里没有任何作用，因为没有人会猜测 256 个随机位，而且它会减慢每次请求的速度。错误的、过期的或被撤销的密钥会收到 401 响应，带有 `error="invalid_token"`，就像一个无效的访问令牌一样。
 
-`JwtAuth` 读取相同的 `Authorization` 头部。JWT 总是包含两个点，而密钥不包含任何点，因此 `JwtAuth` 将密钥留给 `ApiKeyAuth`，先运行哪一个都行。没有凭证的请求仍然会收到一个挑战，`Bearer realm="store"`，因为两个提供者都使用相同的领域。
+`JwtAuth` 读取相同的 `Authorization` 头部。JWT 总是包含两个点，而密钥不包含任何点，因此 `JwtAuth` 将密钥留给 `ApiKeyAuth`，以先运行的那个为准。没有凭证的请求仍然会收到一个挑战，`Bearer realm="store"`，因为两个提供者都使用相同的领域。
 
 现在是创建、列出和撤销密钥的端点：
 
@@ -3442,8 +3493,8 @@ export class ApiKeysController {
 ```
 
 - `generate()` 返回密钥、其 id 和其哈希。表存储 id 和哈希，因此 `create` 是唯一有人看到密钥的时候。丢失密钥的客户会撤销它并创建另一个。
-- 控制器只接受 `SessionAuth`，因此密钥由 Web 应用程序管理。在 `providers` 下，任何其他提供者的凭证都视为无：泄露的密钥不能创建更多密钥或撤销其所有者。
-- 密钥在一年后过期，因此忘记的密钥不会永远有效。删除密钥的行会使其从下一个请求开始被撤销。
+- 控制器只接受 `SessionAuth`，因此密钥由 Web 应用程序管理。在 `providers` 下，任何其他提供者的凭证都视为无：泄露的密钥无法创建更多密钥或撤销其所有者的密钥。
+- 密钥在一年后过期，因此被遗忘的密钥不会永远有效。删除密钥的行会从下一个请求开始撤销它。
 
 在 `AuthModule` 中注册两者：
 
@@ -3464,7 +3515,7 @@ providers: [
 
 ```
 
-一个密钥会在不指定其提供者的所有路由上签入其所有者，包括 `POST /orders`。它永远不被算作第二因素：`PATCH /me/email` 以 `mfa_required` 回答，因为它回答的是尚未通过代码的会话。要将某个路由保留给密钥或排除密钥，请在 `@Authenticate()` 中列出该路由接受的提供者。在处理程序中，`@CurrentSession()` 包含密钥的 `keyId`，其中 `method` 设置为 `api-key`，这样审计日志就可以说明是哪个密钥下了订单。可能只能读取或只能订购的密钥是权限问题，这就是 [`@nestjs/authorization`](/security/authorization) 的用途。
+密钥在不指定其提供者的所有路由上都会签入其所有者，包括 `POST /orders`。它从不被算作第二因素：`PATCH /me/email` 以 `mfa_required` 回答，因为它回答的是尚未通过代码的会话。要将某个路由保留给密钥或将其排除在外，请在 `@Authenticate()` 中列出该路由接受的提供者。在处理程序中，`@CurrentSession()` 包含密钥的 `keyId`，其中 `method` 设置为 `api-key`，这样审计日志就可以说明是哪个密钥下了订单。可能只能读取或只能订购的密钥是权限问题，这就是 [`@nestjs/authorization`](/security/authorization) 的用途。
 
 **使用 TypeORM。** 该表是一个实体，与存储的实体并列：
 
@@ -3493,7 +3544,7 @@ export class ApiKeyEntity {
 
 ```
 
-在数据源的 `entities` 中列出它，其迁移像存储表的迁移一样生成在 `migrations` 中。`findKey()` 通过实体的仓储读取行，使用 `findOneBy()`，而控制器使用 `insert()` 和 `delete()` 写入它。
+在数据源的 `entities` 中列出它，其迁移像存储表的迁移一样生成在 `migrations` 中。`findKey()` 通过实体的仓储读取行，使用 `findOneBy()`，控制器使用 `insert()` 和 `delete()` 写入它。
 
 #### 试用
 
@@ -3504,7 +3555,7 @@ $ npm run start:dev -- --env-file .env
 
 ```
 
-在另一个终端中注册。`-c` 标志将会话 Cookie 保存到文件，而 `-b` 将其随后续请求发送。`--json` (curl 7.82 或更高版本) 使用带有 JSON 主体的 `POST` 发送。响应头在此和下方截断：
+在另一个终端中注册。`-c` 标志将会话 cookie 保存到文件，而 `-b` 会将其随后续请求发送。`--json` (curl 7.82 或更高版本) 使用带有 JSON 主体的 `POST` 发送。响应头在此和下方已截断：
 
 ```bash
 $ curl -i localhost:3000/auth/sign-up -c ada.txt --json '{"email":"ada@example.com","password":"correct horse battery"}'
@@ -3514,7 +3565,7 @@ Set-Cookie: __Host-sid=q0L7c...; Max-Age=1209600; Path=/; HttpOnly; Secure; Same
 
 ```
 
-会话和待验证链接现在是 PostgreSQL 中的行。会话的 id 是 Cookie 的 SHA-256 哈希，而链接的令牌根本不存储：
+会话和待验证链接现在是 PostgreSQL 中的行。会话的 id 是 cookie 的 SHA-256 哈希，而链接的令牌根本不存储：
 
 ```bash
 $ psql "$DATABASE_URL" -c "SELECT user_id, mfa, metadata FROM sessions" -c "SELECT purpose, email FROM email_tokens"
@@ -3542,7 +3593,7 @@ If you didn't create an account, ignore this email.
 
 ```
 
-Cookie 签入了 Ada，但她的地址未经验证，所以她还不能下订单。将令牌返回，就像验证页面会做的那样，订单就会通过。没有 Cookie，API 返回 401：
+Cookie 签入了 Ada，但她的地址尚未验证，因此她暂时无法下订单。将令牌作为验证页面会做的那样返回，订单就会通过。没有 cookie，API 返回 401：
 
 ```bash
 $ curl localhost:3000/me -b ada.txt
@@ -3577,7 +3628,7 @@ $ curl localhost:3000/orders -H "Authorization: Bearer $ACCESS"
 
 ```
 
-刷新令牌只工作一次。使用相同令牌的第二次尝试被视为盗窃，并撤销整个家族：
+刷新令牌只工作一次。第二次使用相同令牌的尝试被视为盗窃，并撤销整个家族：
 
 ```bash
 $ curl localhost:3000/auth/token/refresh --json "{\"refreshToken\":\"$REFRESH\"}"
@@ -3588,7 +3639,7 @@ $ curl localhost:3000/auth/token/refresh --json "{\"refreshToken\":\"$REFRESH\"}
 
 ```
 
-开启双因素认证。将密钥添加到身份验证器应用中，并使用显示的代码进行确认。该代码证明此浏览器具有身份验证器，因此会话从那时起得到验证，使用新的 Cookie（`-c` 保存它）：
+开启双因素认证。将密钥添加到身份验证器应用中，并使用其显示的代码进行确认。该代码证明此浏览器拥有身份验证器，因此会话从那时起得到验证，使用新的 cookie（`-c` 保存它）：
 
 ```bash
 $ curl -X POST localhost:3000/auth/mfa/enroll -b ada.txt
@@ -3603,7 +3654,7 @@ Set-Cookie: __Host-sid=Kp4w...; Max-Age=1209571; Path=/; HttpOnly; Secure; SameS
 
 > info **提示** 安装了 [oath-toolkit](https://www.nongnu.org/oath-toolkit/) 后，`oathtool --totp -b` 加上密钥会在终端打印当前代码。
 
-再次登录。新会话在通过第二因素之前处于待定状态，验证会替换 Cookie：
+再次登录。新会话在通过第二因素之前处于待定状态，验证会替换 cookie：
 
 ```bash
 $ curl localhost:3000/auth/sign-in -b ada.txt -c ada.txt --json '{"email":"ada@example.com","password":"correct horse battery"}'
@@ -3620,7 +3671,7 @@ $ curl -X PATCH localhost:3000/me/email -b ada.txt --json '{"email":"ada.lovelac
 
 ```
 
-新地址未经验证，会发送验证电子邮件到该地址：
+新地址未经验证，并将验证电子邮件发送到该地址：
 
 ```bash
 LOG [LogMailTransport] "Confirm your email address" to ada.lovelace@example.com
@@ -3645,7 +3696,7 @@ Location: https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client
 
 ```
 
-请求为新客户 Grace 发送一个魔术链接。该链接仅在发起请求的浏览器中有效，因此请保留响应设置的 Cookie。电子邮件出现在应用程序日志中：
+请求为新客户 Grace 发送一个魔术链接。该链接仅在发起请求的浏览器中有效，因此请保留响应设置的 Cookie。电子邮件会出现在应用程序的日志中：
 
 ```bash
 $ curl -i localhost:3000/auth/magic-link -c grace.txt --json '{"email":"grace@example.com"}'
@@ -3662,7 +3713,7 @@ The link works once, for 15 minutes. If you didn't ask for it, ignore this email
 
 ```
 
-像页面做的那样，带着该 Cookie 将令牌返回。Grace 获得一个已验证地址和会话的账户：
+像页面做的那样，带着该 Cookie 将令牌返回。Grace 获得了一个已验证地址和会话的账户：
 
 ```bash
 $ curl localhost:3000/auth/magic-link/consume -b grace.txt -c grace.txt --json '{"token":"Hq2x..."}'
@@ -3712,7 +3763,7 @@ $ curl localhost:3000/me -b ada.txt
 
 ```
 
-Ada 忘记了密码。为其地址请求重置链接，并为未注册的地址请求链接：两者都返回相同的空 202 状态码，只有 Ada 收到电子邮件：
+Ada 忘记了密码。请求她地址的重置链接，以及一个未注册地址的重置链接：两者都返回相同的空 202 状态码，但只有 Ada 收到电子邮件：
 
 ```bash
 $ curl -i localhost:3000/auth/password/forgot --json '{"email":"ada.lovelace@example.com"}'
@@ -3758,7 +3809,7 @@ $ for i in 1 2 3 4 5 6; do curl -s -o /dev/null -w '%{http_code} ' localhost:300
 
 全局守卫 `@Public()`、`@CurrentUser()` 和 `AuthenticationContext` 也适用于 GraphQL 解析器和 WebSocket 网关。该守卫读取携带这些信息的请求中的 Cookie 和头部。
 
-在 GraphQL 中，它位于 GraphQL 上下文的 `req`，因此 `context` 选项必须是一个为每个请求构建上下文的函数。作为对象的 `context` 将为每个请求提供一个对象，并且应用程序在启动时失败。Nest 只在根解析器上运行全局守卫和拦截器：要保护字段解析器，并为它们提供 `AuthenticationContext`，请添加 `fieldResolverEnhancers: ['guards', 'interceptors']`。
+在 GraphQL 中，它位于 GraphQL 上下文的 `req`，因此 `context` 选项必须是一个为每个请求构建上下文的函数。作为对象提供的 `context` 将为每个请求有一个对象，并且应用程序在启动时失败。Nest 只在根解析器上运行全局守卫和拦截器：要保护字段解析器，并为它们提供 `AuthenticationContext`，请添加 `fieldResolverEnhancers: ['guards', 'interceptors']`。
 
 ```typescript title="src/app.module.ts"
 GraphQLModule.forRoot<ApolloDriverConfig>({
@@ -3772,9 +3823,9 @@ GraphQLModule.forRoot<ApolloDriverConfig>({
 
 ```
 
-通过 `graphql-ws`，对套接字的每次操作共享该升级请求，并且需要用户的每次操作都会使用其 Cookie 再次进行认证，因此“在所有地方登出”会阻止下一次操作。`@CurrentUser()` 为每次操作提供自己的用户，而 `null` 则为 `@Public()` 操作提供一个用户。`req.user`（模块也为读取请求的代码设置的）保存最后一次认证的操作的用户：请读取 `@CurrentUser()`。
+通过 `graphql-ws`，对套接字的每次操作共享该升级请求，并且需要用户身份验证的每次操作都使用其 Cookie 再次进行身份验证，因此“所有地方登出”会阻止下一次操作。`@CurrentUser()` 为每次操作提供自己的用户，而 `null` 则为 `@Public()` 操作提供一个。`req.user`（模块也为读取请求的代码设置的）保存最后一次成功身份验证的操作，请读取 `@CurrentUser()`。
 
-Nest 不在网关的 `handleConnection()` 上运行守卫，因此使用 `WsAuthenticator` 认证握手：
+Nest 不在网关的 `handleConnection()` 上运行守卫，因此使用 `WsAuthenticator` 验证握手：
 
 ```typescript title="src/orders/orders.gateway.ts"
 import type { IncomingMessage } from 'node:http';
@@ -3793,13 +3844,13 @@ export class OrdersGateway implements OnGatewayConnection {
 
 ```
 
-它会以代码 1008 或 socket.io 的 `disconnect()` 关闭未登录的连接；要保留访客，请将 `authenticateConnection()` 传递一个第三个参数，其 `required` 选项为 `false`。对于 socket.io，它读取握手的头部，因此 `request` 参数可以省略。来自其他站点页面的握手是匿名的，因为 [cross-origin write](/security/authentication#add-sign-up-and-sign-in) 也是如此。然后守卫会再次认证每条消息，因此撤销的会话会在连接中途停止工作。`@CurrentUser()` 是每条消息的，`null` 是每 `@Public()` 的。`client.user` 保存最后一条已认证消息的用户，一旦消息因凭据被拒绝，它就会被清除。
+它以代码 1008 或 socket.io 的 `disconnect()` 关闭了未登录的连接；要保留访客，请将 `authenticateConnection()` 传递一个第三个参数，其 `required` 选项为 `false`。使用 socket.io 时，它读取握手头部的信息，因此 `request` 参数可以省略。来自另一个站点页面的握手是匿名的，因为 [cross-origin write](/security/authentication#add-sign-up-and-sign-in) 也是如此。然后守卫会再次验证每条消息，因此撤销的会话会在连接中途停止工作。`@CurrentUser()` 是每条消息的，`null` 是每 `@Public()` 的。`client.user` 存储最后一条成功身份验证消息的用户，一旦消息因凭据被拒绝，它就会被清除。
 
 [`@nestjs/authorization`](/security/authorization) 将 `@Can()` 与每条消息和每个操作的用户进行比较，而不是套接字的用户。
 
 #### 测试
 
-端到端测试启动真实的 `AppModule`，并更改了三件事。数据库是 [PGlite](https://pglite.dev)，PostgreSQL 编译为 WebAssembly，应用了您的真实迁移，因此测试不需要服务器。邮件发送到 `InMemoryMailTransport`，该邮件类会保留每封邮件供测试读取。并且 scrypt 故意很慢，默认成本下每哈希耗时几百毫秒和 128 MiB 内存，因此测试用更便宜的选项覆盖了 `PasswordHasher`。应用程序在启动时也读取其设置，因此测试需要为其提供测试值：
+端到端测试启动真实的 `AppModule`，并更改了三件事。数据库是 [PGlite](https://pglite.dev)，PostgreSQL 编译为 WebAssembly，应用了真实的迁移，因此测试不需要服务器。邮件发送到 `InMemoryMailTransport`，该服务会保留每封邮件供测试读取。Scrypt 故意很慢，默认成本下每哈希耗时几百毫秒和 128 MiB 内存，因此测试用更便宜的选项覆盖了 `PasswordHasher`。应用程序在启动时也读取其设置，因此测试需要为其提供测试值：
 
 ```typescript title="vitest.config.e2e.ts"
 export default defineConfig({
@@ -3907,97 +3958,98 @@ describe('Authentication (e2e)', () => {
 
 ```
 
-- `mailbox.assertSent()` 查找特定邮件类地址的最新邮件，然后 `link()` 返回包含路径的第一个链接，作为 `URL`。这就是验证、重置和魔术链接的完整流程：发送、查找链接、跟随链接。
+- `mailbox.assertSent()` 查找特定地址、邮件类别的最新电子邮件，而 `link()` 以包含路径的第一个链接作为 `URL` 返回。这就是验证、重置和魔术链接的完整流程：发送、查找链接、跟随链接。
 - 重置电子邮件在响应之后发送（参见 [Reset forgotten passwords](/security/authentication#reset-forgotten-passwords)），因此测试使用 `vi.waitFor()` 等待它。其他电子邮件在路由响应之前发送。
-- `DrizzleAuthenticationStore` 在 PGlite 上运行，与在 PostgreSQL 上运行的方式相同。PGlite 只有一个连接，因此两个请求在那里永远不会真正竞争；存储的 [contract tests](/security/authentication#keep-sessions-and-tokens-in-your-database) 在 PostgreSQL 上也运行，与在那里运行的方式相同。
+- `DrizzleAuthenticationStore` 在 PGlite 上运行，与在 PostgreSQL 上的行为相同。PGlite 只有一个连接，因此两个请求在那里永远不会真正竞争；存储的 [contract tests](/security/authentication#keep-sessions-and-tokens-in-your-database) 在 PostgreSQL 上也运行，与在那里一样。
 
-要在不经过登录路由的情况下登录测试用户，`SessionService.create()` 返回一个会话 Cookie，`TokenService.issue()` 返回一个 bearer token（对于没有认证器的用户）。要测试不通过 HTTP 读取 `AuthenticationContext` 的代码，请将其作为用户运行：`run()` 接收一个认证结果（用户和可选的会话）和一个要运行的函数。
+要在不经过登录路由的情况下为测试用户登录，`SessionService.create()` 返回一个会话 Cookie，而 `TokenService.issue()` 返回一个 bearer token（适用于没有认证器的用户）。要测试不通过 HTTP 读取 `AuthenticationContext` 的代码，请将其作为用户运行：`run()` 接收一个身份验证结果（用户和可选的会话）和一个要运行的函数。
 
 #### 生产检查清单
 
-- **为模块维护的所有内容注册一个仓储**，如 [Keep sessions and tokens in your database](/security/authentication#keep-sessions-and-tokens-in-your-database) 所示，并通过迁移应用其表。应用程序的每个实例都使用它们，因此重启不会使任何人登出。当配置的特性使用的仓储未注册时，模块拒绝启动，但这仅在 `NODE_ENV` 为 `production` 时发生：设置它，或者忘记设置的部署将在内存中运行，仅有启动日志行说明这一点。使用 `concurrent: true` 在 PostgreSQL 上针对包的契约测试运行到您的仓储：它们会失败一个需要一个条件语句的读取后写入的仓储。
-- **在共享用户数据库的每个应用程序中配置相同的特性**。每个应用程序根据自己的选项决定是否要求第二因素进行登录，以及在所有地方登出是否终止刷新令牌。如果任何登录用户的应用程序配置了 `mfa`，则所有应用程序都必须配置，否则通过其中一个注册的客户只能使用密码登录到另一个应用程序。同样配置 `accessToken`，在每个应用程序中开启刷新令牌，如果在一个应用程序中执行所有地方登出或密码重置，也应登出其他应用程序的令牌客户端。
-- **通过真实提供者发送电子邮件**。设置 `SMTP_URL`，或传入另一个传输器。`LogMailTransport` 将每个链接写入日志，任何阅读日志的人都可能冒充客户登录。
-- **通过 HTTPS 提供应用程序**，因为会话 Cookie 是 `Secure`。如果 Web 应用程序在与 API 不同的源上运行，请在 `session.trustedOrigins` 中列出它，否则其登录和魔术链接请求将被拒绝，并且其 `POST` 请求和 WebSocket 连接将是匿名的。在重写 `Host` 的代理后，也在此处列出公共源。保持 `cookie.secure` 开启：没有它的 `SameSite=None` Cookie 在启动时会失败，因为浏览器会丢弃它。
-- **在 Nest 12.1 或更高版本上调用 `app.enableCsrfProtection()`**，使用相同的 `trustedOrigins`。它拒绝对所有路由进行跨域写入，而不仅仅是使用会话 Cookie 的路由。
-- **将密钥保存在密钥管理器中**：JWT 密钥、TOTP 加密密钥、Google 客户端密钥和 SMTP 凭据。按照 [Add two-factor authentication](/security/authentication#add-two-factor-authentication) 描述轮换 TOTP 密钥。
-- **构建验证和重置页面以 POST 令牌**，并从 `APP_URL` 提供它们。电子邮件扫描器会使用 GET 请求跟踪链接；在加载时使用令牌的页面将允许它们消耗该令牌。
+- **为模块维护的所有内容注册一个存储**，如 [Keep sessions and tokens in your database](/security/authentication#keep-sessions-and-tokens-in-your-database) 所示，并通过迁移应用其表。应用程序的每个实例都使用它们，因此重启不会使任何人登出。当配置的特性使用的存储未注册时，模块将拒绝启动，但仅当 `NODE_ENV` 为 `production` 时：设置它，或者忘记它的部署将在内存中运行，仅有一个启动日志行说明这一点。使用 `concurrent: true` 在 PostgreSQL 上针对您的存储运行包的契约测试：它会使需要一个条件语句的读取和写入存储失败。
+- **在共享用户数据库的每个应用程序中配置相同的特性**。每个应用程序根据自己的选项决定是否要求二次验证登录以及全局登出是否终止刷新令牌。如果任何登录用户的应用程序配置了 `mfa`，则所有应用程序都必须配置，否则通过其中一个注册的客户只能使用密码登录到另一个应用程序。同样配置 `accessToken`，在每个应用程序中开启刷新令牌，如果在一个应用程序中进行全局登出或密码重置，也应登出其他应用程序的令牌客户端。
+- **通过真实提供者发送电子邮件**。设置 `SMTP_URL`，或传入另一个传输器。`LogMailTransport` 将每个链接写入日志，任何读取日志的人都可能冒充客户登录。
+- **通过 HTTPS 提供应用程序**，因为会话 Cookie 是 `Secure`。如果 Web 应用程序运行在与 API 不同的源上，请在 `session.trustedOrigins` 中列出它，否则其登录和魔术链接请求将被拒绝，并且其 `POST` 请求和 WebSocket 连接将是匿名的。在重写 `Host` 的代理后，也在此处列出公共源。保持 `cookie.secure` 开启：没有它的 `SameSite=None` Cookie 在启动时会失败，因为浏览器会丢弃它。
+- **在 Nest 12.1 或更高版本上调用 `app.enableCsrfProtection()`**，并使用相同的 `trustedOrigins`。它拒绝对所有路由进行跨域写入，而不仅仅是使用会话 Cookie 的路由。
+- **将密钥保存在密钥管理器中**：JWT 密钥、TOTP 加密密钥、Google 客户端密钥和 SMTP 凭据。按照 [Add two-factor authentication](/security/authentication#add-two-factor-authentication) 中描述的轮换 TOTP 密钥。
+- **构建验证和重置页面以 POST 令牌**，并从 `APP_URL` 提供服务。电子邮件扫描器会使用 GET 请求跟踪链接；在加载时使用令牌的页面会使其被消耗。
 - **保持 `forgot` 不泄露任何信息**。无论发生什么，都以相同的方式回答，就像 [`forgot` route](/security/authentication#reset-forgotten-passwords) 所做的那样，不要 `await` `request()`。注册仍然对已有账户的地址返回 409；如果这对您很重要，也以相同的方式回答注册，并向所有者发送电子邮件。
 - **将生产重定向 URI 注册到 Google**，并将 `APP_URL` 设置为应用程序的公共源。
 - **为 scrypt 调整服务器大小**。每个默认成本的哈希占用 128 MiB，在 libuv 线程池上（除非设置 `UV_THREADPOOL_SIZE`，否则为四个线程）。登录突发会排队，节流器会限制它们。
-- **为节流器使用共享存储**，例如 Redis。其默认存储在每个进程的内存中计数，因此每个实例都独立计数，重启或部署会重置计数。在代理后启用 `trust proxy`。对于分散在许多 IP 地址的密码猜测，添加第三个节流器定义，其跟踪器仅为电子邮件。为其设置一个远高于客户日常输入错误次数的限制，并在除登录和令牌颁发外的路由上跳过它：任何知道地址的人都可以用完它，并且在重置之前阻止客户使用密码登录。
-- **使用 `SignInService.rotateSession()` 在权限更改时轮换会话**。在登录期间更改密码，或客户开启/关闭双因素认证后，也应终止其其他会话和刷新令牌：使用当前会话作为 `except` 的 `SessionService.revokeAll()`，以及 `TokenService.revokeAll()`。知道旧密码的人仍可能登录。[password reset](/security/authentication#reset-forgotten-passwords) 会为您完成此操作。
-- **将 API 密钥视为密钥**。表仅保留其哈希，并且密钥仅在创建时显示一次：泄露的数据库不会提供任何密钥，丢失的密钥将被撤销和替换，永不再次显示。密钥有效期为一年，因此提醒所有者在旧密钥仍然有效时创建新密钥。向您的密钥扫描器添加 `cat_` 模式（GitHub 密钥扫描需要自定义模式）以查找提交到仓库中的密钥并撤销它们。使用密钥发出的请求不发出任何事件：记录来自 `@CurrentSession()` 的 `keyId`，以便您知道哪个密钥做了什么。密码重置或所有地方登出不会更改密钥：如果它们也应切断密钥，则在这些事件上撤销它们。
-- **保留审计跟踪**。`AuthenticationEvents` 在其 `events$` 流和 `node:diagnostics_channel` 上发布每次登录和登出、第二因素更改、重复使用的刷新令牌、密码重置和电子邮件验证事件。将它们存储在您的安全团队可以搜索到的地方。
+- **为节流器使用共享存储**，例如 Redis。其默认存储在每个进程的内存中计数，因此每个实例都独立计数，重启或部署会重置计数。在代理后启用 `trust proxy`。对于分散在许多 IP 地址的密码猜测，添加第三个节流器定义，其跟踪器仅为电子邮件。为其设置一个远高于客户一天内输错次数的限制，并在除登录和令牌颁发外的路由上跳过它：任何知道地址的人都可以用完它，并且在重置之前阻止客户使用密码登录。
+- **在权限更改时轮换会话**，使用 `SignInService.rotateSession()`。在登录状态下更改密码，或客户开启/关闭双因素认证后，也应终止其其他会话和刷新令牌：使用当前会话作为 `except` 的 `SessionService.revokeAll()`，以及 `TokenService.revokeAll()`。知道旧密码的人仍可能登录。[password reset](/security/authentication#reset-forgotten-passwords) 会为您完成此操作。
+- **将 API 密钥视为密钥**。表仅保留其哈希，并且密钥仅在创建时显示一次：泄露的数据库不会给任何人密钥，丢失的密钥将被撤销和替换，永不再次显示。密钥有效期为一年，因此提醒所有者在旧密钥仍然有效时创建新密钥。向您的密钥扫描器添加 `cat_` 模式（GitHub 密钥扫描需要自定义模式）以查找提交到仓库中的密钥并撤销它们。使用密钥发出的请求不发出任何事件：记录来自 `@CurrentSession()` 的 `keyId`，以便您知道哪个密钥做了什么。密码重置或全局登出不影响密钥：如果它们也应切断密钥，则在这些事件上撤销它们。
+- **保留审计跟踪**。`AuthenticationEvents` 在其 `events$` 流和 `node:diagnostics_channel` 上发布每次登录和登出、二次因素更改、重复刷新令牌、密码重置和电子邮件验证事件。将它们存储在安全团队可以搜索到的地方。
 
-警报重复的 `mfa-failed` 事件并带有 `locked: true`（拥有密码的人正在猜测代码），以及来自同一源的许多 `password-reset-requested` 事件但没有 `userId`（有人正在探测账户），以及 `session-touch-failed` 事件，这意味着会话存储拒绝写入。如果添加了 `@nestjs/authorization`，请在 `AuthorizationModule` 之前导入 `AuthenticationModule`。全局守卫按导入顺序运行，而授权需要认证设置的用户。其他顺序在启动时会失败。`@nestjs/authorization` 拒绝声明无检查的处理程序，并将 `@Public()` 计为一次：公共路由不需要 `@Can.Anyone()`。#### 存储契约
+对重复的 `mfa-failed` 事件发出警报，这些事件伴随 `locked: true`（拥有密码的人在猜测代码），以及来自同一源的多个 `password-reset-requested` 事件但没有 `userId`（有人在探测账户），以及 `session-touch-failed` 事件，这意味着会话存储拒绝写入。如果添加了 `@nestjs/authorization`，则需要在 `AuthorizationModule` 之前导入 `AuthenticationModule`。全局守卫按导入顺序运行，而授权需要认证设置的用户。其他顺序在启动时会失败。`@nestjs/authorization` 会拒绝声明无检查的处理程序，并将 `@Public()` 计为一次：公共路由不需要 `@Can.Anyone()`。#### 存储契约
 
-教程 [wrote the authentication store with Drizzle](/security/authentication#keep-sessions-and-tokens-in-your-database)。本节总结了六个契约对任何使用其他 ORM 编写的存储的要求。存储接口的每个方法在其文档注释中给出其规则，说明了该规则防止的竞态条件，并且包的契约测试会检查它们。
+教程 [wrote the authentication store with Drizzle](/security/authentication#keep-sessions-and-tokens-in-your-database)。本节总结了六个契约对任何存储的要求，以便使用另一个 ORM 编写存储。存储接口的每个方法在其文档注释中给出其规则，说明该规则防止的竞争条件，并且包的契约测试会检查它们。
 
-**注册。** 存储是一个普通的单例提供者，在其构造函数中通过契约名称在可注入的 `AuthenticationStorage` 上使用 `registerSource()` 注册：`sessions`、`refreshTokens`、`mfa`、`magicLinks`、`oidcStates` 和 `emailTokens`。方法名称在所有契约中绝不重复，因此一个类可以实现所有六个，或者多个类可以拆分它们。注册表会一次性检查每个存储的结构，除非通过 `replace: true`，否则拒绝为同一名称的第二个存储，并在 `AuthenticationModule` 初始化时锁定，记录每种状态的存储位置。没有存储的契约使用其内存默认值，在重启时会丢失所有内容，并且实例之间不共享。
+**注册。** 存储是一个普通的单例提供者，在其构造函数中通过契约名称在可注入的 `AuthenticationStorage` 上注册自身：`sessions`、`refreshTokens`、`mfa`、`magicLinks`、`oidcStates` 和 `emailTokens`。方法名称在所有契约中绝不重复，因此一个类可以实现所有六个，或者多个类可以拆分它们。注册表会一次检查每个存储的结构，除非通过 `replace: true`，否则拒绝为同名第二个存储，并在 `AuthenticationModule` 初始化时锁定，记录每种状态的存储位置。没有存储的契约使用其内存默认值，在重启时会丢失所有内容，并且实例之间不共享。
 
-**生产守卫。** 使用 `NODE_ENV=production` 时，如果配置的功能使用的契约没有存储，则在启动时失败，并列出每个缺失的接口：
+**生产守卫。** 使用 `NODE_ENV=production` 时，如果配置的特性使用的契约没有存储，则在启动时失败，并列出每个缺失的接口：
 
-| 已配置 | 契约 |
+| 配置的 | 契约 |
 | --- | --- |
 | 一个 `SessionCookieProvider` | `sessions` |
 | `accessToken`，带有刷新令牌 | `refreshTokens` |
-| `accessToken`，将 `refreshToken` 设置为 `false` | 无 |
+| `accessToken`，设置 `refreshToken` 为 `false` | 无 |
 | `mfa` | `mfa` |
-| `magicLink` | `sessions`、`magicLinks` |
-| `oidc` | `sessions`、`oidcStates` |
-| `passwordReset` | `sessions`、`emailTokens` |
+| `magicLink` | `sessions`, `magicLinks` |
+| `oidc` | `sessions`, `oidcStates` |
+| `passwordReset` | `sessions`, `emailTokens` |
 | `emailVerification` | `emailTokens` |
 
-如果没有 `mfa`，则禁用双因素认证：登录不会读取 `mfa` 契约。刷新令牌仅在有 `accessToken` 时存在，因此如果没有它，或者将 `refreshToken` 设置为 `false`，则仅通过全局登出和重置密码来结束会话。一个未被任何已配置功能使用的契约会在第一次读取时失败，而不是在内存中运行。模块选项中的 `allowInMemoryStorage: true` 仍然接受内存存储，但之后每次重启或部署都会使所有用户登出并忘记已注册的认证器，并且实例之间不共享任何内容。
+如果没有 `mfa`，则禁用双因素认证：登录不读取 `mfa` 契约。刷新令牌仅在有 `accessToken` 时存在，因此如果没有它，或者设置 `refreshToken` 为 `false`，则注销所有地方和重置密码仅结束会话。没有被任何配置的特性使用的契约会在第一次读取时失败，而不是在内存中运行。模块选项中的 `allowInMemoryStorage: true` 仍然接受内存存储，但之后每次重启或部署都会注销所有人并忘记已注册的认证器，并且实例之间不共享任何内容。
 
-**必须是原子的方法。** 决定某事只发生一次的任何判断语句，绝不能是先读取后写入。其他方法是纯粹的读取、插入和删除。没有一个会获取事务：认证状态是独立写入的，绝不是作为业务事务的一部分。
+**必须是原子的方法。** 决定某事只发生一次的任何逻辑都是一个条件语句，绝不是先读取后写入。其他方法是纯粹的读取、插入和删除。刷新令牌的撤销以及 `saveRefreshToken()` 中过期家族的清理，首先锁定其行（按 id 顺序）：锁定相同行的两个不同顺序的语句会导致死锁。没有一个会覆盖你的事务：认证状态是独立写入的，绝不是作为业务事务的一部分。
 
 | 契约 | 方法 | 必须是 | 原因 |
 | --- | --- | --- | --- |
-| `SessionStore` | `touchSession()` | 现有行的条件 `UPDATE`，仅将 `lastActiveAt` 推进 | 请求在登出后将会话写回会导致其恢复 |
-| `SessionStore` | `deleteSession()` | 一个 `DELETE`，根据行计数确定是否删除该行 | 两个会话轮换或一次轮换和一次登出，只有一个可以获胜 |
-| `RefreshTokenStore` | `markRefreshTokenUsed()` | 一个 `UPDATE ... WHERE used_at IS NULL`，计数行 | 窃贼和所有者同时刷新时不能都获胜 |
-| `MfaStore` | `saveTotp()` | 一个保留更大 `lastUsedStep` 的 upsert | 保存记录不应重新打开刚刚被声称的步骤 |
-| `MfaStore` | `claimTotpStep()`、`consumeRecoveryCode()` | 一个条件 `UPDATE`，一个 `DELETE`，计数行 | 重放的代码必须失败 |
-| `MfaStore` | `recordMfaFailure()` | 一个插入，然后计数，每个都单独提交 | 一次并行猜测的突发不应全部看到低计数 |
-| `MfaStore` | `saveRecoveryCodes()` | 一个事务：先删除，后插入 | 读取者绝不能看到一半的批次 |
-| `MagicLinkStore`、`OidcStateStore`、`EmailTokenStore` | `consumeMagicLink()`、`consumeOidcState()`、`consumeEmailToken()` | 一个 `DELETE ... RETURNING` | 一个链接不应登录两个浏览器，或设置两个密码 |
+| `SessionStore` | `touchSession()` | 现有行的条件 `UPDATE`，仅向前移动 `lastActiveAt` | 一个在注销后将会话写回的请求会将其恢复 |
+| `SessionStore` | `deleteSession()` | 一个 `DELETE`，根据行计数来解析是否已删除 | 两个会话轮换，或一次轮换和一次注销，只有一个可以获胜 |
+| `RefreshTokenStore` | `markRefreshTokenUsed()` | 一个 `UPDATE ... WHERE used_at IS NULL`，计数行 | 窃贼和所有者同时刷新时不应都获胜 |
+| `MfaStore` | `saveTotp()` | 一个保留更大 `lastUsedStep` 的 upsert | 保存记录不应重新开启刚刚被声称的步骤 |
+| `MfaStore` | `claimTotpStep()`, `consumeRecoveryCode()` | 一个条件 `UPDATE`，一个 `DELETE`，计数行 | 重放的代码必须失败 |
+| `MfaStore` | `recordMfaFailure()` | 先插入后计数，每个单独提交 | 一次性的并行猜测不应都看到低的计数 |
+| `MfaStore` | `saveRecoveryCodes()` | 一个事务：先删除后插入 | 读取者绝不应看到半批数据 |
+| `MagicLinkStore`, `OidcStateStore`, `EmailTokenStore` | `consumeMagicLink()`, `consumeOidcState()`, `consumeEmailToken()` | 一个 `DELETE ... RETURNING` | 一个链接不应登录两个浏览器，或设置两个密码 |
 
-一组刷新令牌在任何一个令牌被撤销时即被撤销，因此在撤销后保存的后继令牌也被撤销。待处理条目（魔术链接、OIDC 登录、电子邮件令牌）保持有界：每次保存都会删除已过期的，并且超过上限的按先过期顺序删除。
+一个刷新令牌家族在其中任何一个令牌被撤销时即被撤销，因此在撤销后保存的后继令牌也被撤销。待处理条目（魔术链接、OIDC 登录、电子邮件令牌）保持有界：每次保存都会删除已过期的，并且超过上限的按先过期顺序删除。
 
-`touchSession()` 是尽力而为的：如果失败，请求将使用已读取的会话继续进行，并且一个 `session-touch-failed` 事件会报告它。`getSession()` 可以将 `extra` 设置为与会话一起查询读取的值，通常是其用户，用于 `SessionCookieProvider.validate()`。`createSession()` 从未接收到它，而 `listUserSessions()` 也没有设置它。
+`touchSession()` 是尽力而为的：如果失败，请求将使用已读取的会话继续进行，并且一个 `session-touch-failed` 事件会报告它。`getSession()` 可以将 `extra` 设置为与会话一起查询读取的值，通常是其用户，用于 `SessionCookieProvider.validate()`。`createSession()` 从未接收到它，而 `listUserSessions()` 也不设置它。
 
 **使用 Prisma。** 教程中展示了使用 Drizzle 和 TypeORM 的存储，它们使用相同的表。Prisma 存储遵循相同的规则：
 
-- **条件更新和删除**（`touchSession()`、`deleteSession()`、`markRefreshTokenUsed()`、`claimTotpStep()`、`consumeRecoveryCode()`）是带有条件在 `where` 中的 `updateMany()` 或 `deleteMany()`，并且它们的 `count`：`deleteSession()` 解析 `count > 0`。绝不应为 `touchSession()` 使用 `upsert()`：它可能会写回刚刚被删除的会话。
-- **`saveTotp()`** 在其 upsert 中需要 `GREATEST(..., excluded.last_used_step)`。Prisma 的 upsert API 不接受冲突行的表达式，因此它是原始 SQL，带有 `$executeRaw`。
-- **`consume` 方法**是带有每个条件在 `where` 中的 `delete()`（ID 和对于 `consumeEmailToken()` 的目的），当没有匹配项时抛出 `P2025`：将其转换为 `undefined`。
-- **`recordMfaFailure()`** 是两个独立的语句：一个 `create()`，然后是一个 `count()`。而不是 `prisma.$transaction([create, count])`，后者在一个事务中运行，该事务在计数后提交。
+- **条件更新和删除**（`touchSession()`、`deleteSession()`、`markRefreshTokenUsed()`、`claimTotpStep()`、`consumeRecoveryCode()`）是使用 `updateMany()` 或 `deleteMany()`，条件在 `where` 中，它们的 `count`：`deleteSession()` 解析 `count > 0`。绝不为 `touchSession()` 使用 `upsert()`：它可能会写回刚刚被删除的会话。
+- **刷新令牌撤销**（`revokeRefreshTokenFamily()`、`revokeUserRefreshTokens()`）和 `saveRefreshToken()` 中的清理首先按 id 顺序锁定其行。`updateMany()` 和 `deleteMany()` 不能，因此它们是原始 SQL，使用 `$executeRaw`：`... WHERE id IN (SELECT id ... ORDER BY id FOR UPDATE)`。
+- **`saveTotp()`** 在其 upsert 中需要 `GREATEST(..., excluded.last_used_step)`。Prisma 的 upsert API 不接受冲突行的表达式，因此它是原始 SQL，使用 `$executeRaw`。
+- **`consume` 方法**是使用 `delete()`，其中每个条件都在 `where` 中（id 和对于 `consumeEmailToken()` 的目的），当没有匹配项时抛出 `P2025`：将其转换为 `undefined`。
+- **`recordMfaFailure()`** 是两个独立的语句：一个 `create()`，然后是一个 `count()`。不是 `prisma.$transaction([create, count])`，后者在一个事务中运行，该事务在计数后提交。
 - **`saveRecoveryCodes()`** 是需要事务的唯一方法：`$transaction()`，其数组形式也适用。
 
-使用 `@nestjs/authentication/testing` 中的套件进行测试，就像教程中做的那样。`authenticationStoreContract()` 返回其工厂返回的契约的任何测试运行器的案例。`concurrent: true` 添加了竞态条件：一个令牌的并行刷新、一个代码或链接的并行使用、失败代码的突发、登出与请求的竞态、一个会话的并行删除，以及一次轮换与登出或另一次轮换的竞态。使用带有连接池的 PostgreSQL 进行测试，其中读取然后写入的存储会使这些测试失败。`maxPending` 检查待处理条目的上限，为测试配置了一个小的上限。该套件在比较 `getSession()` 返回的内容时忽略 `extra`，因此连接用户的存储通过测试。
+像教程中那样，使用 `@nestjs/authentication/testing` 的套件进行测试。`authenticationStoreContract()` 为您的工厂返回的契约提供任何测试运行器的案例。`concurrent: true` 添加了竞争条件：一个令牌的并行刷新、一个代码或链接的并行使用、失败代码的突发、注销与请求的竞争、一个会话的并行删除，以及一次轮换与注销或另一次轮换的竞争。使用连接池的 PostgreSQL 进行测试，其中读取然后写入的存储会使测试失败。`maxPending` 检查待处理条目的上限，为测试配置了一个小的上限。该套件在比较 `getSession()` 返回的内容时忽略 `extra`，因此连接用户的存储通过测试。
 
 #### 参考
 
 ##### 模块选项
 
-`AuthenticationModule.forRoot()` 接受这些选项，`forRootAsync()` 工厂返回它们，但 `isGlobal` 和 `globalGuard` 保持在顶层。生命周期以毫秒或诸如 `'30s'`、`'15m'` 和 `'14d'` 的字符串表示，最长可达 100 年；更长的生命周期会在启动时失败。每个带有时钟的组还接受 `now`，一个返回纪元毫秒的函数，用于测试。
+`AuthenticationModule.forRoot()` 接受这些选项，`forRootAsync()` 工厂返回它们，但 `isGlobal` 和 `globalGuard` 保持在顶层。生命周期以毫秒为单位，或字符串，例如 `'30s'`、`'15m'` 和 `'14d'`，最长可达 100 年；更长的会于启动失败。每个带有时钟的组还接受 `now`，一个返回纪元毫秒的函数，用于测试。
 
 | 选项 | 默认值 | 描述 |
 | --- | --- | --- |
 | `isGlobal` | `true` | 全局注册该模块。 |
 | `globalGuard` | `true` | 将 `AuthenticationGuard` 注册为全局守卫。使用 `false` 时，路由在使用 `@UseGuards(AuthenticationGuard)` 之前保持开放。 |
-| `allowInMemoryStorage` | `false` | 在一个特征使用的契约没有存储时启动。参见 [Keep sessions and tokens in your database](/security/authentication#keep-sessions-and-tokens-in-your-database)。 |
-| `session.cookieName` | `__Host-sid` | 会话 Cookie；当 `cookie` 规则排除 `__Host-` 前缀时使用。 |
+| `allowInMemoryStorage` | `false` | 当一个功能所使用的契约没有存储时，从 `NODE_ENV=production` 开始。参见 [Keep sessions and tokens in your database](/security/authentication#keep-sessions-and-tokens-in-your-database)。 |
+| `session.cookieName` | `__Host-sid` | 会话 Cookie；当 `cookie` 规则排除 `__Host-` 前缀时，为 `sid`。 |
 | `session.absoluteTtl` | `'7d'` | 会话的最大生命周期，无论其活跃程度如何。 |
-| `session.idleTtl` | `'1d'` | 空闲超时，活动会延长此时间。`0` 会禁用它。 |
-| `session.touchInterval` | `'1m'` | 最多多久将活动写入存储。短于 `idleTtl`，除非是 `0`：更长的生命周期会在启动时失败，因为活跃用户将被视为空闲而登出。 |
-| `session.cookie` | `secure: true`, `sameSite: 'lax'`, `path: '/'` | Cookie 属性：`secure`, `sameSite`, `path`, `domain`。`HttpOnly` 始终设置。 |
+| `session.idleTtl` | `'1d'` | 空闲超时，可由活动延长。`0` 会禁用它。 |
+| `session.touchInterval` | `'1m'` | 最多多久将活动写入存储。短于 `idleTtl`，除非是 `0`：更长的会于启动失败，因为活跃用户将被视为空闲而注销。 |
+| `session.cookie` | `secure: true`, `sameSite: 'lax'`, `path: '/'` | Cookie 属性：`secure`, `sameSite`, `path`, `domain`。`HttpOnly` 总是设置的。 |
 | `session.trustedOrigins` | none | 其他可能使用会话 Cookie 进行写入和登录的来源。 |
-| `session.metadata` | none | 登录请求的函数，其结果会与每个新会话一起存储。参见 [Let customers manage their sessions](/security/authentication#let-customers-manage-their-sessions)。 |
+| `session.metadata` | none | 登录请求的函数，其结果与每个新会话一起存储。参见 [Let customers manage their sessions](/security/authentication#let-customers-manage-their-sessions)。 |
 | `password.logN` | `17` | scrypt 成本 N 的以 2 为底的对数，一个从 10 到 22 的整数。`r`（默认 `8`，最高 32）、`p`（`1`，最高 16）、`keyLength`（`32`）和 `saltLength`（`16`，两者从 16 到 64）设置其他参数。一个哈希最多可能占用 1 GiB 内存 (128·N·r 字节) 和默认工作量的 16 倍 (N·r·p)，因此当 `r` 为 8 时，`logN` 停止在 20。 |
-| `accessToken.key` | required | 至少 32 字节的 HS256 密钥，或用于 RS256、ES256 或 EdDSA 的私钥，以 PEM 文本或 `KeyObject` 形式提供。JWK 或 DER 密钥会在启动时失败：使用 `createPrivateKey()` 导入。参见 [Issue tokens to the mobile app](/security/authentication#issue-tokens-to-the-mobile-app)。 |
+| `accessToken.key` | required | 至少 32 字节的 HS256 密钥，或用于 RS256、ES256 或 EdDSA 的私钥，以 PEM 文本或 `KeyObject` 形式提供。JWK 或 DER 密钥会于启动失败：使用 `createPrivateKey()` 导入。参见 [Issue tokens to the mobile app](/security/authentication#issue-tokens-to-the-mobile-app)。 |
 | `accessToken.alg` | from the key | 签名算法：使用密钥的 HS256，使用私钥自身的算法。 |
 | `accessToken.issuer`, `audience` | none | 写入和检查每个令牌的 `iss` 和 `aud` 声明。 |
 | `accessToken.ttl` | `'15m'` | 访问令牌的生命周期。 |
@@ -4005,26 +4057,26 @@ describe('Authentication (e2e)', () => {
 | `refreshToken` | on with `accessToken` | `false` 仅签发访问令牌，不包含刷新令牌和不包含 `RefreshTokenStore`。参见 [Issue tokens to the mobile app](/security/authentication#issue-tokens-to-the-mobile-app)。 |
 | `refreshToken.ttl` | `'30d'` | 单个刷新令牌的生命周期。 |
 | `refreshToken.absoluteTtl` | `'90d'` | 刷新令牌家族的最大生命周期，无论其旋转频率如何。 |
-| `mfa.encryption` | required | `keys`，一个 AES-256-GCM 密钥列表，最新在前，加上 `migratePlaintext`（默认 `false`）；或使用 `false` 以明文存储密钥。参见 [Add two-factor authentication](/security/authentication#add-two-factor-authentication)。 |
-| `mfa.issuer` | none | 认证应用显示的名称。 |
+| `mfa.encryption` | required | `keys`，一个 AES-256-GCM 密钥列表，按最新到旧排序，加上 `migratePlaintext`（默认 `false`）；或使用 `false` 以明文存储密钥。参见 [Add two-factor authentication](/security/authentication#add-two-factor-authentication)。 |
+| `mfa.issuer` | none | 身份验证应用显示的名称。 |
 | `mfa.window` | `1` | 当前时间两侧可接受的 30 秒步长，一个从 0 到 10 的整数。 |
-| `mfa.maxAttempts` | `5` | 在每次代码被拒绝之前，允许的失败代码次数，一个至少为 1 的整数。 |
-| `mfa.lockoutWindow` | `'15m'` | 失败代码计数的窗口期。 |
-| `mfa.recoveryCodes` | `10` | 每批次的恢复代码数量，一个至少为 1 的整数。 |
+| `mfa.maxAttempts` | `5` | 在每个代码被拒绝之前，允许的失败代码次数，一个至少为 1 的整数。 |
+| `mfa.lockoutWindow` | `'15m'` | 失败代码计数的窗口时间。 |
+| `mfa.recoveryCodes` | `10` | 每批恢复代码的数量，一个至少为 1 的整数。 |
 | `mfa.pendingTtl` | `'10m'` | 会话等待第二因子的最长时间。 |
 | `emailVerification.url` | required | 页面验证链接打开。`ttl` 默认为 `'24h'`。参见 [Verify email addresses](/security/authentication#verify-email-addresses)。 |
 | `passwordReset.url` | required | 页面重置链接打开。`ttl` 默认为 `'1h'`。参见 [Reset forgotten passwords](/security/authentication#reset-forgotten-passwords)。 |
 | `magicLink.url` | required | 页面魔术链接打开。`ttl` 默认为 `'15m'`。参见 [Add magic-link sign-in](/security/authentication#add-magic-link-sign-in)。 |
 | `magicLink.bindToBrowser` | `true` | 仅在请求该链接的浏览器中接受链接。 |
 | `magicLink.cookie` | `secure: true` | `__Host-magic_link_tx` 交易 Cookie 的属性。 |
-| `oidc.callbackUrl` | required | 公共回调 URL，其中使用 `:provider` 替换提供者名称，或一个返回该 URL 的请求函数。参见 [Add "Sign in with Google"](/security/authentication#add-sign-in-with-google)。 |
-| `oidc.providers` | required | 按名称配置的提供者，例如 `google()`、`github()` 和 `microsoft()`，它还接受目录的 `tenant` id，或一个返回该名称的函数。参见 [Add "Sign in with Google"](/security/authentication#add-sign-in-with-google)。 |
+| `oidc.callbackUrl` | required | 公共回调 URL，其中使用提供者名称的 `:provider` 替换提供者名称，或一个返回该 URL 的请求函数。参见 [Add "Sign in with Google"](/security/authentication#add-sign-in-with-google)。 |
+| `oidc.providers` | required | 按名称配置的提供者，例如 `google()`、`github()` 和 `microsoft()`，它还接受目录的 `tenant` id，或一个返回名称的函数。参见 [Add "Sign in with Google"](/security/authentication#add-sign-in-with-google)。 |
 | `oidc.redirectAfterLogin` | `/` | 登录没有 `redirectTo` 时到达的页面。 |
 | `oidc.transactionTtl` | `'10m'` | 从重定向到回调之间登录允许花费的时间。 |
 | `oidc.cookie` | `secure: true` | `__Host-oidc_tx` 交易 Cookie 的属性。 |
 | `oidc.discoveryTtl`, `clockTolerance` | `'1h'`, `'30s'` | 发现文档的信任时长以及 ID 令牌时间声明的容忍度。 |
 
-`emailVerification`、`passwordReset`、`magicLink` 和 `oidc` 功能还需要注册同名的处理程序；缺少其中任何一个都会在启动时失败。超出上述范围的值，包括 `Number()` 对未设置的环境变量的判断中的 `NaN`，也会导致启动失败。
+`emailVerification`、`passwordReset`、`magicLink` 和 `oidc` 功能还需要注册同名的处理程序；缺少其中任何一个都会于启动失败。对于超出上述范围的值，包括 `NaN`，即对未设置的环境变量的 `Number()`，也会导致启动失败。
 
 ##### 路由选项
 
@@ -4032,10 +4084,10 @@ describe('Authentication (e2e)', () => {
 
 | 选项 | 描述 |
 | --- | --- |
-| `optional` | 允许匿名调用者通过，用户为 `null`。凭据无效仍返回 401。 |
-| `mfa` | 要求经过验证的第二因素：一个已验证的会话，或一个 `amr` 包含 `mfa`、`otp` 或 `hwk` 的 JWT。API 密钥永远不满足此要求。参见 [Add two-factor authentication](/security/authentication#add-two-factor-authentication)。 |
+| `optional` | 允许匿名调用者通过，用户为 `null`。错误的凭据仍会返回 401。 |
+| `mfa` | 要求经过验证的第二因素：经过验证的会话，或 JWT 的 `amr` 包含 `mfa`、`otp` 或 `hwk`。API 密钥永远不满足此要求。参见 [Add two-factor authentication](/security/authentication#add-two-factor-authentication)。 |
 | `verifiedEmail` | 要求经过验证的电子邮件地址，否则返回 403 附带 `email_unverified`。参见 [Read the current user](/security/authentication#read-the-current-user)。 |
-| `providers` | 只有这些提供者类或它们的子类才能认证此路由。 |
+| `providers` | 只有这些提供者类或它们的子类才能认证该路由。 |
 
 ##### API 密钥
 
@@ -4044,33 +4096,33 @@ describe('Authentication (e2e)', () => {
 | 选项 | 默认值 | 描述 |
 | --- | --- | --- |
 | `prefix` | required | 每个密钥都以 `cat_<id>_<secret>` 开始：1 到 16 个小写字母和数字，以字母开头。 |
-| `realm` | `api` | `WWW-Authenticate` 挑战中的领域。 |
+| `realm` | `api` | `WWW-Authenticate` 挑战中的域。 |
 
-您的子类实现 `findKey(id)`，该方法返回密钥的存储的 `hash`、其 `user` 和其 `expiresAt`，或者对于不存在、已被撤销或所有者已消失的密钥返回 `null`。`generate()` 以 `key` 的形式返回一个新密钥，该密钥只显示一次，并附带 `id` 和 `hash` 以供存储。使用密钥发起的请求中，会话是该密钥的 `keyId` 和 `expiresAt`，其中 `method` 设置为 `api-key`。
+您的子类实现 `findKey(id)`，该方法返回密钥的存储的 `hash`、其 `user` 和其 `expiresAt`，或者对于不存在、已被撤销或所有者已消失的密钥返回 `null`。`generate()` 返回一个新的密钥作为 `key`，仅显示一次，并附带 `id` 和 `hash` 以供存储。对于使用密钥发出的请求，会话是密钥的 `keyId` 和 `expiresAt`，其中 `method` 设置为 `api-key`。
 
 ##### 事件
 
-`AuthenticationEvents` 在其 `events$` 可观察对象上发布每个事件，同时在 `nestjs:authentication:<type>` 诊断通道上发布，例如 `nestjs:authentication:sign-in`。
+`AuthenticationEvents` 在其 `events$` 可观察对象上发布每个事件，并在 `nestjs:authentication:<type>` 诊断通道上发布，例如 `nestjs:authentication:sign-in`。
 
 | 类型 | 有效载荷 | 何时 |
 | --- | --- | --- |
-| `sign-in` | `userId`、`sessionId` 或 `tokenFamilyId`、`method`、`mfa`、`metadata` | `SignInService.signIn()` 或 `TokenService.issue()` 登录用户 |
+| `sign-in` | `userId`、`sessionId` 或 `tokenFamilyId`、`method`、`mfa`、`metadata` | `SignInService.signIn()` 或 `TokenService.issue()` 签入用户 |
 | `sign-out` | `userId`、`sessionId`、`tokenFamilyId` 或 `everywhere` | 会话、刷新令牌家族或全部结束 |
 | `mfa-verified` | `userId`、`method` (`totp` 或 `recovery-code`) | 接受了代码 |
 | `mfa-failed` | `userId`、`method`、`failures`、`locked` | 代码被拒绝，包括在锁定期间 |
-| `mfa-enabled` | `userId`、`replaced` | 确认了认证器 |
-| `mfa-disabled` | `userId` | 移除了认证器和恢复代码 |
-| `recovery-codes-generated` | `userId`、`count` | 新的恢复代码批次替换了旧的 |
+| `mfa-enabled` | `userId`、`replaced` | 验证器已确认 |
+| `mfa-disabled` | `userId` | 已移除验证器和恢复代码 |
+| `recovery-codes-generated` | `userId`、`count` | 新一批恢复代码替换了旧的 |
 | `refresh-token-reused` | `userId`、`tokenFamilyId` | 消耗的刷新令牌返回，并且其家族已被撤销 |
 | `password-reset-requested` | `email`、`userId` (对于未知地址缺失) | 有人请求重置链接 |
 | `password-reset` | `userId` | 重置链接设置了新密码 |
 | `email-verified` | `userId`、`email` | 使用了验证链接 |
-| `magic-link-refused` | `reason` (`not-this-browser`、`unknown`、`expired` 或 `refused`)、`email` | 魔术链接未登录任何人 |
+| `magic-link-refused` | `reason` (`not-this-browser`、`unknown`、`expired` 或 `refused`)、`email` | 魔术链接未签入任何人 |
 | `session-touch-failed` | `userId`、`sessionId`、`error` | `SessionStore.touchSession()` 失败；请求继续进行，会话的空闲截止时间未移动 |
 
 ##### 错误
 
-`AuthenticationError` 是包错误的基类。它携带 `status`，并且可选地携带 `code`、`details` 和 `challenge`（`WWW-Authenticate` 头部）。从处理程序或其调用的任何地方抛出时，它成为 Nest 自己的 HTTP 异常、GraphQL `UNAUTHENTICATED`、一个 `WsException` 或一个 `RpcException`。它的 `code` 是 Nest 的 `errorCode`。在 HTTP 和 GraphQL 上，它设置在异常上，因此异常过滤器读取 `exception.errorCode`，Nest 将其放入正文，或在 GraphQL 中放入 `extensions.originalError`。ws 和 rpc 有效载荷携带相同的 `errorCode` 键。带有消息的拒绝也会像始终那样将代码作为 `error` 发送。一个纯对象 `details` 作为 `details` 发送；错误的其余部分（`cause`，堆栈）不会到达客户端。例如，使用 `too_many_attempts` 作为 `code` 并在 `details` 中使用 `retryAfter: 30` 的 `new AuthenticationError('Too many attempts', options)` 回复：
+`AuthenticationError` 是包错误的基类。它携带 `status`，并且可选地携带 `code`、`details` 和 `challenge`（`WWW-Authenticate` 头部）。从处理程序或其调用的任何地方抛出时，它成为 Nest 自己的 HTTP 异常、GraphQL `UNAUTHENTICATED`、一个 `WsException` 或一个 `RpcException`。它的 `code` 是 Nest 的 `errorCode`。在 HTTP 和 GraphQL 上，它设置在异常上，因此异常过滤器读取 `exception.errorCode`，Nest 将其放入主体中，或在 GraphQL 中放入 `extensions.originalError`。ws 和 rpc 有效载荷携带相同的 `errorCode` 键。带有消息的拒绝也会像始终那样将代码作为 `error` 发送。一个纯对象 `details` 作为 `details` 发送；错误的其余部分（`cause`，堆栈）不会到达客户端。例如，`new AuthenticationError('Too many attempts', options)` 带有 `too_many_attempts` 作为 `code`，并在 `details` 中带有 `retryAfter: 30` 的回答：
 
 ```json
 {"message":"Too many attempts","error":"too_many_attempts","statusCode":401,"errorCode":"too_many_attempts","details":{"retryAfter":30}}
@@ -4079,17 +4131,17 @@ describe('Authentication (e2e)', () => {
 
 | 错误 | 状态 | `errorCode` | `error` | 何时 |
 | --- | --- | --- | --- | --- |
-| `AuthenticationError` | 401 | 任何 `code`，如果有 | 其 `code`；否则带有消息的 `Unauthorized`，无消息则无 | 凭据无效，或没有用户但有 `requireUser()` (无消息，无代码) |
+| `AuthenticationError` | 401 | 任何 `code` | 其 `code`；否则带有消息的 `Unauthorized`，无消息则无 | 凭据错误，或没有用户的 `requireUser()`（无消息，无代码） |
 | `JwtError` | 401 | 无 | `Unauthorized` | 令牌格式错误、签名错误、已过期或用于其他发行者或受众 |
 | `RefreshTokenError` | 401 | 无 | `Unauthorized` | 刷新令牌无效、已过期或重复使用；`reason` 说明了哪个 |
 | `MagicLinkError` | 401 | `not_this_browser` | `not_this_browser` | 魔术链接在请求它的浏览器之外的浏览器中打开，或在该浏览器请求了五个较新的链接之后 |
-| `MfaAlreadyEnrolledError` | 409 | 无 | `Conflict` | 对于已确认认证器的用户，有 `enroll()` 但没有 `replace: true` |
+| `MfaAlreadyEnrolledError` | 409 | 无 | `Conflict` | 对于具有已确认验证器的用户，没有 `enroll()` 且没有 `replace: true` |
 
-当任何提供者不识别任何凭据时，守卫返回 401 附带 `missing_credentials`，且没有 `error`：
+当没有提供者识别任何凭据时，守卫返回 401 附带 `missing_credentials`，且没有 `error`：
 
 ```json
 {"message":"Unauthorized","statusCode":401,"errorCode":"missing_credentials"}
 
 ```
 
-这涵盖了没有凭据的请求、陈旧或未知的会话 Cookie（这算作无，因此可选路由仍可工作），以及路由的 `providers` 不接受的凭据。守卫和 `TokenService.issue()` 在缺少第二因素时也返回 401 附带 `mfa_required`，在 `verifiedEmail` 路由上返回 403 附带 `email_unverified`，两者都作为 `errorCode` 和 `error`。OIDC 路由对错误的或伪造的回调返回 400，当提供者的回答验证失败或链接流程没有已登录会话时返回 401，当解析器拒绝账户或链接流程从其他站点启动时返回 403，对于未配置的提供者名称返回 404，当无法到达或配置错误的提供者时返回 502，例如非 https 端点或无法加载的密钥集。`SignInService.signIn()` 和 `MagicLinkService.create()` 对来自其他源的请求返回 403。
+这涵盖了没有凭据的请求、陈旧或未知的会话 Cookie（这算作无，因此可选路由仍可工作），以及路由的 `providers` 不接受的凭据。守卫和 `TokenService.issue()` 在缺少第二因素时也返回 401 附带 `mfa_required`，在 `verifiedEmail` 路由上返回 403 附带 `email_unverified`，两者都以 `errorCode` 和 `error` 的形式出现。OIDC 路由对错误的或伪造的回调返回 400，当提供者的回答验证失败或链接流程没有已签入的会话时返回 401，当解析器拒绝账户或链接流程从其他站点启动时返回 403，对于未配置的提供者名称返回 404，当提供者无法到达或配置错误时返回 502，例如非 https 端点或无法加载的密钥集。`SignInService.signIn()` 和 `MagicLinkService.create()` 对从其他源发出的请求返回 403。
