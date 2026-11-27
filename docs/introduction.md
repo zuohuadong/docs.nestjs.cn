@@ -1,44 +1,29 @@
-# 介绍
+<!-- 此文件从 content/introduction.md 自动生成，请勿直接修改此文件 -->
+<!-- 生成时间: 2026-11-27T00:33:01.753Z -->
+<!-- 源文件: content/introduction.md -->
+<!-- 源哈希: f9117e2b2079efd6d00729f08da37c5d -->
 
-:::info 关于本文档
-这是 NestJS 官方文档的中文翻译版本。文档源码托管在 [GitHub](https://github.com/nestcn/docs.nestjs.cn)，欢迎 Star、Fork 和贡献翻译！如发现翻译问题或需要改进，请提交 Issue 或 Pull Request。
-:::
+### 简介
 
- 
-:::info 旧版文档
-如需访问旧版文档，请点击 [这里](https://25650abe.nestjs.pages.dev/)。
-:::
+Nest (NestJS) 是一个用于构建高效、可扩展的 [Node.js](https://nodejs.org/) 服务器端应用程序的框架，从单个文件的小型 API 到拥有多个团队的企业级系统均可支持。它使用渐进式 JavaScript，使用并完全支持 [TypeScript](https://www.typescriptlang.org/)（同时仍允许您编写纯 JavaScript），并结合了 OOP（面向对象编程）、FP（函数式编程）和 FRP（函数式响应式编程）的元素。
 
-Nest（NestJS）是一个用于构建高效、可扩展的 [Node.js](https://nodejs.org/) 服务端应用的框架。它采用渐进式 JavaScript，使用 [TypeScript](http://www.typescriptlang.org/) 构建并全面支持 TypeScript（同时仍允许开发者使用纯 JavaScript 编码），融合了 OOP（面向对象编程）、FP（函数式编程）和 FRP（函数响应式编程）的元素。
+在底层，Nest 使用健壮的 HTTP 服务器框架，如 [Express](https://expressjs.com/)（默认），并且可以选择配置为使用 [Fastify](https://github.com/fastify/fastify) 或 Node.js 自身的 `node:http`（参见 [HTTP adapters](/techniques/performance)）。要将 Nest 与这些框架以及 Hono 进行比较，请参阅 [Nest vs Fastify, Express and Hono](/faq/nest-vs-fastify-express-hono)。
 
-在底层，Nest 使用了强大的 HTTP 服务器框架如 [Express](https://expressjs.com/)（默认），也可以配置使用 [Fastify](https://github.com/fastify/fastify)！
+在 `node:http` 上，通过 [`NodeAdapter`](/techniques/performance#node-adapter)，Nest 每秒处理的请求比纯 Fastify 少约 3%，比 Express 多约 50%（[benchmark](/faq/nest-vs-fastify-express-hono#性能)）。
 
-Nest 在这些常见的 Node.js 框架（Express/Fastify）之上提供了一层抽象，同时也将其 API 直接暴露给开发者。这使得开发者能够自由使用底层平台提供的众多第三方模块。
+Nest 在这些常见的 Node.js 框架（Express 和 Fastify）之上提供了一层抽象，同时也将它们的 API 直接暴露给开发者。这为您提供了自由，可以使用底层平台提供的无数第三方模块。
 
-## 设计哲学
+#### 理念
 
-近年来，得益于 Node.js，JavaScript 已成为前后端应用的"通用语言"。这催生了诸如 [Angular](https://angular.dev/)、[React](https://github.com/facebook/react) 和 [Vue](https://github.com/vuejs/vue) 等优秀项目，它们提升了开发效率，使创建快速、可测试且可扩展的前端应用成为可能。然而，尽管 Node（及服务端 JavaScript）有大量优秀的库、工具和辅助程序，但无一能有效解决**架构**这一核心问题。
+近年来，得益于 Node.js，JavaScript 已成为前端和后端应用程序的“通用语言”。这催生了诸如 [Angular](https://angular.dev/)、[React](https://github.com/facebook/react) 和 [Vue](https://github.com/vuejs/core) 等项目，它们提高了开发人员的生产力，并支持创建快速、可测试和可扩展的前端应用程序。然而，尽管存在大量优秀的库、辅助工具和 Node.js（和服务器端 JavaScript）工具，但没有一个能有效解决**架构**这一核心问题。
 
-Nest 提供了一套开箱即用的应用架构，使开发者和团队能够创建高度可测试、可扩展、松耦合且易于维护的应用程序。该架构深受 Angular 启发。
+Nest 提供了一个开箱即用的应用程序架构，使开发人员和团队能够创建高度可测试、可扩展、松耦合和可维护的应用程序。该架构深受 Angular 的启发。
 
-## 安装
+#### 安装
 
-### 环境准备
+要开始，您可以使用 [Nest CLI](/cli/overview) 或 [clone a starter project](#alternatives) 来脚手架项目。两者产生相同的结果。
 
-在开始之前，请确保您的开发环境满足以下要求：
-
-- **Node.js**：版本 ≥20（推荐使用最新 LTS 版本）
-- **包管理器**：npm（Node.js 自带）、yarn 或 pnpm
-
-:::info 提示
-推荐使用 [nvm](https://github.com/nvm-sh/nvm)（Linux/macOS）或 [nvm-windows](https://github.com/coreybutler/nvm-windows)（Windows）来管理 Node.js 版本，这样可以方便地在不同项目间切换 Node.js 版本。
-:::
-
-### 创建项目
-
-要开始使用，您可以使用 [Nest CLI](/cli/overview) 创建项目脚手架，或者[克隆一个初始项目](#alternatives) （两种方式会产生相同的结果）。
-
-要使用 Nest CLI 创建项目脚手架，请运行以下命令。这将创建一个新的项目目录，并用初始的核心 Nest 文件和支持模块填充该目录，为您的项目构建一个常规的基础结构。对于首次使用的用户，建议使用 **Nest CLI** 创建新项目。我们将在[第一步](/overview/first-steps)中继续采用这种方法。
+使用 Nest CLI 脚手架项目，运行以下命令。它们会创建一个新的项目目录，并用初始核心 Nest 文件和支持模块填充它，为您的项目提供一个常规的基础结构。我们推荐首次使用的用户使用 **Nest CLI**，[First steps](/first-steps) 章将继续使用此方法。
 
 ```bash
 $ npm i -g @nestjs/cli
@@ -46,13 +31,13 @@ $ nest new project-name
 
 ```
 
-:::info 提示
-要创建一个具有更严格功能集的 TypeScript 项目，请将 `--strict` 标志传递给 `nest new` 命令。
-:::
+对于小型项目或第一个版本，`nest new project-name --minimal` 会生成一个代码为 [one file](/cli/usages#one-file-projects) 的应用程序。
 
-## 替代方案
+Nest 还拥有针对大多数后端所需的第一方包，例如 [authentication](/security/authentication)、[mail](/application/mail)、[file storage](/application/file-storage)、[webhooks](/http/webhooks)、[queues](/techniques/queues)、[AI](/ai/overview) 和 [MCP](/mcp/overview)，因此在添加其他库之前请检查它们。
 
-或者，使用 **Git** 安装 TypeScript 初始项目：
+#### 替代方案
+
+或者，您可以使用 **Git** 安装 TypeScript 启动项目：
 
 ```bash
 $ git clone https://github.com/nestjs/typescript-starter.git project
@@ -62,23 +47,10 @@ $ npm run start
 
 ```
 
-:::info 提示
-如果你想克隆没有 git 历史记录的仓库，可以使用 [degit](https://github.com/Rich-Harris/degit)。
-:::
+> info **提示** 要克隆仓库而不包含其 Git 历史记录，请使用 [degit](https://github.com/Rich-Harris/degit)。
 
-打开浏览器并访问 [`http://localhost:3000/`](http://localhost:3000/)。
+打开您的浏览器并导航到 [`http://localhost:3000/`](http://localhost:3000/)。
 
-要安装 JavaScript 版本的入门项目，在上述命令序列中使用 `javascript-starter.git`。
+要安装启动项目的 JavaScript 版本，请在上述命令序列中使用 `javascript-starter.git`。
 
-你也可以通过安装核心和支持包从零开始新项目。请注意需要自行设置项目样板文件。至少需要以下依赖项：`@nestjs/core`、`@nestjs/common`、`rxjs` 和 `reflect-metadata`。查看这篇短文了解如何创建完整项目：[5 步从零创建最简 NestJS 应用！](https://dev.to/micalevisk/5-steps-to-create-a-bare-minimum-nestjs-app-from-scratch-5c3b)。
-
----
-
-## 关于本文档
-
-本中文文档由社区贡献者共同维护。感谢所有[贡献者](/contributors)的努力，让更多中文开发者能够学习和使用 NestJS！
-
-如果你发现文档中的错误或希望改进内容，欢迎：
-- 在 [GitHub](https://github.com/nestcn/docs.nestjs.cn) 上提交 Issue
-- 直接提交 Pull Request 进行改进
-- 加入我们的贡献者行列
+您也可以通过自行安装核心和支持包从零开始启动新项目。在这种情况下，您需要自己设置项目样板文件。最少需要这些依赖项：`@nestjs/core`、`@nestjs/common`、`rxjs` 和 `reflect-metadata`。要了解如何以这种方式创建完整项目的操作指南，请参阅 [5 steps to create a bare minimum NestJS app from scratch](https://dev.to/micalevisk/5-steps-to-create-a-bare-minimum-nestjs-app-from-scratch-5c3b)。
