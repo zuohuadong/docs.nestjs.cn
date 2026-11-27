@@ -61,10 +61,22 @@ function fixLinks(content: string): string {
 
   // 5. 官方分版本文档链接（/v11、/v10/migration-guide 等）在本站不存在，
   //    属于英文原文中指向 docs.nestjs.com 版本站点的路径，改写为绝对地址。
+  //    兼容模型把绝对地址改写成相对路径的情况（./v11 -> https://.../v11）。
   result = result.replace(
-    /\]\((\/v\d+(?:\/[^)\s]*)?)\)/g,
-    '](https://docs.nestjs.com$1)'
+    /\]\((?:\/|\.\/)(v\d+(?:\/[^)\s]*)?)\)/g,
+    '](https://docs.nestjs.com/$1)'
   );
+
+  // 6. 上游改版后的重定向路径：英文原文仍指向旧路由，本站没有这些页面。
+  //    - /fundamentals/testing -> /fundamentals/unit-testing（旧锚点一并去掉）
+  //    - /http/session -> /http/sessions
+  //    - /faq/common-errors -> /faq/errors
+  //    - /llms.txt 由 docs.nestjs.com 提供，本站没有该静态文件
+  result = result
+    .replace(/\]\(\/fundamentals\/testing(?:#[^)\s]*)?\)/g, '](/fundamentals/unit-testing)')
+    .replace(/\]\(\/http\/session(#[^)\s]*)?\)/g, '](/http/sessions$1)')
+    .replace(/\]\(\/faq\/common-errors(?:#[^)\s]*)?\)/g, '](/faq/errors)')
+    .replace(/\]\(\/llms\.txt\)/g, '](https://docs.nestjs.com/llms.txt)');
 
   return result;
 }
