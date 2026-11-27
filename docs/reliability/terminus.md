@@ -889,7 +889,7 @@ await build({
 
 #### 测试
 
-要测试您的应用程序如何报告依赖项失败，请在 [end-to-end test](/fundamentals/testing#端到端测试) 中替换指示器：
+要测试您的应用程序如何报告依赖项失败，请在 [end-to-end test](/fundamentals/unit-testing) 中替换指示器：
 
 ```typescript
 const moduleRef = await Test.createTestingModule({ imports: [AppModule] })

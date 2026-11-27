@@ -35,7 +35,7 @@ Nest 基于 Spring Boot 开发者已熟悉的概念构建：依赖注入容器�
 | Actuator 健康检查端点 | `@nestjs/terminus` | [Health checks](/recipes/terminus) |
 | springdoc-openapi | `@nestjs/swagger` | [OpenAPI](/openapi/introduction) |
 | SLF4J 和 Logback | `Logger` 来自 `@nestjs/common` | [Logger](/application/logger) |
-| `@SpringBootTest`, `@WebMvcTest`, MockMvc, `@MockitoBean` | `@nestjs/testing` 和 Supertest | [Testing](/fundamentals/testing) |
+| `@SpringBootTest`, `@WebMvcTest`, MockMvc, `@MockitoBean` | `@nestjs/testing` 和 Supertest | [Testing](/fundamentals/unit-testing) |
 | Spring WebSocket | 网关 | [Gateways](/websockets/gateways) |
 | Spring for Apache Kafka, Spring AMQP | `@nestjs/microservices` | [Microservices](/microservices/basics) |
 
@@ -807,7 +807,7 @@ describe('OrdersController', () => {
 
 ```
 
-对于 `@SpringBootTest` 的对应物，请导入 `AppModule`，并将提供者替换为 `overrideProvider()`，就像 `@MockitoBean` 所做的那样。新项目使用 [Vitest](https://vitest.dev/) 作为测试运行器，取代 JUnit 和 Mockito。单元测试也可以使用 `new` 创建被测类并将其假对象传递给构造函数，因为提供者是一个普通类。参见 [Testing](/fundamentals/testing)。
+对于 `@SpringBootTest` 的对应物，请导入 `AppModule`，并将提供者替换为 `overrideProvider()`，就像 `@MockitoBean` 所做的那样。新项目使用 [Vitest](https://vitest.dev/) 作为测试运行器，取代 JUnit 和 Mockito。单元测试也可以使用 `new` 创建被测类并将其假对象传递给构造函数，因为提供者是一个普通类。参见 [Testing](/fundamentals/unit-testing)。
 
 #### 有何不同
 

@@ -1647,7 +1647,7 @@ describe('Order webhooks', () => {
 - 对于依赖时间的行为，例如退避、租约和轮换重叠，将 `Date.now()` 提前到 `vi.spyOn(Date, 'now')`。工作者和商店从中获取时间，而真实计时器对 Socket 持续运行。
 - 示例中的 `tutorial.e2e-spec.ts` 在 PGlite 和 PostgreSQL 服务器上使用真实 HTTP 运行此页面的每个部分：API 通过默认传输器向合作伙伴的接收者交付，包括中断、重放、重新交付和轮换。其 `zod.e2e-spec.ts` 使用 DTO 的 Zod 变体和 `StandardSchemaValidationPipe` 启动相同的应用程序。其商店测试通过 PGlite、PostgreSQL 和 MySQL 上的 Drizzle，以及 PostgreSQL 上的 TypeORM 运行：合同套件、与订单一起提交和回滚的调度，以及生产中的模式。
 
-有关测试设置的更多信息，请参阅 [End-to-end testing](/fundamentals/testing#端到端测试)。
+有关测试设置的更多信息，请参阅 [End-to-end testing](/fundamentals/unit-testing)。
 
 #### 交付保证
 

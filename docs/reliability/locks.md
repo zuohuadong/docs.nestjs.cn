@@ -1307,7 +1307,7 @@ export async function startInstance(options: InstanceOptions): Promise<TestingMo
 - **断言日志** 或 `LocksEvents`：哪个实例运行了任务，每个跳过的滴答（`jobSkips$`），每个丢失的锁和每次领导权变更（`events$`）。事件也发布在 `nestjs:locks:job-skipped`、`nestjs:locks:lock-lost`、`nestjs:locks:leadership-acquired` 和 `nestjs:locks:leadership-lost` 诊断通道上。
 - **使用契约套件测试您的存储**，就像 Drizzle、TypeORM 和 Redis 存储所做的那样，针对您在生产环境中运行的服务器。
 
-有关测试设置的更多信息，请参阅 [End-to-end testing](/fundamentals/testing#端到端测试)。
+有关测试设置的更多信息，请参阅 [End-to-end testing](/fundamentals/unit-testing)。
 
 #### 生产检查清单
 

@@ -33,7 +33,7 @@ Fastify、Express 和 Hono 将请求路由到您的处理器，而您选择或�
 | 后台 **任务** | [`@nestjs/bullmq`](/techniques/queues) | 添加库 | 添加库 | 添加库 |
 | **微服务** **传输器** | [`@nestjs/microservices`](/microservices/basics) | 添加库 | 添加库 | 添加库 |
 | **流式传输** | [Return a `Response` or a stream](/http/streaming-responses) | 从处理器发送流 | 写入 **响应** | `streamSSE` 和其他辅助工具 |
-| 测试 | [`@nestjs/testing`](/fundamentals/testing)，可替换 **提供者** | `fastify.inject()` | 添加 Supertest | `app.request()` |
+| 测试 | [`@nestjs/testing`](/fundamentals/unit-testing)，可替换 **提供者** | `fastify.inject()` | 添加 Supertest | `app.request()` |
 | 与前端共享的类型 | [A shared package](/recipes/nextjs) | 添加库 | 添加库 | 内置 RPC 客户端 |
 
 #### Nest 应用可以有多小

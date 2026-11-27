@@ -21,7 +21,7 @@ Nest 会比大多数 Node.js 框架更接近 FastAPI：路由使用装饰器声�
 | `Depends()` | 注入到构造函数中的 **提供者** | [Providers](/overview/providers) |
 | 读取 **请求** 的依赖项 | **守卫**、**管道** 和参数装饰器 | [Guards](/overview/guards), [Custom decorators](/custom-decorators) |
 | 带有 `yield` 的依赖项 | 生命周期钩子，或请求作用域的 **提供者** | [Lifecycle events](/fundamentals/lifecycle-events) |
-| `app.dependency_overrides` | 在测试 **模块** 中的 `overrideProvider()` | [Testing](/fundamentals/testing) |
+| `app.dependency_overrides` | 在测试 **模块** 中的 `overrideProvider()` | [Testing](/fundamentals/unit-testing) |
 | `HTTPException`, `@app.exception_handler()` | `HttpException`，**异常过滤器** | [Exception filters](/overview/exception-filters) |
 | **中间件**，`CORSMiddleware` | **中间件**，`app.enableCors()` | [Middleware](/overview/middlewares), [CORS](/security/cors) |
 | `OAuth2PasswordBearer`, `Security()` 带有作用域 | `@nestjs/authentication` 和 `@nestjs/authorization` | [Authentication](/security/authentication), [Authorization](/security/authorization) |
@@ -32,7 +32,7 @@ Nest 会比大多数 Node.js 框架更接近 FastAPI：路由使用装饰器声�
 | `StreamingResponse`，服务端推送事件 | 异步生成器，`@Sse()` | [Streaming responses](/http/streaming-responses), [Server-Sent Events](/http/server-sent-events) |
 | `@app.websocket()` | **网关** | [Gateways](/websockets/gateways) |
 | `/docs` 和 `/openapi.json` | `@nestjs/swagger` | [OpenAPI](/openapi/introduction) |
-| `TestClient` | `@nestjs/testing` 和 Supertest | [Testing](/fundamentals/testing) |
+| `TestClient` | `@nestjs/testing` 和 Supertest | [Testing](/fundamentals/unit-testing) |
 
 #### 启动项目
 
@@ -531,7 +531,7 @@ describe('Orders', () => {
 
 ```
 
-`overrideProvider()` 在所有注入它的地方替换一个 **提供者**，就像 `dependency_overrides` 中的条目替换一个依赖项一样。新项目使用 [Vitest](https://vitest.dev/) 作为测试运行器，替代 pytest。参见 [Testing](/fundamentals/testing)。
+`overrideProvider()` 在所有注入它的地方替换一个 **提供者**，就像 `dependency_overrides` 中的条目替换一个依赖项一样。新项目使用 [Vitest](https://vitest.dev/) 作为测试运行器，替代 pytest。参见 [Testing](/fundamentals/unit-testing)。
 
 #### 有何不同
 

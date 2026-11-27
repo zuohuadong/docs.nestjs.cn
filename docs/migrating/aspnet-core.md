@@ -34,7 +34,7 @@ Nest 基于 ASP.NET Core 开发者已熟悉的概念构建：带有生命周期�
 | 健康检查 (`AddHealthChecks()`, `MapHealthChecks()`) | `@nestjs/terminus` | [Health checks](/recipes/terminus) |
 | Swashbuckle, NSwag, `Microsoft.AspNetCore.OpenApi` | `@nestjs/swagger` | [OpenAPI](/openapi/introduction) |
 | `ILogger<T>` | 来自 `@nestjs/common` 的 `Logger` | [Logger](/application/logger) |
-| `WebApplicationFactory<T>`, xUnit | `@nestjs/testing`, Supertest 和 Vitest | [Testing](/fundamentals/testing) |
+| `WebApplicationFactory<T>`, xUnit | `@nestjs/testing`, Supertest 和 Vitest | [Testing](/fundamentals/unit-testing) |
 | SignalR | 网关，使用 Socket.IO 或 `ws` | [Gateways](/websockets/gateways) |
 | gRPC 服务, MassTransit | `@nestjs/microservices` | [Microservices](/microservices/basics) |
 
@@ -827,7 +827,7 @@ describe('OrdersController', () => {
 
 ```
 
-新项目使用 [Vitest](https://vitest.dev/) 作为测试运行器，取代 xUnit 和 Moq。单元测试也可以使用 `new` 创建被测类并将其假对象传递给构造函数，因为提供者是一个纯类。参见 [Testing](/fundamentals/testing)。
+新项目使用 [Vitest](https://vitest.dev/) 作为测试运行器，取代 xUnit 和 Moq。单元测试也可以使用 `new` 创建被测类并将其假对象传递给构造函数，因为提供者是一个纯类。参见 [Testing](/fundamentals/unit-testing)。
 
 #### 有何不同
 

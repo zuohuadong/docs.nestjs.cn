@@ -774,7 +774,7 @@ describe('Shipping quotes', () => {
 - 断路器、舱壁和出站速率限制属于创建它们的应用程序，因此每个测试应用程序都从新鲜的状态开始。
 - 要使用不同的设置进行测试，例如更短的 `openDuration`，请使用 `overrideProvider(RESILIENCE_MODULE_OPTIONS)` 覆盖模块的选项。
 
-有关测试基础知识，请参阅 [End-to-end testing](/fundamentals/testing#端到端测试)。
+有关测试基础知识，请参阅 [End-to-end testing](/fundamentals/unit-testing)。
 
 #### 生产检查清单
 

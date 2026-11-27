@@ -151,7 +151,7 @@ ordersRouter.get('/', listOrders);
 
 `GET /orders` 仍然由 Express 响应，而 `GET /orders/:id` 会穿过 Express 路由器到达 Nest。
 
-当测试应用程序也基于 Express 应用构建时，[End-to-end tests](/fundamentals/testing#端到端测试) 涵盖了这两种类型的路由。将适配器传递给 `createNestApplication()`，相同的测试可以在路由迁移之前和之后进行：
+当测试应用程序也基于 Express 应用构建时，[End-to-end tests](/fundamentals/unit-testing) 涵盖了这两种类型的路由。将适配器传递给 `createNestApplication()`，相同的测试可以在路由迁移之前和之后进行：
 
 ```typescript title="test/orders.e2e-spec.ts"
 import type { INestApplication } from '@nestjs/common';

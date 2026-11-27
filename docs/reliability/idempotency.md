@@ -1389,7 +1389,7 @@ describe('POST /orders/:id/pay', () => {
 
 应用程序初始化后，`app.get(IdempotencyStorage).source` 返回正在使用的存储，这里是内存中的存储。其 `peek(key)` 方法在记录键（如 `usr_alice:key-1` (`state`, `fingerprint` 和 `response`)）下返回原始记录，可用于断言，例如“已存储被拒绝的支付”。单独使用来自 [Store keys in PostgreSQL](/reliability/idempotency#store-keys-in-postgresql) 的契约套件测试您自己的存储，针对真实服务器。如果想在端到端测试中保留 Drizzle 存储，请用 `overrideProvider(getDrizzleToken()).useValue(db)`（`getDrizzleToken` 来自 `@nestjs/drizzle`）替换 `DrizzleModule` 注册的数据库，其中 `db` 是使用您的迁移在 PGlite 上的 Drizzle 数据库。示例项目以这种方式测试加密、GraphQL、事件和调优。
 
-有关测试设置的更多信息，请参阅 [End-to-end testing](/fundamentals/testing#端到端测试)。
+有关测试设置的更多信息，请参阅 [End-to-end testing](/fundamentals/unit-testing)。
 
 #### 生产检查清单
 

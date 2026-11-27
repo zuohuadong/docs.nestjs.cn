@@ -575,7 +575,7 @@ describe('UsersService', () => {
 
 ```
 
-模拟对象完全替换了 `PrismaService`，因此其 `onModuleInit()` 钩子不会运行，测试永远不会打开数据库连接。当您测试导入了 `PrismaModule` 的模块时，请用 `overrideProvider(PrismaService)` 替换提供者。有关更多测试工具，请参阅 [Testing](/fundamentals/testing)。
+模拟对象完全替换了 `PrismaService`，因此其 `onModuleInit()` 钩子不会运行，测试永远不会打开数据库连接。当您测试导入了 `PrismaModule` 的模块时，请用 `overrideProvider(PrismaService)` 替换提供者。有关更多测试工具，请参阅 [Testing](/fundamentals/unit-testing)。
 
 #### 可观测性
 

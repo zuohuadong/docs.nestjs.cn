@@ -77,7 +77,7 @@ expect(result.statusCode).toEqual(200);
 
 **请求**和**响应**是 `@nestjs/platform-node` 导出的 `NodeRequest` 和 `NodeResponse` 的实例。它们通过 Express 风格的属性和方法扩展了 Node 的 `IncomingMessage` 和 `ServerResponse`，这些属性和方法通常由中间件、**异常过滤器**和 `@Res()` 处理器依赖，例如 `req.get()`、`req.is()`、`req.route`、`req.ip`、`req.ips`、`req.hostname`、`res.status()`、`res.send()`、`res.json()`、`res.set()`、`res.type()`、`res.cookie()`、`res.redirect()`、`res.sendFile()` 和 `res.locals`。中间件在 Express 风格的堆栈中运行，并使用相同的 `(req, res, next)` 签名。
 
-流行的 Express 中间件包，如 `helmet`、`compression`、`cookie-parser`、`express-session`、`express-rate-limit`、`csrf-csrf`、`morgan` 和 `passport`（以及 `@nestjs/passport` **守卫**），可以像在 Express 适配器中一样工作。当本文档的某个章节为 Express 和 Fastify 提供单独的说明时（例如 [Compression](/http/compression) 或 [Session](/http/session)），请遵循 Express 的说明。
+流行的 Express 中间件包，如 `helmet`、`compression`、`cookie-parser`、`express-session`、`express-rate-limit`、`csrf-csrf`、`morgan` 和 `passport`（以及 `@nestjs/passport` **守卫**），可以像在 Express 适配器中一样工作。当本文档的某个章节为 Express 和 Fastify 提供单独的说明时（例如 [Compression](/http/compression) 或 [Session](/http/sessions)），请遵循 Express 的说明。
 
 Node 适配器在某些地方故意与 Express 不同：
 

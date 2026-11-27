@@ -50,7 +50,7 @@ Potential solutions:
 
 这通常有以下原因之一：
 
-1. **循环文件导入。** 与下面描述的 [circular dependency](/faq/common-errors#循环依赖错误) 不同，提供者在构造函数中不相互依赖；而是两个文件相互导入。例如，一个模块文件声明一个令牌并导入一个提供者，而该提供者从模块文件导入该令牌常量。如果您使用桶文件（barrel files），请确保您的桶导入不会创建此类循环导入。
+1. **循环文件导入。** 与下面描述的 [circular dependency](/faq/errors) 不同，提供者在构造函数中不相互依赖；而是两个文件相互导入。例如，一个模块文件声明一个令牌并导入一个提供者，而该提供者从模块文件导入该令牌常量。如果您使用桶文件（barrel files），请确保您的桶导入不会创建此类循环导入。
 2. **按类型或接口注入。** 类型和接口在运行时不存在，因此 Nest 无法将它们用作注入令牌。请注入类引用，或使用带有 `@Inject()` 装饰器的自定义令牌（参见 [custom providers](/fundamentals/dependency-injection)）。
 3. **仅类型导入。** 对于基于类的提供者，请使用 [`import type ...`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-3-8.html#type-only-imports-and-export) 语法导入具体的类，而不是仅导入其类型。
 

@@ -117,7 +117,7 @@ catsService = await moduleRef.resolve(CatsService);
 
 > info **提示** 在 [module reference](/fundamentals/module-reference) 章了解有关其功能的更多信息。
 
-您不必使用提供者的生产版本，而是可以使用 [custom provider](/fundamentals/dependency-injection) 在测试目的下覆盖它。例如，您可以模拟数据库服务，而不是连接到实时数据库。覆盖在 [end-to-end testing](/fundamentals/testing#端到端测试) 部分有介绍，但它们也适用于单元测试。
+您不必使用提供者的生产版本，而是可以使用 [custom provider](/fundamentals/dependency-injection) 在测试目的下覆盖它。例如，您可以模拟数据库服务，而不是连接到实时数据库。覆盖在 [end-to-end testing](/fundamentals/unit-testing) 部分有介绍，但它们也适用于单元测试。
 
 <app-banner-courses></app-banner-courses>
 
@@ -292,7 +292,7 @@ const moduleRef = await Test.createTestingModule({
 
 这些方法中的每一个都会返回 `TestingModuleBuilder` 实例，因此您可以使用 [fluent style](https://en.wikipedia.org/wiki/Fluent_interface) 中的其他方法将它们链接起来。在链的末尾调用 `compile()` 以使 Nest 实例化和初始化模块。
 
-当测试运行时，您可能希望提供一个自定义日志记录器（例如，在 CI 服务器上）。使用 `setLogger()` 方法并传递一个满足 `LoggerService` 接口的对象，以告知 `TestingModuleBuilder` 在测试期间如何记录（默认情况下，只有“error”日志会写入控制台）。要断言已记录的内容，请使用 [`CapturingLogger`](/fundamentals/testing#asserting-on-logs)。
+当测试运行时，您可能希望提供一个自定义日志记录器（例如，在 CI 服务器上）。使用 `setLogger()` 方法并传递一个满足 `LoggerService` 接口的对象，以告知 `TestingModuleBuilder` 在测试期间如何记录（默认情况下，只有“error”日志会写入控制台）。要断言已记录的内容，请使用 [`CapturingLogger`](/fundamentals/unit-testing)。
 
 编译后的模块具有几个有用的方法，如下表所述：
 

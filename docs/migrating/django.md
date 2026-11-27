@@ -35,7 +35,7 @@ Nest 涵盖了 Django 开发者在后端会使用的绝大多数功能：应用�
 | `CsrfViewMiddleware` | `app.enableCsrfProtection()` | [CSRF protection](/security/csrf) |
 | 模板和 `render()` | 一个视图引擎和 `@Render()` | [Model-View-Controller](/http/mvc) |
 | 管理命令、`manage.py shell` | **独立应用程序**、nest-commander、REPL | [Standalone applications](/standalone-applications) |
-| `TestCase`, `APIClient` | `@nestjs/testing` 和 Supertest | [Testing](/fundamentals/testing) |
+| `TestCase`, `APIClient` | `@nestjs/testing` 和 Supertest | [Testing](/fundamentals/unit-testing) |
 | drf-spectacular | `@nestjs/swagger` | [OpenAPI](/openapi/introduction) |
 | Django Channels | **网关** | [Gateways](/websockets/gateways) |
 | 管理后台 | 没有等效项 | [The admin](/migrating/django#the-admin) |
@@ -693,7 +693,7 @@ describe('OrdersController', () => {
 
 ```
 
-要测试整个应用程序，导入`AppModule` 并用`overrideProvider()` 替换**提供者**。Nest 不像 Django 的测试运行器那样为你创建测试数据库：将`DATABASE_URL` 指向测试数据库，在测试运行前应用**迁移**，并在测试之间清空表。新项目使用[Vitest](https://vitest.dev/) 作为测试运行器。参见[Testing](/fundamentals/testing)。
+要测试整个应用程序，导入`AppModule` 并用`overrideProvider()` 替换**提供者**。Nest 不像 Django 的测试运行器那样为你创建测试数据库：将`DATABASE_URL` 指向测试数据库，在测试运行前应用**迁移**，并在测试之间清空表。新项目使用[Vitest](https://vitest.dev/) 作为测试运行器。参见[Testing](/fundamentals/unit-testing)。
 
 #### OpenAPI 和健康检查
 
