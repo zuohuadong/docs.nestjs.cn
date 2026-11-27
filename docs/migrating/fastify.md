@@ -215,7 +215,7 @@ $ BASE_URL=http://localhost:3000 node --test test/contract.test.mjs
 | --- | --- | --- |
 | 响应模式会移除所有未列出的字段，因此处理程序可以返回完整的记录 | 没有模式时，会发送所有字段，包括 `passwordHash` | 对每个有模式的路由执行 `@RouteSchema({ response })` |
 | 一个 `POST` 回答 `200`，并且 `response: { 200: schema }` 生效 | 一个 `POST` 回答 `201`，因此基于 `200` 的模式不再适用，字段也会返回 | 执行 `@HttpCode(200)`，或者将模式键入 `201` |
-| `onRequest` 中的认证在验证之前运行，因此没有令牌的无效请求会得到一个 `401` | `@RouteSchema({ body })` 在任何守卫之前验证，因此该请求会得到验证错误 | 使用 [pipe](/techniques/validation#基于模式的验证)、`@Body({ schema })` 进行验证，它在守卫之后运行，在需要的地方进行 |
+| `onRequest` 中的认证在验证之前运行，因此没有令牌的无效请求会得到一个 `401` | `@RouteSchema({ body })` 在任何守卫之前验证，因此该请求会得到验证错误 | 使用 [pipe](/techniques/validation#使用内置的-standardschemavalidationpipe)、`@Body({ schema })` 进行验证，它在守卫之后运行，在需要的地方进行 |
 | 错误具有处理程序给出的形状 | `{ statusCode, message, error }` | 一个全局异常过滤器 |
 | 验证错误以 `err.validation` 的形式到达您的处理程序 | 它以相同的方式到达过滤器，带有 `exception.validation` | 相同的过滤器 |
 | 未知路由会得到您的未找到处理程序 | `NotFoundException`，带有 Nest 的 body | 相同的过滤器 |
