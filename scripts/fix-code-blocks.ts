@@ -71,6 +71,10 @@ export function fixCodeBlocks(content: string): string {
   // 7. 清理多余的空行（超过 2 个连续空行）
   result = result.replace(/\n{3,}/g, '\n\n');
 
+  // 8. 代码块语言标记统一小写。Shiki 语言 ID 区分大小写，
+  //    官方原文里的 ```TypeScript 会让 rspress 构建直接失败。
+  result = result.replace(/^```([A-Za-z][\w+#-]*)/gm, (_m, lang: string) => `\`\`\`${lang.toLowerCase()}`);
+
   return result;
 }
 

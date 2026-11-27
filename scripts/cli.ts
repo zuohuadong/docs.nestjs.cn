@@ -322,6 +322,8 @@ async function runFix() {
     content = content.replace(/```\n([^\n])/g, '```\n\n$1');
     // 多余空行
     content = content.replace(/\n{3,}/g, '\n\n');
+    // 代码块语言标记小写（Shiki 语言 ID 区分大小写）
+    content = content.replace(/^```([A-Za-z][\w+#-]*)/gm, (_m, lang: string) => `\`\`\`${lang.toLowerCase()}`);
 
     // --- 链接修复 ---
     // 空链接文本

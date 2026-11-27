@@ -121,7 +121,7 @@ $ npm run start
 
 创建文档时，您可以传递额外的选项来微调库的行为。这些选项的类型是 `SwaggerDocumentOptions`：
 
-```TypeScript
+```typescript
 export interface SwaggerDocumentOptions {
   /**
    * List of modules to include in the specification
@@ -205,7 +205,7 @@ export interface SwaggerDocumentOptions {
 
 例如，要生成操作名称如 `createUser` 而不是 `UsersController_createUser`，请设置以下内容：
 
-```TypeScript
+```typescript
 const options: SwaggerDocumentOptions =  {
   operationIdFactory: (
     controllerKey: string,
@@ -363,7 +363,7 @@ const documentOptions: SwaggerDocumentOptions = {
 
 您可以通过将实现 `SwaggerCustomOptions` 接口的选项对象作为 `SwaggerModule#设置()` 方法的第四个参数来配置 Swagger UI。
 
-```TypeScript
+```typescript
 export interface SwaggerCustomOptions {
   /**
    * If `true`, Swagger resources paths will be prefixed by the global prefix set through `setGlobalPrefix()`.
