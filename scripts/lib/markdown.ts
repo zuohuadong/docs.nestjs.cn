@@ -61,13 +61,29 @@ export function protectMarkdown(content: string): {
 
 /**
  * 还原占位符。如果有未还原的占位符则抛出错误。
+ *
+ * 注意占位符可能嵌套：后一步保护（如链接）可能把先一步已保护的片段
+ * （如行内代码）整体包进自己的原文，例如
+ * `[⟦IC_2⟧](http://localhost:3000/)` 被链接占位符收录。
+ * 因此必须按与保护相反的顺序还原，让外层先展开、内层后还原；
+ * 同时多做几轮直至稳定，以覆盖多层嵌套。
  */
 export function restoreMarkdown(content: string, map: PlaceholderMap): string {
   let result = content;
 
-  for (const [ph, original] of map.placeholders) {
-    const escaped = ph.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    result = result.replace(new RegExp(escaped, 'g'), original);
+  // 逆序：外层占位符在 map 中更靠后
+  const entries = [...map.placeholders.entries()].reverse();
+
+  // 多轮还原，处理嵌套占位符；无进展即退出
+  for (let pass = 0; pass < 5; pass++) {
+    let changed = false;
+    for (const [ph, original] of entries) {
+      if (!result.includes(ph)) continue;
+      // 用 split/join 而非 replace，避免原文中的 $& / $1 被当作替换模式
+      result = result.split(ph).join(original);
+      changed = true;
+    }
+    if (!changed) break;
   }
 
   // 检检查未还原的占位符（兼容新旧格式）
