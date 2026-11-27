@@ -77,6 +77,12 @@ function processFile(
 
           const cleanPath = urlPath.replace(/^\//, '');
 
+          // 官方分版本文档（/v11、/v10/migration-guide）与 llms.txt 在本站
+          // 没有对应页面，必须保留绝对地址；否则会被改写成 ./v11，变成死链。
+          if (/^v\d+(?:\/|$)/.test(cleanPath) || /^llms(?:-full)?\.txt$/.test(cleanPath)) {
+            return `https://docs.nestjs.com${urlPath}`;
+          }
+
           if (pathMappings[cleanPath]) {
             const mappedPath = pathMappings[cleanPath];
             stats.fixedLinks++;
@@ -118,6 +124,18 @@ function processFile(
           }
           return `](${mapped}${anchor ?? ''})`;
         },
+      );
+    }
+
+    // 1.7 历史译文里分版本链接可能已被改写成 ./v11，恢复为绝对地址
+    if (!isSpecial) {
+      content = content.replace(
+        /\]\(\.?\/(v\d+(?:\/[^)\s]*)?)\)/g,
+        '](https://docs.nestjs.com/$1)',
+      );
+      content = content.replace(
+        /\]\(\.?\/(llms(?:-full)?\.txt)\)/g,
+        '](https://docs.nestjs.com/$1)',
       );
     }
 
