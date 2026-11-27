@@ -2,6 +2,8 @@
 
 This article walks you through migrating from NestJS version 11 to version 12. Version 12 centers on ESM packages, updated CLI defaults, first-class support for [Standard Schema](https://standardschema.dev/)-based validation and serialization, and native [observability](/observability/overview) support.
 
+> info **Hint** If your project is on a major version older than v11, see [Version compatibility](/faq/versions) for the guides that bring it to v11 first.
+
 #### Upgrading packages
 
 Start by upgrading the Nest CLI itself, because the upgrade command used below ships with it:
@@ -338,7 +340,7 @@ isHealthy(key: string) {
 }
 ```
 
-The `timeout` option of the built-in database, microservice, and gRPC indicators (e.g., `db.pingCheck('database', {{ '{' }} timeout: 1500 {{ '}' }})`) is deprecated. Chain `.withTimeout(1500)` on the returned attempt instead. See the [Terminus chapter](/reliability/terminus#timeouts-and-caching) for details.
+The `timeout` option of the built-in database, microservice, and gRPC indicators (e.g., `db.pingCheck('database', {{ '{' }} timeout: 1500 {{ '}' }})`) is deprecated. Chain `.withTimeout(1500)` on the returned attempt instead. See the [Terminus chapter](/reliability/terminus#configuring-a-check) for details.
 
 #### Webpack deprecation in CLI workflows
 

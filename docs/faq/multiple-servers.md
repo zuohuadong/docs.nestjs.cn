@@ -1,10 +1,11 @@
 <!-- 此文件从 content/faq/multiple-servers.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:36:49.521Z -->
+<!-- 生成时间: 2026-11-26T23:13:21.239Z -->
 <!-- 源文件: content/faq/multiple-servers.md -->
+<!-- 源哈希: fd3102f425759128c9f61864109b9350 -->
 
 ### HTTPS
 
-要创建使用 HTTPS 协议的应用程序，请在传递给 `NestFactory` 类的 `create()` 方法的选项对象中设置 `httpsOptions` 属性：
+要创建一个使用 HTTPS 协议的应用程序，请在传递给 `NestFactory.create()` 方法的选项对象中设置 `httpsOptions` 属性：
 
 ```typescript
 const httpsOptions = {
@@ -18,7 +19,7 @@ await app.listen(process.env.PORT ?? 3000);
 
 ```
 
-如果您使用 `FastifyAdapter`，请按如下方式创建应用程序：
+如果你使用 `FastifyAdapter`，请按如下方式创建应用程序：
 
 ```typescript
 const app = await NestFactory.create<NestFastifyApplication>(
@@ -28,9 +29,9 @@ const app = await NestFactory.create<NestFastifyApplication>(
 
 ```
 
-#### 同时运行多个服务器
+#### 多个同时运行的服务器
 
-以下示例展示了如何实例化一个同时监听多个端口（例如，一个非 HTTPS 端口和一个 HTTPS 端口）的 Nest 应用程序。
+以下示例展示了如何创建一个在多个端口上同时监听的 Nest 应用程序（例如，在 HTTP 端口和 HTTPS 端口上）：
 
 ```typescript
 const httpsOptions = {
@@ -47,7 +48,7 @@ const httpsServer = https.createServer(httpsOptions, server).listen(443);
 
 ```
 
-因为我们自己调用了 `http.createServer` / `https.createServer`，NestJS 在调用 `app.close` / 终止信号时不会关闭它们。我们需要自己完成这一操作：
+因为我们使用 `http.createServer()` 和 `https.createServer()` 自己创建了服务器，所以当你调用 `app.close()` 或进程接收到终止信号时，Nest 不会自动关闭它们。你需要自己关闭它们，例如使用实现 `OnApplicationShutdown` 钩子的提供者：
 
 ```typescript
 @Injectable()
@@ -82,6 +83,6 @@ shutdownObserver.addHttpServer(httpsServer);
 
 ```
 
-> info **提示** `ExpressAdapter` 从 `@nestjs/platform-express` 包中导入。`http` 和 `https` 包是 Node.js 原生包。
+> info **提示** `ExpressAdapter` 从 `@nestjs/platform-express` 包导入。`http` 和 `https` 模块内置于 Node.js。
 
-> **警告** 此示例不适用于 [GraphQL Subscriptions](/graphql/subscriptions)。
+> warning **警告** 此示例不适用于 [GraphQL subscriptions](/graphql/subscriptions)。

@@ -97,7 +97,21 @@ The <strong>gRPC</strong> transporter options object exposes the following prope
       >
     </td>
   </tr>
+  <tr>
+    <td><code>maxPendingResponses</code></td>
+    <td>Maximum number of responses of a streaming call that may wait for a client that isn't reading them. Once more are waiting, the call fails with <code>RESOURCE_EXHAUSTED</code> and the handler's <code>Observable</code> is unsubscribed from. Responses that a handler emits in one go while its client keeps up, such as a result returned with <code>from(rows)</code>, are not counted. Applies only to the server. Optional. Set to <code>0</code> to disable. A value that isn't a number, such as the <code>NaN</code> that <code>Number()</code> makes of an unset environment variable, gets the default. Defaults to <code>1000</code></td>
+  </tr>
+  <tr>
+    <td><code>gracefulShutdown</code></td>
+    <td>Enables graceful shutdown. When enabled, closing the server stops it from taking new calls and waits for the calls in progress to finish, for <code>gracePeriod</code> at most, before it cancels those still running. When disabled, closing the server cancels the calls in progress right away. Applies only to the server. Optional. Defaults to <code>false</code></td>
+  </tr>
+  <tr>
+    <td><code>gracePeriod</code></td>
+    <td>Longest time in milliseconds to wait for the calls in progress when <code>gracefulShutdown</code> is enabled. The server closes sooner when they are done before that. Set to <code>0</code> to cancel the calls at once. Applies only to the server. Optional. Defaults to <code>10000</code></td>
+  </tr>
 </table>
+
+> info **Hint** A streaming call that never ends is still in progress, so closing the server with `gracefulShutdown` takes the whole `gracePeriod` before the call is cancelled.
 
 #### Sample gRPC service
 
@@ -256,7 +270,7 @@ export class AppService implements OnModuleInit {
     this.heroesService = this.client.getService<HeroesService>('HeroesService');
   }
 
-  getHero(): Observable<string> {
+  getHero(): Observable<Hero> {
     return this.heroesService.findOne({ id: 1 });
   }
 }
@@ -286,7 +300,7 @@ export class AppService implements OnModuleInit {
     this.heroesService = this.client.getService<HeroesService>('HeroesService');
   }
 
-  getHero(): Observable<string> {
+  getHero(): Observable<Hero> {
     return this.heroesService.findOne({ id: 1 });
   }
 }
@@ -299,8 +313,13 @@ In each case, you end up with a reference to the `HeroesService` proxy object, w
 All service methods are **lower camel cased**, following the natural convention of the language. For example, while the `HeroesService` definition in the `.proto` file contains the `FindOne()` function, the `heroesService` instance provides the `findOne()` method.
 
 ```typescript
+interface Hero {
+  id: number;
+  name: string;
+}
+
 interface HeroesService {
-  findOne(data: { id: number }): Observable<any>;
+  findOne(data: { id: number }): Observable<Hero>;
 }
 ```
 
@@ -309,7 +328,7 @@ A handler can also return an `Observable`, in which case the result values are e
 ```typescript
 @@filename(heroes.controller)
 @Get()
-call(): Observable<any> {
+call(): Observable<Hero> {
   return this.heroesService.findOne({ id: 1 });
 }
 @@switch
@@ -322,7 +341,7 @@ call() {
 To send gRPC metadata along with the request, pass a second argument, as follows:
 
 ```typescript
-call(): Observable<any> {
+call(): Observable<Hero> {
   const metadata = new Metadata();
   metadata.add('Set-Cookie', 'yummy_cookie=choco');
 

@@ -35,6 +35,7 @@ export interface ValidationPipeOptions extends ValidatorOptions {
   disableErrorMessages?: boolean;
   exceptionFactory?: (errors: ValidationError[]) => any;
   errorFormat?: 'list' | 'grouped';
+  maxErrorMessagesLength?: number;
 }
 ```
 
@@ -121,7 +122,7 @@ In addition to these, all `class-validator` options (inherited from the `Validat
   <tr>
     <td><code>validationError.target</code></td>
     <td><code>boolean</code></td>
-    <td>Indicates if target should be exposed in <code>ValidationError</code>.</td>
+    <td>Indicates if target should be exposed in <code>ValidationError</code>. <code>ValidationPipe</code> sets it to <code>false</code> by default, so an <code>exceptionFactory</code> that reads <code>error.target</code> gets <code>undefined</code> unless this is set to <code>true</code>.</td>
   </tr>
   <tr>
     <td><code>validationError.value</code></td>
@@ -137,6 +138,11 @@ In addition to these, all `class-validator` options (inherited from the `Validat
     <td><code>errorFormat</code></td>
     <td><code>'list' | 'grouped'</code></td>
     <td>Specifies the format of validation error messages. <code>'list'</code> (default) returns an array of error message strings. <code>'grouped'</code> returns an object with property paths as keys and arrays of unmodified error messages as values, preserving custom validation messages without prepending parent path prefixes.</td>
+  </tr>
+  <tr>
+    <td><code>maxErrorMessagesLength</code></td>
+    <td><code>number</code></td>
+    <td>Maximum total length, in characters, of the messages in an error response of the built-in exception factory. The errors past it are left out, and a last message says so. Set to <code>Infinity</code> to lift the limit. A value that isn't a number, such as the <code>NaN</code> that <code>Number()</code> makes of an unset environment variable, gets the default. Defaults to <code>1000000</code>.</td>
   </tr>
 </table>
 
@@ -211,6 +217,8 @@ export class FindOneParams {
   id: string;
 }
 ```
+
+> warning **Warning** `@IsOptional()` skips a property's other validators when its value is `null`, not only when it's `undefined`. A body such as `{{ '{' }}"title": null{{ '}' }}` passes validation, and the `null` can reach your database. For a property that may be left out but must not be `null`, use `@ValidateIf((_, value) => value !== undefined)` in place of `@IsOptional()`, together with the property's other validators.
 
 #### Disable detailed errors
 
@@ -323,6 +331,8 @@ The `PartialType()` function returns a type (class) with all the properties of t
 export class UpdateCatDto extends PartialType(CreateCatDto) {}
 ```
 
+> info **Hint** Like `@IsOptional()`, `PartialType()` skips validation for `null` as well as `undefined`. To validate `null` and skip only `undefined`, pass `{{ '{' }} skipNullProperties: false {{ '}' }}` as the second argument.
+
 The `PickType()` function constructs a type from a subset of the input type's properties:
 
 ```typescript
@@ -400,6 +410,8 @@ This construction parses and validates the query parameters of a request such as
 ```bash
 GET /?ids=1,2,3
 ```
+
+By default, `ParseArrayPipe` rejects the array at its first invalid item. With the `stopAtFirstError` option set to `false`, it validates every item and reports the errors of all the invalid ones, each prefixed with the index of its item, such as `[2] email must be an email`. The `maxErrorMessagesLength` option, which `ParseArrayPipe` takes like `ValidationPipe`, then applies to the messages of all the items together: once they reach it, the next invalid item ends the validation, the items after it aren't validated, and a last message says that errors were left out. With a custom `exceptionFactory`, this limit doesn't apply.
 
 #### Schema-based validation
 
@@ -621,6 +633,11 @@ The `StandardSchemaValidationPipe` constructor accepts the following options:
     <td><code>exceptionFactory</code></td>
     <td><code>Function</code></td>
     <td>Receives the array of validation issues and returns the exception to throw.</td>
+  </tr>
+  <tr>
+    <td><code>maxErrorMessagesLength</code></td>
+    <td><code>number</code></td>
+    <td>Maximum total length, in characters, of the messages in an error response of the built-in exception factory, counting the path that comes with each message. The issues past it are left out, and a last message says so. A custom <code>exceptionFactory</code> receives every issue. Set to <code>Infinity</code> to lift the limit. A value that isn't a number, such as the <code>NaN</code> that <code>Number()</code> makes of an unset environment variable, gets the default. Default: <code>1000000</code>.</td>
   </tr>
 </table>
 

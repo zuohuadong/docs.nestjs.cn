@@ -77,8 +77,14 @@ Instead of the default `webpack` configuration that the Nest CLI ships with, we'
 ```javascript
 module.exports = (options, webpack) => {
   const lazyImports = [
+    '@nestjs/microservices',
     '@nestjs/microservices/microservices-module',
+    '@nestjs/microservices/microservices-module.js',
     '@nestjs/websockets/socket-module',
+    '@nestjs/websockets/socket-module.js',
+    'class-validator',
+    'class-transformer',
+    'class-transformer/storage',
   ];
 
   return {
@@ -212,7 +218,7 @@ With this in place, open the `main.ts` file and update the bootstrap code with t
 
 ```typescript
 import { NestFactory } from '@nestjs/core';
-import serverlessExpress from '@codegenie/serverless-express';
+import { configure } from '@codegenie/serverless-express';
 import type { Callback, Context, Handler } from 'aws-lambda';
 import { AppModule } from './app.module.js';
 
@@ -223,7 +229,7 @@ async function bootstrap(): Promise<Handler> {
   await app.init();
 
   const expressApp = app.getHttpAdapter().getInstance();
-  return serverlessExpress({ app: expressApp });
+  return configure({ app: expressApp });
 }
 
 export const handler: Handler = async (

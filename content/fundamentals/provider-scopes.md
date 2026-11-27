@@ -176,7 +176,7 @@ import {
   ContextIdFactory,
   ContextIdStrategy,
 } from '@nestjs/core';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 const tenants = new Map<string, ContextId>();
 
@@ -247,3 +247,5 @@ Similarly, for [custom providers](/fundamentals/custom-providers), set the `dura
   durable: true,
 }
 ```
+
+> info **Hint** For durable providers in a complete multi-tenant application, with a bounded number of sub-trees, follow [Build a multi-tenant SaaS backend in Node.js](/tutorials/multi-tenant-saas#give-each-organization-its-own-di-sub-tree).

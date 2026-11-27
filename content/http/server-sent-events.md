@@ -2,6 +2,8 @@
 
 Server-Sent Events (SSE) is a server push technology that enables a client to receive automatic updates from a server over an HTTP connection. Each notification is sent as a block of text terminated by a pair of newlines (see [Server-sent events on MDN](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events) to learn more).
 
+> info **Hint** For Server-Sent Events in a complete application, streaming each user only the updates of their own projects, follow [Build a project-management API in Node.js](/tutorials/project-management-api).
+
 #### Usage
 
 To enable Server-Sent Events on a route (a route registered within a **controller class**), annotate the route handler with the `@Sse()` decorator.
@@ -15,7 +17,7 @@ sse(): Observable<MessageEvent> {
 
 > info **Hint** The `@Sse()` decorator and the `MessageEvent` interface are imported from the `@nestjs/common` package, while `Observable`, `interval`, and `map` are imported from the `rxjs` package.
 
-> warning **Warning** Server-Sent Events routes must return an `Observable` stream (or a `Promise` that resolves to one, as shown [below](/http/server-sent-events#client-disconnection)).
+> warning **Warning** Server-Sent Events routes must return an `Observable` stream (or a `Promise` that resolves to one, as shown [below](/http/server-sent-events#client-disconnection)). To stream from an async generator, a `ReadableStream`, or a web `Response` instead, return it from a regular route: see [Streaming responses](/http/streaming-responses).
 
 In the example above, we defined a route named `sse` that propagates real-time updates. Clients can listen to these events using the [EventSource API](https://developer.mozilla.org/en-US/docs/Web/API/EventSource).
 
@@ -167,6 +169,21 @@ return new Observable<MessageEvent>(subscriber => {
 ```
 
 > info **Hint** `@SseSignal()` is only populated on `@Sse()` routes; on any other route handler, it resolves to `undefined`. It works the same way on the Express and Fastify platforms.
+
+#### Slow clients
+
+An `Observable` can't be paused, so events wait in memory for a client that isn't reading them. Once more than 4 million characters of event data are waiting for a client whose stream is backed up, Nest logs a warning and drops the connection as if the client had disconnected, which also unsubscribes from the `Observable`. An `EventSource` then reconnects, sending the ID of the last event it received. An event counts for the length of its `data`, `comment`, `type` and `id`, and for at least 16 characters, whatever it carries.
+
+For a route that streams bulk data faster than its clients read, raise the limit with the `maxPendingDataLength` option, or set it to `0` or `Infinity` to lift it:
+
+```typescript
+@Sse('logs', { maxPendingDataLength: 64 * 1024 * 1024 })
+logs(): Observable<MessageEvent> {
+  // ...
+}
+```
+
+A value that isn't a number, such as the `NaN` that `Number()` makes of an unset environment variable, gets the default.
 
 #### Example
 

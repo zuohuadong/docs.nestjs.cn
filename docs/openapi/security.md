@@ -1,10 +1,11 @@
 <!-- 此文件从 content/openapi/security.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:31:45.940Z -->
+<!-- 生成时间: 2026-11-26T22:59:18.933Z -->
 <!-- 源文件: content/openapi/security.md -->
+<!-- 源哈希: 5e56052f3807d71537d93c5ad2bbbfee -->
 
-### 安全
+### 安全性
 
-要定义特定操作应使用哪些安全机制，请使用 `@ApiSecurity()` 装饰器。
+要定义特定操作使用的安全机制，请应用 `@ApiSecurity()` 装饰器：
 
 ```typescript
 @ApiSecurity('basic')
@@ -13,7 +14,7 @@ export class CatsController {}
 
 ```
 
-在运行应用程序之前，请记得使用 `DocumentBuilder` 将安全定义添加到基础文档中：
+在运行应用程序之前，请使用 `DocumentBuilder` 将安全定义添加到基础文档中：
 
 ```typescript
 const options = new DocumentBuilder().addSecurity('basic', {
@@ -23,11 +24,11 @@ const options = new DocumentBuilder().addSecurity('basic', {
 
 ```
 
-一些最流行的认证技术是内置的（例如 `basic` 和 `bearer`），因此您不必像上面那样手动定义安全机制。
+最流行的认证技术（例如 `basic` 和 `bearer`）是内置的，因此您无需像上面所示那样手动定义其安全机制。
 
 #### 基本认证
 
-要启用基本认证，请使用 `@ApiBasicAuth()`。
+要启用基本认证，请使用 `@ApiBasicAuth()`：
 
 ```typescript
 @ApiBasicAuth()
@@ -36,7 +37,7 @@ export class CatsController {}
 
 ```
 
-在运行应用程序之前，请记得使用 `DocumentBuilder` 将安全定义添加到基础文档中：
+在运行应用程序之前，请使用 `DocumentBuilder` 将安全定义添加到基础文档中：
 
 ```typescript
 const options = new DocumentBuilder().addBasicAuth();
@@ -45,7 +46,7 @@ const options = new DocumentBuilder().addBasicAuth();
 
 #### Bearer 认证
 
-要启用 Bearer 认证，请使用 `@ApiBearerAuth()`。
+要启用 Bearer 认证，请使用 `@ApiBearerAuth()`：
 
 ```typescript
 @ApiBearerAuth()
@@ -54,7 +55,7 @@ export class CatsController {}
 
 ```
 
-在运行应用程序之前，请记得使用 `DocumentBuilder` 将安全定义添加到基础文档中：
+在运行应用程序之前，请使用 `DocumentBuilder` 将安全定义添加到基础文档中：
 
 ```typescript
 const options = new DocumentBuilder().addBearerAuth();
@@ -63,7 +64,7 @@ const options = new DocumentBuilder().addBearerAuth();
 
 #### OAuth2 认证
 
-要启用 OAuth2，请使用 `@ApiOAuth2()`。
+要启用 OAuth2，请使用 `@ApiOAuth2()`：
 
 ```typescript
 @ApiOAuth2(['pets:write'])
@@ -72,7 +73,7 @@ export class CatsController {}
 
 ```
 
-在运行应用程序之前，请记得使用 `DocumentBuilder` 将安全定义添加到基础文档中：
+在运行应用程序之前，请使用 `DocumentBuilder` 将安全定义添加到基础文档中：
 
 ```typescript
 const options = new DocumentBuilder().addOAuth2();
@@ -81,7 +82,7 @@ const options = new DocumentBuilder().addOAuth2();
 
 #### Cookie 认证
 
-要启用 Cookie 认证，请使用 `@ApiCookieAuth()`。
+要启用 Cookie 认证，请使用 `@ApiCookieAuth()`：
 
 ```typescript
 @ApiCookieAuth()
@@ -90,7 +91,7 @@ export class CatsController {}
 
 ```
 
-在运行应用程序之前，请记得使用 `DocumentBuilder` 将安全定义添加到基础文档中：
+在运行应用程序之前，请使用 `DocumentBuilder` 将安全定义添加到基础文档中：
 
 ```typescript
 const options = new DocumentBuilder().addCookieAuth('optional-session-id');

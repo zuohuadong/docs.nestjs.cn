@@ -1,17 +1,18 @@
 <!-- 此文件从 content/fundamentals/platform-agnosticism.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-09-03T11:23:53.486Z -->
+<!-- 生成时间: 2026-11-26T22:35:32.134Z -->
 <!-- 源文件: content/fundamentals/platform-agnosticism.md -->
+<!-- 源哈希: 92e583f427225be6ca577cb2f49267e8 -->
 
 ### 平台无关性
 
-Nest 是一个平台无关的框架。这意味着您可以开发**可复用的逻辑部分**，这些部分可以用于不同类型的应用程序。例如，大多数组件可以在不同的底层 HTTP 服务器框架（如 Express 和 Fastify）之间无需修改即可重用，甚至可以在不同类型的应用程序（如 HTTP 服务器框架、具有不同传输层的微服务以及 Web Sockets）之间重用。
+Nest 是一个平台无关的框架。您可以开发**可重用的逻辑部分**，并在不同类型的应用程序中使用它们。例如，大多数组件可以在不同的底层 HTTP 服务器框架（例如 Express 和 Fastify）之间，甚至在不同_类型_的应用程序（例如 HTTP 服务器、具有不同传输层的微服务和 WebSocket）之间无需更改地重用。
 
-#### 一次构建，随处使用
+#### 构建一次，随处使用
 
-文档的**概述**部分主要展示了使用 HTTP 服务器框架的编码技术（例如，提供 REST API 或提供 MVC 风格的服务端渲染应用的应用程序）。然而，所有这些构建模块都可以在不同的传输层（[microservices](/microservices/basics) 或 [websockets](/websockets/gateways)）之上使用。
+文档的**概述**部分主要展示了使用 HTTP 服务器框架的编码技术（例如提供 REST API 或 MVC 风格服务器端渲染的应用程序）。然而，所有这些构建块都可以基于不同的传输层（[microservices](/microservices/basics) 或 [WebSockets](/websockets/gateways)）使用。
 
-此外，Nest 附带了一个专用的 [GraphQL](/graphql/quick-start) 模块。您可以交替使用 GraphQL 作为您的 API 层，而不是提供 REST API。
+Nest 还提供了一个专用的 [GraphQL](/graphql/quick-start) 模块。您可以将 GraphQL 作为 API 层与 REST API 互换使用。
 
-另外，[application context](/application-context) 功能有助于在 Nest 之上创建任何类型的 Node.js 应用程序——包括 CRON 任务和 CLI 应用等。
+此外，[application context](/standalone-applications) 功能允许您在 Nest 之上构建任何类型的 Node.js 应用程序，包括定时任务和 CLI 应用程序。
 
-Nest 致力于成为 Node.js 应用程序的完整平台，为您的应用程序带来更高级别的模块化和可重用性。一次构建，随处使用！
+Nest 旨在成为一个成熟的 Node.js 应用程序平台，为您的应用程序带来更高层次的模块化和可重用性。构建一次，随处使用。

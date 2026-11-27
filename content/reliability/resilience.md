@@ -1,5 +1,7 @@
 ### Resilience
 
+`@nestjs/resilience` adds retries, timeouts, circuit breakers, bulkheads and fallbacks to controllers, resolvers, message handlers and gateways, as decorators.
+
 Sooner or later, every application that calls another system meets one that is slow or down. Without a plan, a slow dependency ties up your request handlers, your clients wait until their own timeouts fire, and retries from every layer pile even more load onto the service that is already struggling.
 
 `@nestjs/resilience` gives you the usual tools as decorators: **retry**, **timeout**, **circuit breaker**, **bulkhead** and **fallback**. They apply to your application's **entrypoints**, which are controllers, GraphQL resolvers, microservice message handlers and WebSocket gateways. For code inside services, the same settings are available as policy objects. A single global interceptor applies the decorators, so they behave the same on every transport, and each failure becomes that transport's native error. Over HTTP, for example, a timeout answers `504 Gateway Timeout` and an open breaker answers `503 Service Unavailable` with a `Retry-After` header.
@@ -442,6 +444,7 @@ Add `RepricingService` to the providers of `ShippingModule`, and call `repricePe
 A few details differ from entrypoints:
 
 - `execute()` passes your function the attempt's `signal` and `attempt` number. The `source` option labels the events this call emits.
+- A call that returns normally with a bad result, such as a `fetch()` that resolves with a 503 `Response`, isn't an error, so `retryIf` never sees it. Set `retryOnResult(result, attempt)` in the `retry` options of `create()` or of a preset to retry it. Entrypoints ignore it, and `@Retry()` has no such option.
 - A policy object has no `GET` or `POST` to look at, so the preset's retry **always** applies. Only wrap calls that are safe to repeat (a quote is).
 - The route's `@Timeout('1.5s')` belongs to the route. The job gets the preset's 2 seconds.
 - Create the policy once, for example in the constructor, not on every call. For options that aren't a preset, use `resilience.create(options, name)`.
