@@ -178,7 +178,9 @@ jobs:
 
       - name: Process and translate content changes
         id: translate-content
-        if: steps.sync-content.outputs.content_changed == 'true' || inputs.force_translation == true
+        # 不限于 content 变化时才翻译：翻译失败的文件会保留旧译文/缺失译文，
+        # 若只在 content 变化时运行，这些文件将永远得不到补齐（源哈希不匹配
+        # 也不会有机会重试）。翻译脚本按源哈希逐文件跳过，全部最新时几乎无开销。
         run: |
           echo "🔄 正在处理内容变更并进行翻译..."
           

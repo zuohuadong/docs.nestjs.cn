@@ -452,7 +452,12 @@ const options: Partial<TranslatorOptions> = {
 };
 
 const translator = new DocumentTranslator(options);
-translator.run().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+// 约定退出码：0 = 有更新，1 = 无更新（工作流据此判断），2 = 执行出错。
+// 出错不能用 1，否则工作流会把「全部翻译失败」当成「无需更新」而静默通过。
+translator
+  .run()
+  .then((hasChanges) => process.exit(hasChanges ? 0 : 1))
+  .catch((err) => {
+    console.error(err);
+    process.exit(2);
+  });
