@@ -59,6 +59,13 @@ function fixLinks(content: string): string {
     '[$1]($2)'
   );
 
+  // 5. 官方分版本文档链接（/v11、/v10/migration-guide 等）在本站不存在，
+  //    属于英文原文中指向 docs.nestjs.com 版本站点的路径，改写为绝对地址。
+  result = result.replace(
+    /\]\((\/v\d+(?:\/[^)\s]*)?)\)/g,
+    '](https://docs.nestjs.com$1)'
+  );
+
   return result;
 }
 
