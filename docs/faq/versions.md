@@ -32,10 +32,10 @@
 | 从 | 到 | 迁移指南 |
 | --- | --- | --- |
 | v11 | v12 | [Migration guide](/migration-guide) |
-| v10 | v11 | [docs.nestjs.com/v11/migration-guide](https://docs.nestjs.com/v11/migration-guide) |
-| v9 | v10 | [docs.nestjs.com/v10/migration-guide](https://docs.nestjs.com/v10/migration-guide) |
-| v8 | v9 | [docs.nestjs.com/v9/migration-guide](https://docs.nestjs.com/v9/migration-guide) |
-| v7 | v8 | [docs.nestjs.com/v8/migration-guide](https://docs.nestjs.com/v8/migration-guide) |
+| v10 | v11 | [docs.nestjs.com/v11/migration-guide](./v11/migration-guide) |
+| v9 | v10 | [docs.nestjs.com/v10/migration-guide](./v10/migration-guide) |
+| v8 | v9 | [docs.nestjs.com/v9/migration-guide](./v9/migration-guide) |
+| v7 | v8 | [docs.nestjs.com/v8/migration-guide](./v8/migration-guide) |
 
 由于每个指南仅描述两个相邻主要版本之间的更改，请**一次一个主要版本**升级落后多个版本的项目。按顺序遵循指南，并在开始下一步之前确保应用程序构建成功且测试通过。在每一步之前，请检查您的 Node.js 版本是否与上表的目标行匹配。
 
@@ -52,4 +52,4 @@ $ npm i @nestjs/core@11 @nestjs/common@11 @nestjs/platform-express@11 @nestjs/te
 
 #### 旧主要版本
 
-先前主要版本（回溯到 v4）的文档在其自己的路径下仍然可用，例如 [docs.nestjs.com/v11](https://docs.nestjs.com/v11) 或 [docs.nestjs.com/v10](https://docs.nestjs.com/v10)。
+先前主要版本（回溯到 v4）的文档在其自己的路径下仍然可用，例如 [docs.nestjs.com/v11](./v11) 或 [docs.nestjs.com/v10](./v10)。

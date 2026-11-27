@@ -136,7 +136,7 @@ Nest 也将 Next.js 服务器视为客户端，因此 `req.ip` 是其地址，�
 
 #### 在应用间共享模式
 
-Nest 根据任何 [Standard Schema](https://standardschema.dev/) 模式验证请求体，例如 Zod 模式（参见 [Schema-based validation](/techniques/validation#基于模式的验证)）。将模式放在一个单独的包 `packages/contracts` 中，Next.js 应用使用与 Nest 检查请求时相同的模式验证其表单，并且两者都使用从中推断出的类型。
+Nest 根据任何 [Standard Schema](https://standardschema.dev/) 模式验证请求体，例如 Zod 模式（参见 [Schema-based validation](/techniques/validation#使用内置的-standardschemavalidationpipe)）。将模式放在一个单独的包 `packages/contracts` 中，Next.js 应用使用与 Nest 检查请求时相同的模式验证其表单，并且两者都使用从中推断出的类型。
 
 ```json
 {

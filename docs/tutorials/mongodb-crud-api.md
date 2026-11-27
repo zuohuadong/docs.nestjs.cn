@@ -231,7 +231,7 @@ export type UpdateProductDto = z.infer<typeof updateProductSchema>;
 
 ```
 
-`StandardSchemaValidationPipe`，稍后全局注册，会验证声明了 `schema` 的每个参数，并将模式的输出传递给处理程序：修剪的字符串、大写的 SKU、小写的类别以及描述的默认值。每个模式推断的类型即为参数的类型，因此没有 DTO 类（参见 [Schema-based validation](/techniques/validation#基于模式的验证)）。
+`StandardSchemaValidationPipe`，稍后全局注册，会验证声明了 `schema` 的每个参数，并将模式的输出传递给处理程序：修剪的字符串、大写的 SKU、小写的类别以及描述的默认值。每个模式推断的类型即为参数的类型，因此没有 DTO 类（参见 [Schema-based validation](/techniques/validation#使用内置的-standardschemavalidationpipe)）。
 
 ##### 验证 MongoDB ObjectId
 

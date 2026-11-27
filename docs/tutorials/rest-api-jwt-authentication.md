@@ -187,7 +187,7 @@ await app.listen(process.env.PORT ?? 3000);
 ```
 
 - 没有模块类：`NestFactory.create()` 直接获取根模块的元数据（参见 [Root module from metadata](/modules#root-module-from-metadata)）。当应用程序有自己的模块需要导入时，该类将在下一部分出现。使用适配器时，应用程序选项（包括 `instrument`）是第三个参数。
-- `StandardSchemaValidationPipe` 使用 Zod 或任何其他 [Standard Schema](https://standardschema.dev/) 库验证声明了 `schema` 的每个参数，并将模式的输出传递给处理器，因此 `body` 默认为空字符串，而 `title` 接收到的是修剪后的字符串。每个模式推断的类型即为参数的类型，因此无需维护 DTO 类。参见 [Schema-based validation](/techniques/validation#基于模式的验证)。
+- `StandardSchemaValidationPipe` 使用 Zod 或任何其他 [Standard Schema](https://standardschema.dev/) 库验证声明了 `schema` 的每个参数，并将模式的输出传递给处理器，因此 `body` 默认为空字符串，而 `title` 接收到的是修剪后的字符串。每个模式推断的类型即为参数的类型，因此无需维护 DTO 类。参见 [Schema-based validation](/techniques/validation#使用内置的-standardschemavalidationpipe)。
 - `updateNoteSchema` 是从相同的字段模式构建的，而不是使用 `createNoteSchema.partial()`。Zod 仍在 `partial()` 内部应用默认值，因此一个仅重命名笔记的 `PATCH` 会将其主体重置为空字符串。
 - 可选字段不是可空的。一个带有 `null` 标题的 `PATCH` 会返回 400 错误，而不是像 500 那样达到数据库的 `NOT NULL` 约束。
 
