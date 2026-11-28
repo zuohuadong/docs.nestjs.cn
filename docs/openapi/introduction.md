@@ -1,7 +1,7 @@
 <!-- 此文件从 content/openapi/introduction.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-11-26T22:59:14.878Z -->
+<!-- 生成时间: 2026-11-28T10:05:16.865Z -->
 <!-- 源文件: content/openapi/introduction.md -->
-<!-- 源哈希: 05f6cbe16459939dc7bc9c4adc3d508c -->
+<!-- 源哈希: 1aac9a63751cc39304b50f868ac26896 -->
 
 ### 简介
 
@@ -53,11 +53,11 @@ await bootstrap();
 
 > 警告 **警告** 如果您急切地调用 `createDocument()`（而不是像上面所示的工厂函数），请确保 `app.enableVersioning()` 先运行。否则，生成的 `paths` 将缺少版本前缀。工厂模式不受影响，因为文档直到首次请求时才构建。
 
-`DocumentBuilder` 结构化了一个符合 OpenAPI 规范的基础文档。其方法允许您设置标题、描述和版本等属性。要创建完整的文档（定义所有 HTTP 路由），请使用 `SwaggerModule` 类的 `createDocument()` 方法。它接受两个参数：一个应用程序实例和由 `DocumentBuilder#build()` 返回的基础文档配置。一个可选的第三个参数，类型为 `SwaggerDocumentOptions`，在 [document options](/openapi/introduction#文档选项) 部分介绍。
+`DocumentBuilder` 构建一个符合 OpenAPI 规范的基础文档。其方法允许您设置标题、描述和版本等属性。要创建完整的文档（定义所有 HTTP 路由），请使用 `SwaggerModule` 类的 `createDocument()` 方法。它接受两个参数：一个应用程序实例和由 `DocumentBuilder#build()` 返回的基础文档配置。一个可选的第三个参数，类型为 `SwaggerDocumentOptions`，在 [document options](/openapi/introduction#文档选项) 部分介绍。
 
 接下来，调用 `setup()` 方法。它接受：
 
-1. 要挂载 Swagger UI 的路径
+1. 挂载 Swagger UI 的路径
 2. 一个应用程序实例
 3. 文档对象，或返回该对象的工厂函数（如上所示）
 4. 一个可选的配置对象（参见 [setup options](/openapi/introduction#设置选项)）
@@ -87,7 +87,7 @@ $ npm run start
 >
 > 这将其暴露在 `http://localhost:3000/swagger/json`。
 
-> 警告 **警告** `setup()` 在 `/api` 处提供 Swagger UI，文档在 `/api-json` 和 `/api-yaml`（或您使用 `jsonDocumentUrl` 和 `yamlDocumentUrl` 设置的路径）处提供，对任何可以访问应用程序的人都有效，在所有环境中都是如此。[Guards](/overview/guards) 不对这些路由运行，因此全局 守卫 不会保护它们；在使用 Express 和 Node 适配器时，只有在调用 `setup()` 之前注册时，[middleware](/overview/middlewares) 才会对它们运行。仅在非生产环境中注册 `setup()`，或者在所有三个路径前放置您自己的中间件，因为仅有 `app.use('/api', ...)` 会使另外两个路径开放：
+> 警告 **警告** `setup()` 在 `/api` 处提供 Swagger UI，在 `/api-json` 和 `/api-yaml`（或您使用 `jsonDocumentUrl` 和 `yamlDocumentUrl` 设置的路径）提供文档，对任何可以访问应用程序的人，在所有环境中都是如此。[Guards](/overview/guards) 不会为这些路由运行，因此全局 守卫 不会保护它们；在使用 Express 和 Node 适配器时，只有在调用 `setup()` 之前注册时，[middleware](/overview/middlewares) 才会为它们运行。仅在非生产环境中注册 `setup()`，或者在所有三个路径前放置您自己的中间件，因为仅有 `app.use('/api', ...)` 会使另外两个路径开放：
 >
 > ```typescript
 > if (process.env.NODE_ENV !== 'production') {
@@ -97,7 +97,7 @@ $ npm run start
 
 > 信息 **提示** Swagger UI 与 Nest 内置 [security headers](/security/helmet) 的默认 [Content Security Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) 配合使用。如果您通过 `customJs`/`customJsStr` 添加脚本，或者在本地开发外部通过纯 HTTP 提供 Swagger UI，请参阅 [Swagger UI and GraphQL IDEs](/security/helmet#swagger-ui-and-graphql-ides) 以了解调整的指令。
 
-> 警告 **警告** 如果您直接使用 Fastify 注册 `helmet`，其 [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) 可能会阻止 Swagger UI。要解决此冲突，请按如下方式配置 CSP：
+> 警告 **警告** 如果您直接使用 Fastify 注册 `helmet`，其 [CSP](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) 可能会阻止 Swagger UI。要解决此冲突，请按如下所示配置 CSP：
 >
 > ```typescript
 > app.register(helmet, {
@@ -203,7 +203,7 @@ export interface SwaggerDocumentOptions {
 
 ```
 
-例如，要生成操作名称如 `createUser` 而不是 `UsersController_createUser`，请设置以下内容：
+例如，要生成像 `createUser` 这样的操作名称而不是 `UsersController_createUser`，请设置以下内容：
 
 ```typescript
 const options: SwaggerDocumentOptions =  {
@@ -309,11 +309,11 @@ const documentOptions: SwaggerDocumentOptions = {
 
 ```
 
-这两个转换器在一个方面不同。`createSchema()` 可以提升可重用定义，因此其结果携带一个 `components` 映射，您将其传递，Nest 会将其合并到文档的共享组件中。`toJsonSchema()` 返回一个单一的自包含模式，因此 Valibot 转换器省略了 `components`。
+这两个转换器在一个方面不同。`createSchema()` 可以提升可重用定义，因此其结果带有 `components` 映射，您将其传递，Nest 会将其合并到文档的共享组件中。`toJsonSchema()` 返回一个单一的自包含模式，因此 Valibot 转换器省略了 `components`。
 
 ##### 同时支持多个库
 
-因为转换器接收的模式是 `unknown`，所以您可以根据模式的 vendor 进行分支，从而在同一个应用程序中支持多个库。每个 Standard Schema 都在 `~standard.vendor` 暴露其 vendor：
+由于转换器接收模式为 `unknown`，您可以根据模式的 vendor 进行分支，从而在同一应用程序中支持多个库。每个 Standard Schema 都会在 `~standard.vendor` 暴露其 vendor：
 
 ```typescript title="main.ts"
 import { SwaggerDocumentOptions } from '@nestjs/swagger';
@@ -501,7 +501,7 @@ export interface SwaggerCustomOptions {
 > ```
 
 >
-> 在这种情况下，`http://localhost:3000/api-json` 仍然可访问，但 `http://localhost:3000/api`（Swagger UI）不可访问。
+> 在此情况下，`http://localhost:3000/api-json` 仍然可访问，但 `http://localhost:3000/api`（Swagger UI）不可用。
 
 #### 示例
 

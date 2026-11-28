@@ -1,28 +1,28 @@
 <!-- 此文件从 content/http/webhooks.md 自动生成，请勿直接修改此文件 -->
-<!-- 生成时间: 2026-11-27T01:02:22.656Z -->
+<!-- 生成时间: 2026-11-28T10:08:47.733Z -->
 <!-- 源文件: content/http/webhooks.md -->
-<!-- 源哈希: 566858852b2906fa2c966891bc744b0c -->
+<!-- 源哈希: b8e22e20cf94167791f3213a4a4964de -->
 
 ### Webhooks
 
 `@nestjs/webhooks` 在交易提交后向您的合作伙伴发送签名、重试的 webhook，并验证您收到的原始请求体中的 webhook。
 
-> info **提示** 在完整的商店中，有关支付提供商的 webhook 请遵循 [Accept payments with webhooks in Node.js](/tutorials/payments-webhooks)。
+> info **提示** 在完整的商店中，有关支付提供商的 webhook，请遵循 [Accept payments with webhooks in Node.js](/tutorials/payments-webhooks)。
 
-一个销售猫粮和用品的在线商店通过其 API 向猫咪收容所和批量采购的经销商销售。经销商 Northside Pet Supplies 下了一个订单，希望在不轮询的情况下知道何时发货和何时取消：一个发送到其仓库系统的 webhook。商店也会接收 webhook：支付提供商报告付款，承运商报告发货。两个方向看起来都很简单，但都会以相同的方式出错：
+一个销售猫粮和用品的在线商店通过其 API 向猫舍和批量采购的经销商销售。经销商 Northside Pet Supplies 下了一个订单，希望在不轮询的情况下知道何时发货和何时取消：即向其仓库系统发送一个 webhook。商店也会接收 webhook：支付提供商报告付款，承运商报告发货。两个方向看起来都很简单，但都以相同的方式出错：
 
-- **发送。** 订单提交后，`fetch()` 在过程中死亡时会丢失，并发送给随后回滚的交易。重试会两次发送相同的事件，但不会告知合作伙伴。每个合作伙伴都会为自制签名编写自己的验证器。一个宕机一小时的合作伙伴会被持续轰炸，一个死掉的端点永远不会被关闭，没有人能回答“你发送了吗？”。而合作伙伴输入的 URL 是一个等待发生的服务器端请求伪造：`https://169.254.169.254/` 以云凭证进行回答。
-- **接收。** 签名是在框架解析并再次序列化的请求体上检查的（一个多余的空格就会破坏它，被篡改的请求体也可能通过），而不是在常数时间内进行比较，没有时间戳窗口，并且重发事件会运行处理程序两次：一个订单被标记为支付两次，或发货两次。
+- **发送。** 在订单提交后，`fetch()` 在过程中死亡时会丢失，并会为随后回滚的交易发送。重试会两次发送相同的事件，但不会告知合作伙伴。每个合作伙伴都会为自制的签名编写自己的验证器。一个宕机一小时的合作伙伴会遭受大量请求轰炸，一个死掉的端点永远不会被关闭，没有人能回答“你发送了吗？”。而合作伙伴输入的 URL 是一个等待发生的服务器端请求伪造：`https://169.254.169.254/` 以云凭证进行响应。
+- **接收。** 签名是在框架解析并再次序列化的请求体上检查的（一个多余的空格就会破坏它，被篡改的请求体也可能通过），而不是在常数时间内比较的，没有时间戳窗口，并且重发事件会两次运行处理器：订单被标记为已支付两次，或发货两次。
 
-`@nestjs/webhooks` 使两个方向成为一个配置项。传出 webhook 通过 [outbox](/reliability/outbox) 传输：`webhooks.dispatch()` 在与订单相同的事务中添加消息，提交后，一个工作进程将其分发到合作伙伴的端点，以 [Standard Webhooks](https://www.standardwebhooks.com) 指定的方式对每个请求进行签名，带有约两天的退避重试，保留每次尝试的日志，并在请求时重放。传入的 webhook 是一个装饰器 `@VerifyWebhook()`，它在原始请求体上检查签名并跳过重发。
+`@nestjs/webhooks` 使两个方向的配置统一化。传出 webhook 通过 [outbox](/reliability/outbox) 传输：`webhooks.dispatch()` 在与订单相同的事务中添加消息，提交后，一个工作进程将其分发到合作伙伴的端点，按照 [Standard Webhooks](https://www.standardwebhooks.com) 指定的方式对每个请求进行签名，带有指数退避策略重试约两天，保留每次尝试的日志，并可按请求重放。传入 webhook 是一个装饰器 `@VerifyWebhook()`，它在原始请求体上检查签名并跳过重发。
 
-在本教程中，您将在使用 Drizzle 的 PostgreSQL 上为商店的订单 API 添加 webhook：
+在本教程中，您将在使用 Drizzle 和 PostgreSQL 的商店订单 API 中添加 webhook：
 
-- 合作伙伴通过 API 订阅 `order.shipped` 和 `order.cancelled`，并只看到一次密钥。
+- 合作伙伴通过 API 订阅 `order.shipped` 和 `order.cancelled`，并仅查看一次其密钥。
 - API 在提交后发送签名后的 webhook，并在合作伙伴宕机时重试。
 - 合作伙伴读取其交付日志，并请求重放。
 - API 接收支付提供商的付款 webhook（标准 webhook）和承运商的发货 webhook（Stripe 方案），在原始请求体上验证并精确处理一次。
-- 密钥在无间隙的情况下轮换，并且会拒绝指向商店内部网络的 URL。
+- 密钥无间隙轮换，并且会拒绝指向商店内部网络的 URL。
 
 #### 安装
 
@@ -33,11 +33,11 @@ $ npm i --save @nestjs/webhooks
 
 ```
 
-本教程在 PostgreSQL 上运行，通过 [Drizzle ORM](https://orm.drizzle.team) 和 [`@nestjs/drizzle`](https://docs.nestjs.com/data/drizzle) 使用 `pg` 驱动：端点和交付日志存储在订单所在的数据库中，该数据库位于一个比任何应用程序实例都更持久的数据库服务器上。使用 TypeORM 还是 MySQL？请遵循教程，并查看 [Keep webhooks in your database](/http/webhooks#keep-webhooks-in-your-database) 中的“使用 TypeORM”和“使用 MySQL”了解变化。
+本教程在 PostgreSQL 上运行，通过 [Drizzle ORM](https://orm.drizzle.team) 和 [`@nestjs/drizzle`](https://docs.nestjs.com/data/drizzle) 使用 `pg` 驱动：端点和交付日志存储在与订单相同的数据库中，该数据库运行在比任何应用程序实例都更持久的数据库服务器上。使用 TypeORM 还是 MySQL？请遵循教程，并查看 [Keep webhooks in your database](/http/webhooks#keep-webhooks-in-your-database) 中的“使用 TypeORM”和“使用 MySQL”了解变化。
 
-传出 webhook 是出库消息，传入的 webhook 通过出库的收件箱进行去重，因此应用程序也运行出库（`@nestjs/outbox`，已在 [the outbox tutorial](/reliability/outbox) 中安装和设置）。
+传出 webhook 是出库消息，传入 webhook 则与出库的收件箱进行去重，因此应用程序也运行出库（`@nestjs/outbox`，已在 [the outbox tutorial](/reliability/outbox) 中安装和设置）。
 
-示例应用程序——在线商店的订单 API——在其自己的三个表中保留其目录、调用它的合作伙伴及其订单，后续部分会读取和写入这些表。它们是示例的数据，而不是 webhook 所需的：webhook 和出库的表属于它们的商店，由这些商店创建，如 [Keep webhooks in your database](/http/webhooks#keep-webhooks-in-your-database) 所示。
+示例应用程序（在线商店的订单 API）在其自己的三个表中保留其目录、调用它的合作伙伴及其订单，后续部分会读取和写入这些表。它们是示例的数据，而不是 webhook 所需的：webhook 和出库的表属于它们创建的商店，如 [Keep webhooks in your database](/http/webhooks#keep-webhooks-in-your-database) 所示。
 
 `products` 是目录：
 
@@ -45,9 +45,9 @@ $ npm i --save @nestjs/webhooks
 | --- | --- | --- |
 | `id` | `text` | 主键，例如 `salmon-kibble-2kg` |
 | `name` | `text` | 显示名称，例如 `Salmon kibble, 2 kg` |
-| `price` | `integer` | 以分为单位 |
+| `price` | `integer` | 以分计 |
 
-`partners` 存储通过 API 批量采购并接收其 webhook 的猫咪收容所和经销商：
+`partners` 存储通过 API 批量采购并接收 webhook 的猫舍和经销商：
 
 | 列 | 类型 | 备注 |
 | --- | --- | --- |
@@ -55,7 +55,7 @@ $ npm i --save @nestjs/webhooks
 | `name` | `text` | 显示名称，例如 `Northside Pet Supplies` |
 | `api_key_hash` | `text` | 合作伙伴 API 密钥的 SHA-256，十六进制表示。唯一 |
 
-`orders` 存储合作伙伴的订单，其 `status` 的范围从 `placed` 到 `paid` 和 `shipped`，或到 `cancelled`：
+`orders` 存储合作伙伴的订单，其 `status` 的状态从 `placed` 到 `paid` 和 `shipped`，或到 `cancelled`：
 
 | 列 | 类型 | 备注 |
 | --- | --- | --- |
@@ -64,12 +64,12 @@ $ npm i --save @nestjs/webhooks
 | `items` | `jsonb` | 订单行，作为 JSON 数组：每行的 `productId`、`quantity` 和单位 `price`（以分计） |
 | `total` | `integer` | 以分计 |
 | `status` | `text` | `placed`、`paid`、`shipped` 或 `cancelled` |
-| `payment_id` | `text` | 可为空：订单支付时设置 |
-| `tracking_number` | `text` | 可为空：订单发货时设置 |
+| `payment_id` | `text` | 可空：订单支付时设置 |
+| `tracking_number` | `text` | 可空：订单发货时设置 |
 
 其他列不可为空。
 
-目录中有两个产品，`salmon-kibble-2kg` 价格为 2499 分，`clumping-litter-10l` 价格为 1599 分，两个合作伙伴有示例 API 密钥（请从您的合作伙伴入职中获取真实密钥）：
+目录中有两个产品，`salmon-kibble-2kg` 价格为 2499 分，`clumping-litter-10l` 价格为 1599 分，两个合作伙伴有示例 API 密钥（请从合作伙伴入职中获取真实密钥）：
 
 | 合作伙伴 | `id` | API 密钥 |
 | --- | --- | --- |
@@ -78,13 +78,13 @@ $ npm i --save @nestjs/webhooks
 
 #### 将 webhook 保存在数据库中
 
-对于 webhook 或它们经过的 outbox，没有需要创建的内容：没有表、实体或 Prisma 模型。注册它们的两个存储，每个存储都会创建自己的 **模式**，`nest_webhooks` 和 `nest_outbox`，并在启动时（开发和测试中）以及在生产环境中使用 `npx @nestjs/webhooks migrate` 和 `npx @nestjs/outbox migrate`，或使用您自己的 **迁移** 中的 `migrationSql()` 进行 **迁移**。
+对于 webhook 或它们经过的 outbox，没有需要创建的实体，没有表、实体或 Prisma 模型。注册它们的两个存储，每个存储都会创建自己的 **模式**，`nest_webhooks` 和 `nest_outbox`，并在启动时（开发和测试中）以及在生产环境中（使用 `npx @nestjs/webhooks migrate` 和 `npx @nestjs/outbox migrate`，或使用您自己的 **迁移** 中的 `migrationSql()`）进行 **迁移**。
 
-该包将端点及其密钥、已分发的消息、它们的投递以及每次尝试的日志保存在一个 **存储** 中，它通过两个契约 `WebhookEndpointStore` 和 `WebhookDeliveryStore` 读取。在注册一个存储之前，该 **模块** 将它们保存在内存中：对于首次运行是没问题的，但重启会丢失所有待处理的投递，并且两个实例不会共享它们。
+该包将端点、其密钥、已分发的消息、其投递以及每次尝试的日志保存在一个 **存储** 中，它通过两个契约 `WebhookEndpointStore` 和 `WebhookDeliveryStore` 读取。在注册一个存储之前，该 **模块** 将它们保存在内存中：首次运行时没问题，但重启会丢失所有待处理的投递，并且两个实例不会共享它们。
 
 > 警告 **警告** 如果使用 `NODE_ENV=production` 且未注册存储，启动将失败，除非设置了 `allowInMemoryStorage: true`。
 
-在 PostgreSQL 上，从 `@nestjs/webhooks/postgres` 注册该包的存储 `PostgresWebhookStore`。outbox 也需要一个，用于将已分发的 webhook 消息移出您的事务，以及用于去重传入消息的 inbox：从 `@nestjs/outbox/postgres` 注册 `PostgresOutboxStore`，如 [the outbox tutorial](/reliability/outbox#keep-messages-in-your-database) 所示。两者都通过您的应用程序已有的数据库客户端运行 SQL，并将它们的表保存在各自的 **模式** 中。它们是普通的 **提供者**，在根 **模块** 中注册一次，与 `WebhooksModule` 和 `OutboxModule` 并列：这四个都是应用范围的。`AppModule` 使用一个 **工厂提供者** 为每个存储创建，该 **工厂提供者** 注入 Drizzle 数据库及其包的存储注册表，存储会向该注册表注册自身：
+在 PostgreSQL 上，从 `@nestjs/webhooks/postgres` 注册该包的存储 `PostgresWebhookStore`。outbox 也需要一个，用于将已分发的 webhook 从事务中取出，以及用于去重传入 webhook 的 inbox：从 `@nestjs/outbox/postgres` 注册 `PostgresOutboxStore`，如 [the outbox tutorial](/reliability/outbox#keep-messages-in-your-database) 所示。两者都通过您的应用程序已有的数据库客户端运行 SQL，并将它们的表保存在各自的 **模式** 中。它们是普通的 **提供者**，在根 **模块** 中注册一次，与 `WebhooksModule` 和 `OutboxModule` 并列：这四个都是应用范围的。`AppModule` 使用一个 **工厂提供者** 为每个存储创建，该 **工厂提供者** 注入 Drizzle 数据库及其包的存储注册表，存储会向其注册自己：
 
 ```typescript title="app.module.ts"
 {
@@ -104,9 +104,9 @@ $ npm i --save @nestjs/webhooks
 
 ```
 
-`fromDrizzle(db)` 是存储的 **执行器**：它通过您的 Drizzle 数据库运行它们的语句，无论使用哪个驱动程序，例如 `pg` 或 PGlite。`fromPg(pool)`、`fromTypeOrm(dataSource)`、`fromPrisma(prisma)` 和 `fromKysely(db)` 对 node-postgres 连接池、TypeORM、Prisma 和 Kysely 执行相同操作。`@nestjs/webhooks/postgres` 和 `@nestjs/outbox/postgres` 都导出它们，因此 `AppModule` 只导入 `fromDrizzle` 一次，用于两个存储。在启动时，每个 **模块** 都会记录它使用的存储。
+`fromDrizzle(db)` 是存储的 **执行器**：它通过您的 Drizzle 数据库运行它们的语句，无论使用哪个驱动程序，例如 `pg` 或 PGlite。`fromPg(pool)`、`fromTypeOrm(dataSource)`、`fromPrisma(prisma)` 和 `fromKysely(db)` 对 node-postgres 连接池、TypeORM、Prisma 和 Kysely 执行相同操作。`@nestjs/webhooks/postgres` 和 `@nestjs/outbox/postgres` 都导出它们，因此 `AppModule` 仅导入 `fromDrizzle` 一次，用于两个存储。在启动时，每个 **模块** 都会记录它使用的存储。
 
-**模式**。webhook 存储将其表保存在自己的 **模式** 中，`nest_webhooks`（`schema` 选项指定了另一个）。在没有 **模式** 的 MySQL 上，它们是连接数据库的表，**模式** 的名称作为它们的**全局前缀**：`nest_webhooks_endpoints` 等。
+**模式**。webhook 存储将其表保存在自己的 **模式** 中，`nest_webhooks`（`schema` 选项指定了另一个）。在没有 **模式** 的 MySQL 上，它们是连接数据库的表，**模式** 名称作为它们的前缀：`nest_webhooks_endpoints` 等。
 
 | 表 | 存储内容 |
 | --- | --- |
@@ -120,13 +120,13 @@ outbox 的存储将其消息、死信和 inbox 保存在 `nest_outbox`（MySQL �
 
 - 端点的密钥是一个 JSON 数组，最新在前：在轮换期间，旧密钥会保留以覆盖，并有过期时间。配置了 `encryption`（参见 [Register the modules](/http/webhooks#register-the-modules)）后，存储的内容是密封的。
 - 消息的 `body` 是 `text`，而不是 `jsonb`。它是被签名和发送的确切 JSON，而 `jsonb` 会重新格式化它：存储请求及其签名的合作伙伴将无法验证重放。
-- 每次投递是针对特定消息和端点的唯一记录。创建投递的扇出在提交后、在 outbox 内部运行，因此可以运行两次；唯一键使得第二次运行不插入任何内容。
-- 没有从投递到其端点的外键：被删除的端点的日志会保留。尝试与它们的投递一起存在。
+- 每次投递是针对特定消息和端点的唯一。创建投递的扇出在提交后、在 outbox 内部运行，因此可以运行两次；唯一键使得第二次运行不插入任何内容。
+- 投递到其端点的外键：已删除的端点的日志会保留。尝试与它们的投递一起保留。
 - 时间是纪元毫秒（`bigint`），来自包的时钟，而不是数据库的时钟。
 
-**迁移**。该包以版本化的 **迁移** 形式提供其 **模式**，存储自行应用它们。使用 `migrate` 选项时，每个存储在启动时应用其尚未应用的 **迁移**，在中继和工作者运行之前，在一个持有咨询锁的事务中：在同时启动的多个实例中，一个进行 **迁移**，其他实例发现没有剩余工作。`migrate` 默认为 `true`，除非使用 `NODE_ENV=production`。因此，在开发和测试中，存储在首次启动时创建其 **模式**，而您的 **迁移** 只创建您自己的表。
+**迁移**。该包以版本化 **迁移** 的形式提供其 **模式**，存储自行应用它们。使用 `migrate` 选项时，每个存储在启动时应用其尚未应用的 **迁移**，在中继和工作者运行之前，在一个持有咨询锁的事务中：在同时启动的多个实例中，一个进行 **迁移**，其他实例发现没有剩余工作。`migrate` 默认为 `true`，除非使用 `NODE_ENV=production`。因此，在开发和测试中，存储在首次启动时创建其 **模式**，而您的 **迁移** 只创建您自己的表。
 
-在生产环境中，请在应用程序新版本启动之前应用 **迁移**，就像您应用自己的 **迁移** 一样，这样在启动时就不会有任何实例更改 **模式**：在滚动部署过程中，这将锁定繁忙的表，而且最小权限的数据库用户也无法做到这一点。该包的命令行工具在您的部署步骤中执行此操作，与 `npx drizzle-kit migrate` 并列。它们从 `DATABASE_URL` 或 `--url` 读取数据库，并且需要安装 `pg`：
+在生产环境中，请在应用程序的新版本启动之前应用 **迁移**，就像您应用自己的 **迁移** 一样，这样在启动时就不会有任何实例更改 **模式**：在滚动部署过程中，这将锁定繁忙的表，而且最小权限的数据库用户也无法做到这一点。该包的命令行工具在您的部署步骤中执行此操作，与 `npx drizzle-kit migrate` 并列。它们从 `DATABASE_URL` 或 `--url` 读取数据库，并且需要安装 `pg`：
 
 ```bash
 $ npx @nestjs/webhooks status
@@ -138,7 +138,7 @@ Migrated schema "nest_outbox" to version 1 (applied 1).
 
 ```
 
-`status` 在 **模式** 落后时以 1 退出，这使其成为 CI 的检查项。如果想使用您自己的 **迁移** 工具应用 **迁移**，请从 `npx @nestjs/webhooks sql` 和 `npx @nestjs/outbox sql` 获取其 SQL，或在代码中从 `PostgresWebhookStore.migrationSql()` 和 `PostgresOutboxStore.migrationSql()` 获取：每个 **迁移** 的语句，以及记录版本的簿记。像 TypeORM 和 Drizzle 的 **迁移** 工具那样，将每个语句在一个事务中运行。使用 TypeORM，这是一个您自己的 **迁移**，与它为您的 **实体** 生成的 **迁移** 并列：
+如果 **模式** 落后，`status` 以 1 退出，这使其成为 CI 的检查项。如果想使用您自己的 **迁移** 工具应用 **迁移**，请从 `npx @nestjs/webhooks sql` 和 `npx @nestjs/outbox sql` 或代码中的 `PostgresWebhookStore.migrationSql()` 和 `PostgresOutboxStore.migrationSql()` 获取它们的 SQL：每个 **迁移** 的语句，以及记录版本的簿记。像 TypeORM 和 Drizzle 的 **迁移** 工具那样，将每个语句在一个事务中运行。使用 TypeORM 时，这是您自己的 **迁移**，与它为您的 **实体** 生成的 **迁移** 并列：
 
 ```typescript title="typeorm/migrations/1790801311590-WebhookStores.ts"
 import { PostgresOutboxStore } from '@nestjs/outbox/postgres';
@@ -158,7 +158,7 @@ export class WebhookStores1790801311590 implements MigrationInterface {
 
 ```
 
-使用 drizzle-kit，为每个存储创建一个自定义 **迁移**，并用其 SQL 填充文件，语句之间使用一个 `--> statement-breakpoint` 行：Drizzle 的 **迁移** 工具然后逐个运行它们，PGlite 需要这样做。在代码中，`migrationSql()` 配合 `statementBreakpoints: true` 返回相同的结果。
+使用 drizzle-kit，为每个存储创建自定义 **迁移**，并用其 SQL 填充文件，语句之间有一个 `--> statement-breakpoint` 行：Drizzle 的 **迁移** 工具然后逐个运行它们，PGlite 需要此操作。在代码中，`migrationSql()` 配合 `statementBreakpoints: true` 返回相同的结果。
 
 ```bash
 $ npx drizzle-kit generate --custom --name=outbox
@@ -177,13 +177,13 @@ for (const statement of [...MySqlOutboxStore.migrationStatements(), ...MySqlWebh
 
 ```
 
-当 `migrate` 关闭时，其 **模式** 落后的存储会以 `WebhookSchemaError` 失败启动（outbox 的存储，带有 `OutboxSchemaError`），该错误以这三种方式命名，并且在 **模式** 赶上之前会以相同的方式失败每次调用，它会在没有重启的情况下注意到这一点。在滚动部署期间，您应用程序的旧版本会继续在新版本已 **迁移** 的 **模式** 上运行。没有回滚 **迁移**。
+如果 `migrate` 关闭，其 **模式** 落后的存储将以 `WebhookSchemaError` 失败启动（outbox 的存储，带有 `OutboxSchemaError`），该错误以这三种方式命名，并且在 **模式** 赶上之前每次调用都以相同方式失败，它会在没有重启的情况下注意到这一点。在滚动部署期间，您应用程序的旧版本会继续在新版本已 **迁移** 的 **模式** 上运行。没有回滚 **迁移**。
 
-**事务**。webhook 存储的任何方法都不会接受您的事务。`webhooks.dispatch(tx, ...)` 通过 outbox 的存储在您的事务中将消息添加到 outbox，并且 `webhook.processInTransaction(tx, ...)` 以相同方式在 outbox 的 inbox 中记录传入的 webhook；提交后的扇出、工作者和所有其他组件都在存储自己的连接上运行。使用 Drizzle，`tx` 是 `db.transaction()` 传递给其回调的内容，如后续部分所示。outbox 的存储拒绝数据库本身，因为其语句会自行提交，并使用一个 `OutboxTransactionRequiredError` 来指定要传递的内容。对于其他 **执行器**，请在 `BEGIN` 之后传递一个 node-postgres 客户端（而不是连接池）、TypeORM 的 `EntityManager`（来自 `dataSource.transaction()`）、Prisma 的交互式事务客户端或一个 Kysely 事务。
+**事务**。webhook 存储的任何方法都不会接收您的事务。`webhooks.dispatch(tx, ...)` 通过 outbox 的存储将消息添加到 outbox 中，并且 `webhook.processInTransaction(tx, ...)` 以相同方式在 outbox 的 inbox 中记录传入的 webhook；提交后的扇出、工作者和所有其他组件都在存储自己的连接上运行。使用 Drizzle，`tx` 是 `db.transaction()` 传递给其回调的内容，如后续部分所示。outbox 的存储拒绝数据库本身，因为其语句会自行提交，而是使用一个 `OutboxTransactionRequiredError` 来指定要传递的内容。对于其他 **执行器**，请在 `BEGIN` 之后传递一个 node-postgres 客户端（而不是连接池），TypeORM 的 `EntityManager`（来自 `dataSource.transaction()`），Prisma 的交互式事务客户端，或一个 Kysely 事务。
 
 **隔离**。存储依赖于 READ COMMITTED，PostgreSQL 的默认隔离级别：它们的语句相互竞争，在更严格的级别下会因序列化错误而失败。在启动时，每个存储都会检查数据库的 `default_transaction_isolation`，如果更严格则失败。您自己的事务可以在任何级别运行。但在 REPEATABLE READ 或 SERIALIZABLE 下，一个在您的事务中由 `processInTransaction()` 处理的传入 webhook 的副本，与第一个提交竞争，将因 PostgreSQL 的序列化错误而失败，而不是被跳过作为重复项：发送方会收到错误，其重试会发现已记录了该 webhook。
 
-**使用 TypeORM**。`TypeOrmModule` 取代了 `DrizzleModule` 在 `AppModule` 中，并且两个存储都运行在它提供的 `DataSource` 上，通过 `fromTypeOrm()`：
+**使用 TypeORM**。`TypeOrmModule` 取代了 `DrizzleModule` 在 `AppModule` 中，两个存储都运行在它提供的 `DataSource` 上，通过 `fromTypeOrm()`：
 
 ```typescript title="typeorm/app.module.ts"
 {
@@ -224,7 +224,7 @@ const order = await this.dataSource.transaction(async (manager) => {
 
 ```
 
-您的实体及其迁移保持不变：`migration:generate` 仅将您的实体与数据库进行比较，而不修改存储的模式。
+您的实体及其迁移保持不变：`migration:generate` 仅比较您的实体和数据库，而不更改存储的模式。
 
 **使用 MySQL。** 在 MySQL 8.4 或 9.x 上，请从 `@nestjs/outbox/mysql` 和 `@nestjs/webhooks/mysql` 导入存储和执行器。提供者相同，使用 `MySqlOutboxStore` 和 `MySqlWebhookStore`，在一个 Drizzle 数据库 `drizzle-orm/mysql2` 上：
 
@@ -255,19 +255,19 @@ DrizzleModule.forRootAsync({
 
 ```
 
-对于其他客户端，执行器是 `fromMysql2(pool)` 用于 `mysql2/promise` 池，`fromTypeOrm(dataSource)` 用于类型为 `DataSource` 的 `mysql`，`fromPrisma(prisma)` 用于通过 `@prisma/adapter-mariadb` 的 Prisma，或 `fromKysely(db)` 用于 Kysely 的 `MysqlDialect`。与 PostgreSQL 的不同之处在于：
+对于其他客户端，执行器是 `fromMysql2(pool)` 用于 `mysql2/promise` 池，`fromTypeOrm(dataSource)` 用于类型为 `DataSource` 的 `mysql`，`fromPrisma(prisma)` 用于通过 `@prisma/adapter-mariadb` 的 Prisma，或 `fromKysely(db)` 用于 Kysely 的 `MysqlDialect`。与 PostgreSQL 的不同之处：
 
-- **表，而非模式。** MySQL 在数据库内没有模式，因此存储将它们的表保留在连接的数据库中（即 URL 路径中的数据库），与您的数据库相邻，并且 `schema` 成为它们的前缀：`nest_webhooks_endpoints`、`nest_webhooks_deliveries` 等，以及用于出库的 `nest_outbox_messages`。它接受小写字母、数字和下划线，最多 40 个字符。
-- **您的事务。** `dispatch()` 和 `processInTransaction()` 在 REPEATABLE READ（MySQL 的默认设置）下按 READ COMMITTED 工作：无需配置，存储也不会检查数据库的默认设置。当 MySQL 在您的事务中发生死锁时（错误 1213），它会回滚整个事务，客户端的错误会到达您的代码：重新运行事务。存储会自行再次运行事务。使用 `processInTransaction()` 时，当一个 webhook 的副本同时到达时，可能会发生这种情况，第一个事务回滚：发送方收到错误，其重试会成功。
-- **键是有界的。** ID 和租户是索引列：最多 255 个字符，租户最多 256 个字符，包自身的 ID 及其对 `tenant` 的限制都在范围内。传入 webhook 的 ID 会进入收件箱的键中，最多 255 个字符，并且验证器在处理程序运行之前，会拒绝任何更长的 ID，返回 401。
-- **迁移不是一个事务。** MySQL 会单独提交每个 DDL 语句，因此 `migrate` 每次只应用一个语句，在锁（`GET_LOCK()`）下进行，并且失败的运行会从停止的语句处恢复。您的工具也必须每次调用发送一个语句，就像上面 **Migrations** 中的 TypeORM 迁移一样。命令行接受一个 `mysql://` URL，而 `sql --dialect mysql` 会打印 MySQL 的 SQL：添加 `--statement-breakpoints` 用于 drizzle-kit 自定义迁移，因为其 MySQL 迁移器每次断点只发送一个语句。
+- **表，而非模式。** MySQL 在数据库内没有模式，因此存储将它们的表保留在连接的数据库中，即 URL 路径中的数据库，与您的数据库相邻，并且 `schema` 成为它们的前缀：`nest_webhooks_endpoints`、`nest_webhooks_deliveries` 等，以及用于出库的 `nest_outbox_messages`。它接受小写字母、数字和下划线，最多 40 个字符。
+- **您的事务。** `dispatch()` 和 `processInTransaction()` 在 REPEATABLE READ（MySQL 的默认设置）下按 READ COMMITTED 工作：无需配置，存储也不会检查数据库的默认设置。当 MySQL 在您的事务中发生死锁时（错误 1213），它会回滚整个事务，客户端的错误会到达您的代码：重新运行事务。存储会自行再次运行其事务。使用 `processInTransaction()` 时，当一个 webhook 的副本同时到达时，可能会发生这种情况，第一个事务回滚：发送方收到错误，其重试会成功。
+- **键是有界的。** ID 和租户是索引列：最多 255 个字符，租户最多 256 个字符，包自身的 ID 及其对 `tenant` 的限制都在范围内。传入 webhook 的 ID 会进入收件箱的键中，最多 255 个字符，并且验证器在处理程序运行之前，会对每个数据库拒绝更长的 ID，返回 401。
+- **迁移不是一个事务。** MySQL 会单独提交每个 DDL 语句，因此 `migrate` 每次只应用一个语句，在锁（`GET_LOCK()`）下进行，失败的运行会从停止的语句处恢复。您的工具也必须每次调用发送一个语句，就像上面 **Migrations** 中的 TypeORM 迁移一样。命令行接受一个 `mysql://` URL，而 `sql --dialect mysql` 打印 MySQL 的 SQL：添加 `--statement-breakpoints` 用于 drizzle-kit 自定义迁移，因为其 MySQL 迁移器每次断点只发送一个语句。
 - **服务器。** 存储在启动时检查它，并拒绝 MariaDB（没有数据库的连接）和不严格的 `sql_mode`（MySQL 的默认设置）。也请将 `NO_BACKSLASH_ESCAPES` 排除在外。
 
-对于其他数据库，编写您自己的存储：[The store contract](/http/webhooks#the-store-contract) 说明了必须做什么。
+对于另一个数据库，编写您自己的存储：[The store contract](/http/webhooks#the-store-contract) 说明了必须做什么。
 
 #### 注册模块
 
-在根模块中注册 `OutboxModule` 和 `WebhooksModule`，紧邻注册 Drizzle 数据库的 `DrizzleModule`，并在其 `providers` 中包含两个存储。功能模块在接下来的部分构建：
+在根模块中注册 `OutboxModule` 和 `WebhooksModule`，紧邻注册 Drizzle 数据库的 `DrizzleModule`，并将两个存储放在其 `providers` 中。功能模块在接下来的部分构建：
 
 ```typescript title="app.module.ts"
 import { Module } from '@nestjs/common';
@@ -342,14 +342,14 @@ export class AppModule {}
 
 ```
 
-`WebhooksModule` 需要出库：`dispatch()` 是一个 `Outbox.add()`，而将已提交的消息转换为交付的扇出是一个出库处理器。如果没有 `OutboxModule`，启动将失败并报告此错误。出库的 `relay` 将已提交的消息传递给扇出，每秒轮询一次，而 `OUTBOX_RELAY=off` 会关闭它。其余选项在应用程序启动时解析：
+`WebhooksModule` 需要出库：`dispatch()` 是一个 `Outbox.add()`，而将已提交的消息转换为交付的扇出是一个出库处理器。没有 `OutboxModule`，启动就会失败并报告此错误。出库的 `relay` 将已提交的消息交给扇出，每秒轮询一次，而 `OUTBOX_RELAY=off` 会关闭它。其余选项在应用程序启动时解析：
 
-- `eventTypes`：此应用程序发送的消息类型。`dispatch()` 拒绝任何其他类型，尝试订阅其中已知类型的端点也会拒绝。
-- `retry`：与出库、HTTP 客户端和弹性共享的词汇表。十次尝试，回退从 5 秒开始，呈四倍增长，上限为一天，并带有抖动：符合标准 Webhooks 规范的“跨多天的重试计划”。
-- `disableEndpointAfter`：一个在五天内所有尝试均未成功而没有一次成功的端点将被关闭，并通知其所有者（参见 [Retries, the delivery log and replay](/http/webhooks#retries-the-delivery-log-and-replay)）。
-- `delivery`：单次尝试有 15 秒用于 DNS、连接、TLS、请求和响应。默认情况下 `allowHttp` 和 `allowPrivateNetworks` 是关闭的：只接受公共 `https://` 端点。`WEBHOOKS_ALLOW_LOCAL=1` 在开发环境中开启它们，此时合作伙伴的接收器在该机器上运行。云元数据地址即使在这种情况下也保持阻止状态。
+- `eventTypes`：此应用程序发送的消息类型。`dispatch()` 拒绝任何其他类型，尝试订阅其中一种的端点也会拒绝，因为消息中包含已知的类型。
+- `retry`：与出库、HTTP 客户端和弹性共享的词汇表。十次尝试，回退从 5 秒开始，四倍增长，上限为一天，带有抖动：符合标准 Webhooks 规范的“跨越数天的重试计划”。
+- `disableEndpointAfter`：一个在五天内所有尝试都未成功而失败的端点将被关闭，并通知其所有者（参见 [Retries, the delivery log and replay](/http/webhooks#retries-the-delivery-log-and-replay)）。
+- `delivery`：一次尝试有 15 秒用于 DNS、连接、TLS、请求和响应。`allowHttp` 和 `allowPrivateNetworks` 默认关闭：只接受公共 `https://` 端点。`WEBHOOKS_ALLOW_LOCAL=1` 在开发环境中开启它们，在该环境中合作伙伴的接收器在该机器上运行。即使如此，云元数据地址仍被阻止。
 - `worker`：后台交付器，每个进程一个。`WEBHOOKS_WORKER=off` 在仅提供 API 的实例中将其关闭。
-- `encryption`：端点密钥以静态方式密封，具有家族形状：第一个密钥加密，每个密钥解密。可选，来自 `WEBHOOKS_ENCRYPTION_KEYS`。
+- `encryption`：端点密钥在静态存储中密封，具有家族形状：第一个密钥加密，每个密钥解密。可选，来自 `WEBHOOKS_ENCRYPTION_KEYS`。
 
 > info **提示** 教程直接读取 `process.env` 以保持简洁。在应用程序中，通过 [`@nestjs/config`](/application/configuration) 使用验证模式加载环境变量，这样缺失的变量会在启动时而不是在第一个请求时停止应用程序，并从 `ConfigService`（在工厂中是 `inject: [ConfigService]`）读取值。
 
@@ -384,7 +384,7 @@ await bootstrap();
 
 #### 允许合作伙伴订阅
 
-庇护所和经销商使用 API 密钥调用合作伙伴 API：示例中的两个合作伙伴，Northside Pet Supplies（经销商）和 Riverside Cat Shelter，在 [Installation](/http/webhooks#安装) 中有示例密钥。`PartnerGuard` 查找密钥的哈希值并将合作伙伴设置到请求上，而 `@CurrentPartner()` 读取它：
+零售商和经销商使用 API 密钥调用合作伙伴 API：示例中的两个合作伙伴，Northside Pet Supplies（经销商）和 Riverside Cat Shelter，在 [Installation](/http/webhooks#安装) 中有样本密钥。`PartnerGuard` 查找密钥的哈希值并将合作伙伴设置到请求上，而 `@CurrentPartner()` 读取它：
 
 ```typescript title="partners/partner.guard.ts"
 import {
@@ -436,7 +436,7 @@ export const CurrentPartner = createParamDecorator(
 
 ```
 
-订阅包括一个 URL、要接收的事件类型和描述；更新只发送变更的内容。DTOs 检查形状，将 URL 和类型留给包，该包知道它接受什么。请求体使用应用程序已有的任何方式进行验证：本页上的每个 DTO 都出现两次，一次是带有 `class-validator` 装饰器的类，一次是 Zod 模式，因此选择您已有的风格并跳过另一个列表：
+订阅是一个 URL、要接收的事件类型和描述；更新只发送变更的内容。DTO 检查形状，将 URL 和类型留给包，该包知道它接受什么。请求体使用应用程序已有的任何方式进行验证：本页面上的每个 DTO 都出现两次，一次是带有 `class-validator` 装饰器的类，一次是 Zod 模式，因此选择您已有的风格并跳过另一个列表：
 
 ```typescript title="partner-webhooks/webhook-endpoints.dto.ts"
 import { IsArray, IsBoolean, IsOptional, IsString } from 'class-validator';
@@ -592,9 +592,9 @@ update(@CurrentPartner() partner: Partner, @Param('id') id: string, @Body({ sche
 
 ```
 
-> info **提示** DTO 仅由验证管道强制执行：全局绑定 `ValidationPipe`，像 `main.ts` 中 `useGlobalPipes()` 那样（`whitelist` 会丢弃没有装饰器的属性），或作为一个 `APP_PIPE` 提供者。使用 Zod 模式时，以相同方式绑定 `StandardSchemaValidationPipe`：应用程序使用其中一个。[validation](/techniques/validation) 页面提供了每种选项。
+> info **提示** DTO 仅由验证管道强制执行：全局绑定 `ValidationPipe`，在 `main.ts` 中使用 `useGlobalPipes()`，就像 [Register the modules](/http/webhooks#register-the-modules) 所做的那样（`whitelist` 会丢弃没有装饰器的属性），或者作为一个 `APP_PIPE` 提供者。使用 Zod 模式时，以相同方式绑定 `StandardSchemaValidationPipe`：应用程序使用其中一个。[validation](/techniques/validation) 页面提供了每种选项。
 
-`create()` 返回带有其 `secret` 的端点，一个 32 字节的随机标准 Webhooks `whsec_…`，在此生成。此 API 只显示一次：`list()` 和 `get()` 从不包含它，丢失它的合作伙伴会轮换。包会保留密钥，在设置 `encryption` 时密封，因为它使用它进行签名，而 `getSecret()` 读取当前密钥，以便在您的 API 提供时，通过新的登录后的“显示”按钮进行。从 Svix 或其他标准 Webhooks 发送器迁移的端点保留其密钥：迁移脚本将合作伙伴现有的 `whsec_…` 作为 `secret` 传递给 `create()`，因此合作伙伴的验证器保持工作，并且 `rotateSecret()` 以相同方式处理给定的 `secret`。包检查合作伙伴提交的内容并以 400 状态码抛出 `InvalidWebhookEndpointError`：URL 不是 `https://`（或带有 `allowHttp` 的 `http://`），携带凭据，或其主机是受阻止的地址，例如 `https://169.254.169.254/latest/meta-data/` 或 `https://localhost/`；事件类型不在 `eventTypes` 中。合作伙伴的错误以 400 返回，而另一个合作伙伴的 id 以 404 返回，通过一个过滤器：
+`create()` 返回带有其 `secret` 的端点，一个 32 字节的标准 Webhooks `whsec_…`，在此生成。此 API 只显示一次：`list()` 和 `get()` 从不包含它，丢失它的合作伙伴会轮换。该包保留密钥，在设置 `encryption` 时密封，因为它使用它进行签名，而 `getSecret()` 读取当前密钥，以便在您的 API 提供时，通过新的登录后的“显示”按钮进行验证。从 Svix 或其他标准 Webhooks 发送器迁移的端点保留其密钥：迁移脚本将合作伙伴现有的 `whsec_…` 作为 `secret` 传递给 `create()`，因此合作伙伴的验证器继续工作，并且 `rotateSecret()` 以相同方式处理给定的 `secret`。该包检查合作伙伴提交的内容并以 400 状态码抛出 `InvalidWebhookEndpointError`：URL 不是 `https://`（或带有 `allowHttp` 的 `http://`），携带凭据，或其主机是受阻止的地址，例如 `https://169.254.169.254/latest/meta-data/` 或 `https://localhost/`；事件类型不在 `eventTypes` 中。合作伙伴的错误返回 400，另一个合作伙伴的 id 返回 404，通过一个过滤器：
 
 ```typescript title="partner-webhooks/webhooks-error.filter.ts"
 import { Catch, HttpException, type ArgumentsHost } from '@nestjs/common';
@@ -631,9 +631,9 @@ export class PartnerWebhooksModule {}
 
 ```
 
-添加到此模块 [later](/http/webhooks#retries-the-delivery-log-and-replay) 的交付日志的控制器为合作伙伴提供了另一半信息：发送到其端点的内容。
+添加到此模块 [later](/http/webhooks#retries-the-delivery-log-and-replay) 的交付日志的控制器，向合作伙伴提供另一半信息：发送到其端点的内容。
 
-#### 提交后发送 order.shipped 和 order.cancelled
+#### 在提交后发送 order.shipped 和 order.cancelled
 
 `Webhooks.dispatch()` 首先接收您的事务句柄，如下所示 `Outbox.add()`：使用 Drizzle，`tx` 传递其回调，该回调的类型由服务提供 `Webhooks<Transaction>`。取消订单会更新它并在同一 `tx` 上分派 `order.cancelled`；发货（由承运商触发，在 [Receive the carrier's Stripe-like webhooks](/http/webhooks#receive-the-carriers-stripe-like-webhooks) 中）会更新它并分派 `order.shipped`。`tenant` 是下订单的合作伙伴，因此只有该合作伙伴的端点会接收到它：
 
@@ -695,7 +695,7 @@ export class OrdersService {
 
 ```
 
-事务内部没有内容离开进程。如果回滚，消息从未存在。如果提交，出库中继会拾取消息（`notify()` 要求它现在而不是在下一次轮询时执行）并将其交给包的扇出，该扇出为订阅了该类型的租户的每个已启用端点创建一次交付。工作进程然后对每个交付进行签名和发送。这就是 Northside 服务器收到的内容，在每次交付尝试时，带有相同的 `webhook-id` 和在 `dispatch()` 序列化时的确切主体：
+事务内部没有内容离开进程。如果回滚，消息从未存在。如果提交，出库中继会拾取消息（`notify()` 要求它现在而不是在下一次轮询时执行）并将其交给包的扇出，该扇出为订阅了该类型的租户的每个已启用端点创建一次交付。然后工作进程对每个交付进行签名和发送。这是 Northside 服务器在每次交付尝试时收到的内容，带有相同的 `webhook-id` 和在 `dispatch()` 序列化的确切主体：
 
 ```http
 POST /store/webhooks HTTP/1.1
@@ -790,15 +790,15 @@ await bootstrap();
 
 ```
 
-合作伙伴的 `OutboxModule` 提供了一个由 `@VerifyWebhook()` 去重收件箱。它在此内存中运行；真实的合作伙伴在其自己的数据库上注册出库的存储，如分析服务在 [the outbox tutorial](/reliability/outbox#publish-to-the-analytics-microservice) 中对 PostgreSQL 上的 `PostgresOutboxStore` 所做的那样。
+合作伙伴的 `OutboxModule` 提供了一个由 `@VerifyWebhook()` 去重收件箱。它在此内存中运行；真实的合作伙伴在其自己的数据库上注册出库的存储，在 PostgreSQL 上是 `PostgresOutboxStore`，就像分析服务在 [the outbox tutorial](/reliability/outbox#publish-to-the-analytics-microservice) 中所做的那样。
 
 #### 重试、交付日志和重放
 
-来自合作伙伴的 2xx 表示成功。其他任何情况都表示尝试失败：5xx、4xx、3xx（重定向永不跟随）、超时、连接被拒绝。工作进程在退避后重试，遵守秒级或 HTTP 日期的 `Retry-After` 头部（不超过退避上限，即一天；任何其他值均被忽略），对于 429、502、503 或 504，它会暂停该端点直到那时，即没有头部地暂停五秒：其他交付会等待而不尝试，因此请求喘息的合作伙伴会得到一次探测，而不是每个批次一次，而其他合作伙伴的交付会继续进行。三个答案会提前结束交付：410 Gone，这也禁用了端点（`gone`）；传输拒绝的目的地（订阅会检查，在每次发送时重新运行，因为 DNS 会更改）；以及 `retry.retryIf` 表示否决。在最后一次尝试后，交付状态为 `failed`，原因为 `exhausted`。
+来自合作伙伴的 2xx 表示成功。任何其他情况都表示尝试失败：5xx、4xx、3xx（重定向永不跟随）、超时、连接被拒绝。工作进程在退避后重试，遵守秒级或 HTTP 日期的 `Retry-After` 标头（不超过退避上限，即一天；任何其他值均被忽略），对于 429、502、503 或 504，它会暂停该端点直到那时，即没有标头的五秒钟：其他交付会等待而不尝试，因此请求喘息的合作伙伴会得到一次探测，而不是每个批次一次，而其他合作伙伴的交付会继续进行。三个答案会提前结束交付：410 Gone，这也禁用了端点（`gone`）；传输拒绝的目的地（订阅会检查，在每次发送时重新运行，因为 DNS 会更改）；以及 `retry.retryIf` 表示否决。在最后一次尝试后，交付变为 `failed`，原因为 `exhausted`。
 
-对于 `disableEndpointAfter` 每次尝试都失败的端点将被禁用，原因为 `failing`，并且 `WebhooksEvents` 发出 `endpoint-disabled`：通知合作伙伴。任何时间点的成功都会重置计时器。被禁用（无论是被工作进程还是被合作伙伴（订阅 `update()` 中的 `enabled: false`））的端点在禁用期间不会收到任何分派的消息：扇出会跳过它，之后不会创建这些交付。重放也不会，因为它会重新发送已存在的交付。存在的是在端点被禁用时正在等待的交付：当轮到它们时，它们会以原因 `endpoint-disabled` 失败，并在重新启用后，合作伙伴可以再次请求这些失败的交付，因为它们是失败的交付。重新启用会忘记失败，从那时起端点会接收到分派的消息。
+对于 `disableEndpointAfter` 每次尝试都失败的端点，会禁用，原因为 `failing`，并且 `WebhooksEvents` 发出 `endpoint-disabled`：通知合作伙伴。任何时间点的成功都会重置计时器。被禁用（无论是被工作进程还是被合作伙伴（订阅 `update()` 中的 `enabled: false`））的端点在禁用期间不会收到任何分派的消息：扇出会跳过它，之后不会创建这些交付。重放也不会，因为它会重新发送已存在的交付。存在的是在端点被禁用时正在等待的交付：当轮到它们时，它们会以原因 `endpoint-disabled` 失败，并在重新启用后，合作伙伴可以再次请求这些失败的交付，因为它们是失败的交付。重新启用会忘记失败，从那时起端点会接收到分派的消息。
 
-每次尝试都会被记录：状态码、持续时间、响应正文的前 4 KB、错误。合作伙伴读取自己的日志，并请求重新发送一次或所有自中断开始以来失败的交付。批量重试接受一个端点和中断的开始时间，两者都是可选的：
+每次尝试都会被记录：状态码、持续时间、响应体的前 4 KB、错误。合作伙伴读取自己的日志，并请求重新发送一次交付，或者自中断开始以来所有失败的交付。批量重试接受一个端点和中断的开始时间，两者可选：
 
 ```typescript title="partner-webhooks/webhook-deliveries.dto.ts"
 import { IsISO8601, IsOptional, IsString } from 'class-validator';
@@ -911,13 +911,13 @@ async retryFailed(@CurrentPartner() partner: Partner, @Body({ schema: retryDeliv
 
 ```
 
-重试会启动一个新轮次：`attempts` 重置到 0，现在发送，使用相同的 `webhook-id` 和相同的正文。早期轮次的日志保持不变。因为 id 相同，其收件箱保留了该 id 的合作伙伴会在不运行其处理程序的情况下以 2xx 响应，因此对于已投递的 webhook 来说，重放是安全的：Northside 在丢失自己的数据库后可以再次请求过去一小时的数据，并且只会收到尚未处理的数据。
+重试启动了一个新轮次：`attempts` 重置到 0，现在发送，使用相同的 `webhook-id` 和相同的 body。早期轮次的日志保持不变。因为 id 相同，其收件箱保留了该 id 的合作伙伴在不运行其处理器的情况下响应 2xx，因此对于已投递的 webhook 来说，重放是安全的：Northside 在丢失自己的数据库后可以再次请求过去一小时的数据，并且只会收到尚未处理的数据。
 
-操作员可以通过不指定租户的 `WebhookDeliveries` 获得相同的信息：`stats()`（待处理、到期、已租用和失败计数，以及 `lagMs`，最逾期交付等待了多长时间，需要警报的数字）、跨租户的 `retry()`，以及 `prune('30d')`，无需任何调用。`WebhooksEvents.events$` 发射 `delivered`、`retry-scheduled`、`delivery-failed`、`endpoint-disabled` 和 `destination-blocked`，每个事件都在名为 `nestjs:webhooks:<event>` 的 `node:diagnostics_channel` 频道上。
+操作员可以通过不带租户的 `WebhookDeliveries` 获得相同的信息：`stats()`（待处理、到期、已租用和失败计数，以及 `lagMs`，最逾期交付等待的时间，需要警报的数字），跨租户的 `retry()`，以及 `prune('30d')`，无需任何调用。`WebhooksEvents.events$` 发射 `delivered`、`retry-scheduled`、`delivery-failed` 和 `endpoint-disabled`，每个事件都在名为 `nestjs:webhooks:<event>` 的 `node:diagnostics_channel` 通道上。
 
 #### 接收支付提供者的 webhook
 
-支付提供者通过 Standard Webhooks 請求告知商店支付已成功完成。验证它需要与提供者签名时完全相同的正文，因此应用程序使用 `rawBody: true` 创建。这在 Express 和 Fastify 上都有效：
+支付提供者通过 Standard Webhooks 請求告知商店支付已完成。验证它需要与提供者签名时完全相同的 body，因此应用程序使用 `rawBody: true` 创建。这在 Express 和 Fastify 上都有效：
 
 ```typescript title="main.ts"
 import { ValidationPipe } from '@nestjs/common';
@@ -950,7 +950,7 @@ receivers: {
 
 ```
 
-路由上的 `@VerifyWebhook('payments')` 在处理程序运行前验证请求，而 `@IncomingWebhook()` 提供已验证的内容：发送者的 webhook `id`、签名的 `timestamp`、从签名字节解析出的 `payload`，以及 `processInTransaction()`：
+路由上的 `@VerifyWebhook('payments')` 在处理器运行前验证请求，而 `@IncomingWebhook()` 提供了验证的内容：发送者的 webhook `id`、签名的 `timestamp`、从签名字节中解析出的 `payload`，以及 `processInTransaction()`：
 
 ```typescript title="provider-webhooks/payment-provider-webhooks.controller.ts"
 import { Controller, HttpCode, HttpStatus, Logger, Post } from '@nestjs/common';
@@ -1031,11 +1031,11 @@ export class ProviderWebhooksModule {}
 
 ```
 
-装饰器按顺序检查的内容是：三个 `webhook-` 头部存在且格式正确，其中 `webhook-id` 最多为 255 个字符（按代码点计算）；在配置的密钥之一（支付提供者轮换时可列出多个密钥进行比较，时间复杂度为常数）与 `id.timestamp.body` 的 HMAC 匹配的 `v1,` 签名位于 `webhook-signature` 中；签名的时间戳在当前时间前后 5 分钟内；正文是 JSON。失败的请求会收到 401 错误和通用消息。原因绝不会发送给发送者；它会发送到 `verification-failed` 事件，并包含接收者的名称。如果签名的正文不是 JSON，则在装饰器看到它之前由框架的正文解析器返回 400 错误，因此不会发出事件。正文超过正文解析器大小限制（Express 默认 100 kB，Fastify 默认 1 MiB）的情况也相同：在装饰器运行前返回 413 错误，不会发出事件。如果支付提供者发送更大的正文，请使用 `useBodyParser()` 提高限制，如 [Raw body](/faq/raw-body#body-parser-size-limit) 所述。
+装饰器按顺序检查的内容是：三个 `webhook-` 头部存在且格式正确，其中 `webhook-id` 最多为 255 个字符（按代码点计算）；在 `webhook-signature` 中有一个 `v1,` 签名与使用配置的密钥之一对 `id.timestamp.body` 的 HMAC 匹配（以恒定时间比较；当支付提供者轮换密钥时可以列出多个密钥）；签名的时间戳在当前时间前后 5 分钟内；body 是 JSON。失败的请求会收到 401 错误和通用消息。原因绝不会发送给发送者；它会发送到 `verification-failed` 事件，并包含接收者的名称。未是 JSON 的签名 body 会在装饰器看到它之前被框架的 body 解析器返回 400，因此不会发出事件。对于超过 body 解析器大小限制（Express 默认 100 kB，Fastify 默认 1 MiB）的 body，它会在装饰器运行前返回 413，也不会发出事件。如果支付提供者发送更大的 body，请使用 `useBodyParser()` 提高限制，如 [Raw body](/faq/raw-body#body-parser-size-limit) 所述。
 
-接着是去重。支付提供者会重试直到收到 2xx 响应，因此在处理程序成功后超时会导致它再次发送相同的 `webhook-id`。接收者会维护一个已处理 id 的收件箱（出库的收件箱，消费者 `webhooks:payments`）：已知的 id 会以空的 200 响应而无需运行处理程序，并且只有在处理程序成功后才会记录 id，因此如果处理程序抛出异常，将在支付提供者的重试中再次运行。同一实例同时收到两个副本会运行处理程序一次；同一时刻接收的两个实例都可能运行它，这正是下一段的目的。
+接着是去重。支付提供者会重试直到收到 2xx 响应，因此在处理器成功后超时会导致它再次发送相同的 `webhook-id`。接收者会维护一个已处理 id 的收件箱（出库的收件箱，消费者 `webhooks:payments`）：已知的 id 会以空的 200 响应而无需运行处理器，并且只有在处理器成功后才会记录 id，因此如果处理器抛出异常，将在支付提供者的重试中再次运行。同一实例同时接收到两个副本会运行处理器一次；同一时刻接收到它们的两个实例都可能运行它，这正是下一段要解决的问题。
 
-`markPaid()` 移动与金钱相关的状态，因此控制器进一步使用 `processInTransaction()`：webhook 的 id 是*通过订单的事务*记录的，并且只有在它是新的情况下才会运行 `markPaid()`。记录和新状态一起提交。在处理程序和收件箱写入之间崩溃后的重新投递，或另一个实例上与此请求竞争的请求，会找到 id 且不改变任何内容；它以 `duplicate` 设置的响应解决，控制器使用此状态仅记录一次。当 `markPaid()` 抛出异常时（例如，支付金额错误），事务会回滚，记录也会回滚，发送者收到 409 错误，并且在订单修复后，其重试将获得另一次机会。
+`markPaid()` 移动与金钱相关的状态，因此控制器通过 `processInTransaction()` 进一步操作：webhook 的 id 是*通过订单的事务*记录的，并且只有在它是新的情况下才会运行 `markPaid()`。记录和新状态一起提交。在处理器和收件箱写入之间崩溃后的重新投递，或另一个实例上与此请求竞争的请求，会找到 id 且不改变任何内容；它以 `duplicate` 设置的响应解决，控制器使用此状态仅记录一次。当 `markPaid()` 抛出异常时（例如，金额错误），事务会回滚，记录也会回滚，发送者收到 409 错误，并且在订单修复后其重试获得另一次机会。
 
 对于开发，一个小型脚本会以支付提供者（以及下一节中的承运商）的方式签名请求，使用来自 `@nestjs/webhooks/testing` 的 `signWebhook()`：
 
@@ -1096,9 +1096,9 @@ console.log(`${response.status} ${await response.text()}`);
 
 #### 接收承运商的 Stripe 风格 webhook
 
-承运商复制了 Stripe 的方案：一个 `Carrier-Signature: t=…,v1=…` 头部，使用密钥文本的 HMAC-SHA256 的十六进制值 `t.body`，以及事件 ID 包含在有效载荷中。[`receivers` option](/http/webhooks#receive-the-payment-providers-webhooks) 中的接收者说明了这一点：使用 `header` 名称的 `scheme: 'stripe'`。Stripe 自己的 webhook 是没有 `header` 的相同接收者。GitHub 的以及使用自己方案的发送者在 [Other senders](/http/webhooks#other-senders) 中。
+承运商复制了 Stripe 的方案：一个 `Carrier-Signature: t=…,v1=…` 头部，对 `t.body` 使用密钥文本的十六进制 HMAC-SHA256，以及事件 id 包含在负载中。[`receivers` option](/http/webhooks#receive-the-payment-providers-webhooks) 中的接收者说明了这一点：使用 `header` 名称的 `scheme: 'stripe'`。Stripe 自己的 webhook 是没有 `header` 的相同接收者。GitHub 的以及拥有自己方案的发送者在 [Other senders](/http/webhooks#other-senders) 中。
 
-处理程序是有趣的部分。标记订单已发货并通知合作伙伴在一个事务中完成：订单的新状态、合作伙伴的 `order.shipped` 消息（通过出库）以及此 webhook 的收件箱记录一起提交，否则都不提交：
+处理器是有趣的部分。标记订单已发货并通知合作伙伴在一个事务中发生：订单的新状态、合作伙伴的 `order.shipped` 消息（通过出库）和此 webhook 的收件箱记录一起提交，否则都不提交：
 
 ```typescript title="provider-webhooks/carrier-webhooks.controller.ts"
 import { Controller, HttpCode, HttpStatus, Logger, Post } from '@nestjs/common';
@@ -1148,15 +1148,15 @@ export class CarrierWebhooksController {
 
 ```
 
-`markShipped()` 是来自 [Send order.shipped and order.cancelled after the commit](/http/webhooks#send-ordershipped-and-ordercancelled-after-the-commit) 的方法。去重 id 是签名有效载荷中的事件 `id`，而不是头部，因为这是 Stripe 方案所签名的内容。对于尚未付款的订单的 `shipment.shipped` 事件会以 409 拒绝，并且不会记录任何内容：当承运商在付款到达后重试时，相同的事件 id 会被处理。
+`markShipped()` 是来自 [Send order.shipped and order.cancelled after the commit](/http/webhooks#send-ordershipped-and-ordercancelled-after-the-commit) 的方法。去重 id 是签名负载中的事件 `id`，而不是头部，因为这是 Stripe 方案所签名的内容。对于尚未付款的订单的 `shipment.shipped` 事件会返回 409 拒绝，并且不会记录任何内容：当承运商在付款到达后重试时，相同的事件 id 会被处理。
 
 #### 其他发送者
 
-GitHub 的 webhook 接收 `scheme: 'github'`：`X-Hub-Signature-256`，即使用密钥文本的 HMAC-SHA256 散列值。
+GitHub 的 webhook 接收 `scheme: 'github'`：`X-Hub-Signature-256`，即使用密钥文本的 HMAC-SHA256 散列值。在 GitHub 中将 hook 的 **Content type** 设置为 `application/json`：其默认值 `application/x-www-form-urlencoded` 将有效载荷作为表单字段发送，而接收者对每次投递都返回 400，因为主体不是 JSON。
 
-> 警告 **Warning** GitHub 不对时间戳或 ID 进行签名。捕获的请求将永久有效，默认情况下，去重键基于 `X-GitHub-Delivery` 头部，该头部未签名：使用该头部的新值重放相同的请求会再次运行处理程序。
+> 警告 **警告** GitHub 不对时间戳或 ID 进行签名。捕获的请求永远有效，默认情况下，去重键基于 `X-GitHub-Delivery` 头部，该头部未签名：使用该头部的新值重放相同的请求会再次运行处理器。
 
-转而基于签名后的主体进行去重，使用接收者的 `id` 选项。有效载荷是从被签名的字节中解析的，因此重放的 ID 与原始 ID 相同，收件箱会跳过它：
+转而基于签名主体进行去重，使用接收者的 `id` 选项。有效载荷是从被签名的字节中解析的，因此重放的请求具有与原始请求相同的 ID，收件箱会跳过它：
 
 ```typescript
 receivers: {
@@ -1170,9 +1170,9 @@ receivers: {
 
 ```
 
-收件箱会记住一个 ID 直到 `OutboxInbox.prune()` 移除它，因此对于 GitHub 来说，其窗口期也是捕获重放的时长：保持较长。在此之后重放的请求将验证并运行；仅接受来自其发布的地址（`hooks` 在 `https://api.github.com/meta` 中）的 GitHub webhook 可以缩小发送者的范围。
+收件箱会记住一个 ID 直到 `OutboxInbox.prune()` 将其移除，因此对于 GitHub 来说，其窗口期也是捕获重放的时长：保持较长。在此之后重放的请求将验证并通过运行；仅接受来自其发布地址（`hooks` 在 `https://api.github.com/meta` 中）的 GitHub webhook 可以缩小发送者的范围。
 
-具有自身方案的发送者是一个继承自 `WebhookSignatureScheme` 的类。假设商店也通过市场销售，该市场会签名其发布的 URL 加上主体，并将事件的 ID 放在主体中：
+具有自身方案的发送者是扩展了 `WebhookSignatureScheme` 的类。假设商店也通过市场销售，市场会签名它发布的 URL 加上主体，并将事件的 ID 放在主体中：
 
 ```typescript title="provider-webhooks/marketplace.scheme.ts"
 import { WebhookSignatureScheme, type WebhookSignatureCheck, type WebhookSignedRequest } from '@nestjs/webhooks';
@@ -1218,12 +1218,12 @@ export class MarketplaceScheme extends WebhookSignatureScheme {
 
 ```
 
-- `verify(request, keys)` 获取请求的 `headers`（小写名称）和其收到的 `rawBody`，以及每个配置密钥的一个键。它返回 `valid: true`，如果头部携带发送者的 `id`，则返回该值；如果方案签名，则返回以 epoch 秒表示的签名后的 `timestamp`（然后应用接收者的 `tolerance`），或者返回 `valid: false`，其中包含针对 `verification-failed` 事件的 `reason` 和 `detail`。它同步运行，在主体被解析为 JSON 之前。
-- `WebhookSignatureScheme.matches(expected, candidates)` 以恒定时间进行比较。切勿使用 `===` 比较签名。
-- `idFromPayload(payload, headers)` 在没有头部携带去重 ID 时，从解析后的主体中提供去重 ID，就像内置的 Stripe 方案对事件的 `id` 所做的那样。任何长度超过 255 个字符的 ID（来自任一来源）都将使用 `malformed-header` 拒绝。
-- `key(secret)` 在启动时将每个配置密钥转换为 `verify()` 接收的键，如果密钥格式错误，将停止应用程序。默认值使用密钥文本，拒绝空值或包含周围空白值的密钥。对于编码的密钥，请像 `standard` 方案对 `whsec_…` 所做的那样进行覆盖。
+- `verify(request, keys)` 获取请求的 `headers`（小写名称）和其接收到的 `rawBody`，以及每个配置密钥的一个键。它返回 `valid: true`，如果头部携带发送者的 `id`，则返回该值；如果方案签名，则返回以纪元秒表示的签名 `timestamp`（然后应用接收者的 `tolerance`），或者返回 `valid: false`，其中包含针对 `verification-failed` 事件的 `reason` 和一个 `detail`。它同步运行，在主体被解析为 JSON 之前。
+- `WebhookSignatureScheme.matches(expected, candidates)` 以常数时间进行比较。切勿使用 `===` 比较签名。
+- `idFromPayload(payload, headers)` 在没有头部携带去重 ID 时，从解析后的主体中提供去重 ID，就像内置的 Stripe 方案对事件的 `id` 所做的那样。来自任一来源的长度超过 255 个字符的 ID 将以 `malformed-header` 拒绝。
+- `key(secret)` 在启动时将每个配置密钥转换为 `verify()` 接收的键，如果密钥格式错误，则会停止应用程序。默认值使用密钥文本，拒绝空值或包含周围空白值的密钥。对于编码的密钥，请覆盖它，就像 `standard` 方案对 `whsec_…` 所做的那样。
 
-接收者接受一个实例：
+接收者接收一个实例：
 
 ```typescript
 receivers: {
@@ -1237,9 +1237,9 @@ receivers: {
 
 #### 轮换密钥
 
-密钥泄露了，或者合作伙伴的策略规定一年足够了。`POST /partner/webhook-endpoints/:id/rotate-secret`（参见 [Let partners subscribe](/http/webhooks#let-partners-subscribe)）返回一个新的密钥，旧密钥在旁边继续签名 `secretRotationOverlap`，即 24 小时：每次交付都携带两个 `v1,` 签名，而 Standard Webhooks 验证器接受任何匹配的签名。合作伙伴在其自己的时间表上将新密钥添加到其列表中，部署，然后移除旧密钥。重叠期后，只有新密钥签名。`rotateSecret()` 配合 `overlap: 0` 会立即淘汰旧密钥，适用于密钥泄露的情况。
+密钥泄露了，或者合作伙伴的策略规定一年足够了。`POST /partner/webhook-endpoints/:id/rotate-secret`（参见 [Let partners subscribe](/http/webhooks#let-partners-subscribe)）返回一个新的密钥，旧密钥会紧随其后继续签名 `secretRotationOverlap`，即 24 小时：每次投递都携带两个 `v1,` 签名，而 Standard Webhooks 验证器接受任何匹配的签名。合作伙伴在其列表中添加新密钥，部署，然后根据自己的时间表移除旧密钥。重叠期过后，只有新密钥签名。`rotateSecret()` 使用 `overlap: 0` 立即淘汰旧密钥，适用于泄露的密钥。
 
-设置 `WEBHOOKS_ENCRYPTION_KEYS` 以对静态密钥进行密封，为每个密钥设置 `openssl rand -base64 32`，按最新到旧的顺序。在此之前创建的端点仍可读取（其密钥是明文），并在下次轮换时被密封。
+设置 `WEBHOOKS_ENCRYPTION_KEYS` 以对静态密钥进行密封，为每个密钥设置 `openssl rand -base64 32`，按最新到旧的顺序。在此之前创建的端点仍可读取（其密钥是明文），并在下一次轮换时进行密封。
 
 #### 试用
 
@@ -1250,7 +1250,7 @@ $ psql postgres://localhost:5432/postgres -c 'CREATE DATABASE store'
 
 ```
 
-导出支付提供商和承运商与商店共享的密钥（此处虚构），允许交付到此机器，并在端口 3000 上启动 API：
+导出支付提供商和承运商与商店共享的密钥（此处虚构），允许投递到此机器，并在端口 3000 上启动 API：
 
 ```bash
 $ export PAYMENTS_WEBHOOK_SECRET=whsec_$(openssl rand -base64 32)
@@ -1268,7 +1268,7 @@ $ export WEBHOOKS_ALLOW_LOCAL=1
 
 ```
 
-您的迁移创建了订单 API 的表，商店创建了其模式，位于其旁边。Northside 使用其 API 密钥订阅两个事件，在一个将在端口 4100 上运行的接收者中。响应携带密钥，仅此一次：
+您的迁移创建了订单 API 的表，商店创建了它们的模式，紧邻它们。Northside 使用其 API 密钥订阅两个事件，在一个将在端口 4100 上运行的接收者中。响应携带密钥，仅此一次：
 
 ```bash
 $ curl -s -X POST localhost:3000/partner/webhook-endpoints \
@@ -1280,9 +1280,9 @@ $ curl -s localhost:3000/partner/webhook-endpoints -H 'Authorization: Bearer par
 
 ```
 
-> 信息 **Hint** `--json` 需要 curl 7.82 或更高版本。
+> 信息 **提示** `--json` 需要 curl 7.82 或更高版本。
 
-云元数据服务的 URL 在存储任何内容之前即被拒绝，API 不发送的事件类型也会被拒绝。另一个合作伙伴 Riverside Cat Shelter 对 Northside 的端点返回 404：
+云元数据服务的 URL 在存储任何内容之前就会被拒绝，API 不发送的事件类型也会被拒绝。另一个合作伙伴 Riverside Cat Shelter 会收到 Northside 端点的 404 错误：
 
 ```bash
 $ curl -s -X POST localhost:3000/partner/webhook-endpoints \
@@ -1324,7 +1324,7 @@ $ curl -s localhost:3000/orders/1067d04c-0617-44ac-9a29-67297867329e -H 'Authori
 
 ```
 
-API 的日志显示两个 webhook 都已处理，而 Northside 的日志显示 `order.shipped` 在承运商之后到达，带有其 `webhook-id`：
+API 的日志显示两个 webhook 都已处理，Northside 的日志显示 `order.shipped` 在承运商之后到达，带有其 `webhook-id`：
 
 ```bash
 [Nest] 55905  - 09/30/2026, 6:52:39 PM     LOG [PaymentProviderWebhooksController] Order 1067d04c-0617-44ac-9a29-67297867329e paid: pay_8f21c, 4998 cents
@@ -1337,7 +1337,7 @@ API 的日志显示两个 webhook 都已处理，而 Northside 的日志显示 `
 
 ```
 
-Northside 的交付日志中有交付记录，其详细信息包含消息和一次尝试，以及合作伙伴的状态码和耗时：
+Northside 的投递日志中有投递记录，其详细信息包含消息和一次尝试，以及合作伙伴的状态码和耗时：
 
 ```bash
 $ curl -s localhost:3000/partner/webhook-deliveries -H 'Authorization: Bearer partner_northside_7c1d2e'
@@ -1376,7 +1376,7 @@ $ curl -s localhost:3000/partner/webhook-deliveries/dlv_01a0f33b89ac720aa76e2c3d
 
 ```
 
-使用 `Ctrl+C` 停止 Northside 的接收者，然后下订单并取消。交付连接失败，API 记录了等待下一次尝试的时间，合作伙伴的日志显示交付待处理及其错误：
+使用 `Ctrl+C` 停止 Northside 的接收者，然后下订单并取消。投递连接失败，API 记录了等待下一次尝试的时间，合作伙伴的日志显示投递待处理及其错误：
 
 ```bash
 $ curl -s -X POST localhost:3000/orders \
@@ -1424,7 +1424,7 @@ $ curl -s localhost:3000/partner/webhook-deliveries/dlv_01a0f33b8f51724da606406a
 
 ```
 
-Northside 再次请求该交付。它使用相同的 `webhook-id` 发送，接收者的收件箱识别它并返回 204，而无需运行处理程序（其日志中没有新内容），交付日志显示了一个新轮次：
+Northside 再次请求该投递。它使用相同的 `webhook-id` 发送，接收者的收件箱识别它并返回 204，而没有运行处理器（其日志中没有新内容），投递日志显示了一个新轮次：
 
 ```bash
 $ curl -s -X POST localhost:3000/partner/webhook-deliveries/dlv_01a0f33b8f51724da606406a85418fab/retry \
@@ -1447,7 +1447,7 @@ $ curl -s localhost:3000/partner/webhook-deliveries/dlv_01a0f33b8f51724da606406a
 
 ```
 
-现在是支付提供商的侧面。使用相同的 `webhook-id` 的重新交付（丢失的 200，因此提供商重试）得到了响应但未再次处理：API 记录了一次支付。篡改的主体和错误的密钥被拒绝，没有原因：
+现在是支付提供商的侧面。使用相同的 `webhook-id` 的重新投递（丢失的 200，因此提供商重试）得到了响应但没有再次处理：API 记录了一笔付款。篡改的主体和错误的密钥被拒绝，没有提供原因：
 
 ```bash
 $ curl -s -X POST localhost:3000/orders \
@@ -1474,7 +1474,7 @@ $ PAYMENTS_WEBHOOK_SECRET=whsec_$(openssl rand -base64 32) npx tsx scripts/send-
 
 ```
 
-最后，旋转端点的密钥。接收者仍使用旧密钥运行，但下一次交付仍然会验证：它携带了两个签名。然后使用新密钥在前、旧密钥在后的顺序重启接收者，就像合作伙伴部署的那样，并放置和取消另一个订单：该交付也验证成功：
+最后，旋转端点的密钥。接收者仍使用旧密钥运行，但下一次投递仍会验证：它携带了两个签名。然后使用新密钥在前、旧密钥在后的顺序重启接收者，就像合作伙伴部署的那样，并放置和取消另一个订单：该投递也验证成功：
 
 ```bash
 $ curl -s -X POST localhost:3000/partner/webhook-endpoints/ep_01a0f33b79e27154b8fd089a10f3e48e/rotate-secret \
@@ -1514,7 +1514,7 @@ $ curl -s -X POST localhost:3000/orders/d203fd6f-7396-489b-9d20-775cd8a6ca4e/can
 
 ```
 
-交付是您数据库中的行，在商店的模式中：
+投递是您数据库中的行，在商店的模式中：
 
 ```bash
 $ psql "$DATABASE_URL" -c "SELECT type, status, attempts, last_status_code FROM nest_webhooks.deliveries ORDER BY created_at"
@@ -1530,7 +1530,7 @@ $ psql "$DATABASE_URL" -c "SELECT type, status, attempts, last_status_code FROM 
 
 #### 测试
 
-在 e2e 测试中，使用 [PGlite](https://pglite.dev) 在进程内运行 PostgreSQL 和您的真实迁移，关闭中继和工作者，用记录请求的传输器替换传输器，并使用 `signWebhook()` 对提供者的请求进行签名。用一个基于 PGlite 的数据库 `DrizzleModule` 注册（`getDrizzleToken()` 返回其令牌）覆盖它：商店会跟随，因为它们的工厂注入了它，并在应用程序启动时在那里创建它们的模式：
+在 e2e 测试中，使用 [PGlite](https://pglite.dev) 在进程内运行 PostgreSQL 和您的真实迁移，关闭中继和工作者，用记录请求的传输器替换传输器，并使用 `signWebhook()` 对提供者的请求进行签名。用一个在 PGlite 上的数据库 `DrizzleModule` 注册表（`getDrizzleToken()` 返回其令牌）覆盖，商店会跟随，因为它们的工厂注入它，并在应用程序启动时在那里创建它们的模式：
 
 ```typescript title="test/webhooks.e2e-spec.ts"
 import { PGlite } from '@electric-sql/pglite';
@@ -1641,81 +1641,81 @@ describe('Order webhooks', () => {
 ```
 
 - Outbox、两个商店、迁移、扇出、签名和验证都是真实的。只替换了网络：`InMemoryWebhookTransport` 回复 200 并保留每个请求，而 `respondWith(503)` 或一个函数模拟一个宕机、缓慢或挑剔的合作伙伴。
-- `deliver()` 是提交后的整个管道：`relay.runOnce()` 发布已提交的消息（扇出创建了交付），`worker.runOnce()` 声明一个批次并发送它。
+- `deliver()` 是提交后的整个管道：`relay.runOnce()` 发布已提交的消息（扇出创建了投递），`worker.runOnce()` 领取一个批次并发送它。
 - `SentWebhook.isSignedWith(secret)` 使用端点的密钥验证 `v1` 签名，而 `data` 是主体中的 `data`，因此测试断言于合作伙伴将验证和读取的内容。
-- `signWebhook()` 生成支付提供者（Stripe 或 GitHub）将发送的主体和头部。重用其 `id` 进行重新交付，移动 `timestamp` 以测试容错性，更改主体的一个字节以进行篡改请求。
-- 对于依赖时间的行为，例如退避、租约和轮换重叠，将 `Date.now()` 提前到 `vi.spyOn(Date, 'now')`。工作者和商店从中获取时间，而真实计时器对 Socket 持续运行。
-- 示例中的 `tutorial.e2e-spec.ts` 在 PGlite 和 PostgreSQL 服务器上使用真实 HTTP 运行此页面的每个部分：API 通过默认传输器向合作伙伴的接收者交付，包括中断、重放、重新交付和轮换。其 `zod.e2e-spec.ts` 使用 DTO 的 Zod 变体和 `StandardSchemaValidationPipe` 启动相同的应用程序。其商店测试通过 PGlite、PostgreSQL 和 MySQL 上的 Drizzle，以及 PostgreSQL 上的 TypeORM 运行：合同套件、与订单一起提交和回滚的调度，以及生产中的模式。
+- `signWebhook()` 生成支付提供者（Stripe 或 GitHub）将发送的主体和头部。重用其 `id` 进行重新投递，移动 `timestamp` 以测试容忍度，修改主体的一个字节以进行篡改请求。
+- 对于依赖时间的行为，例如退避、租约和轮换重叠，将 `Date.now()` 提前到 `vi.spyOn(Date, 'now')`。工作者和商店从其中获取时间，而真实计时器对 Socket 持续运行。
+- 示例中的 `tutorial.e2e-spec.ts` 在真实 HTTP、PGlite 和 PostgreSQL 服务器上运行此页面的每个部分：API 通过默认传输器向合作伙伴的接收者投递，包括中断、重放、重新投递和轮换。其 `zod.e2e-spec.ts` 使用 DTO 的 Zod 变体和 `StandardSchemaValidationPipe` 启动相同的应用程序。其商店测试通过 PGlite、PostgreSQL 和 MySQL 上的 Drizzle，以及 PostgreSQL 上的 TypeORM 运行：合同套件、与订单一起提交和回滚的调度，以及生产中的模式。
 
-有关测试设置的更多信息，请参阅 [End-to-end testing](/fundamentals/unit-testing)。
+有关测试设置的更多信息，请参阅 [End-to-end testing](/fundamentals/testing#端到端测试)。
 
-#### 交付保证
+#### 投递保证
 
-传出的 Webhook **至少交付一次**；接收者通过 `webhook-id` 进行去重。
+传出的 Webhook **至少投递一次**；接收者通过 `webhook-id` 去重。
 
 | 情况 | 结果 |
 | --- | --- |
 | 订单的事务回滚 | 消息从未存在，不发送任何内容 |
-| 订单的事务提交 | 每个订阅的租户端点交付一次，最终交付或带有尝试日志失败 |
-| Outbox 重新交付消息（扇出后中继崩溃） | 扇出是幂等的：每个消息和端点一次交付 |
+| 订单的事务提交 | 每个订阅的租户端点投递一次，最终投递或带有尝试日志失败 |
+| Outbox 重新投递消息（扇出后中继崩溃） | 扇出是幂等的：每个消息和端点投递一次 |
 | 端点在消息之后创建或被禁用 | 不接收，重放不会将其恢复 |
-| 工作者在声明后死亡 | 在租约过期后由另一个工作者发送（`worker.lease`，1 分钟） |
+| 工作者在领取后死亡 | 在租约过期后由另一个工作者发送（`worker.lease`，1 分钟） |
 | 工作者在发送后、记录前死亡 | **发送两次**，使用相同的 `webhook-id`，在租约过期后 |
-| 两个工作者，相同交付 | 声明对租约是独占的，并且每次后续写入都由它围栏保护 |
-| 合作伙伴回答 2xx | 已交付 |
+| 两个工作者，相同投递 | 领取是租约的独占，后续的每次写入都由其围栏保护 |
+| 合作伙伴回答 2xx | 已投递 |
 | 回答其他任何内容或无响应 | 带有退避重试，遵守 `Retry-After`；429、502、503 和 504 控制端点速率 |
 | 回答 410 Gone | 失败（`rejected`），并且端点被禁用（`gone`） |
-| `disableEndpointAfter` 所有尝试都失败 | 端点被禁用（`failing`），仅一次 |
-| 合作伙伴请求重放 | 一个带有相同 `webhook-id` 的新轮次，因此其收件箱会跳过它 |
+| `disableEndpointAfter` 次尝试均失败 | 端点被禁用（`failing`），仅一次 |
+| 合作伙伴请求重放 | 使用相同的 `webhook-id` 进行新一轮，因此其收件箱会跳过它 |
 
-交付**没有顺序**。一个工作者一次发送一个端点的交付，最超时的优先，但失败的尝试会等待其退避时间，而后续消息会发出，多个工作者同时向同一端点发送，重放现在发送一条旧消息。一个订单的两次更新可能以任意顺序到达合作伙伴。接收者像处理重复项一样处理：主体中的 `timestamp` 是消息被分派的时间（`webhook-timestamp` 是本次尝试被签名的时间），因此处理程序可以忽略早于其已持有状态的事件，或者将 Webhook 视为信号并从 API 读取当前状态。
+投递**没有顺序**。一个工作者一次发送一个端点的投递，最逾期的优先，但失败的尝试会等待其退避时间，而后续消息会发出；多个工作者同时向同一端点发送；重放现在发送一条旧消息。一个订单的两次更新可能以任意顺序到达合作伙伴。接收者像处理重复项一样处理：主体中的 `timestamp` 是消息被分派的时间（`webhook-timestamp` 是本次尝试被签名的时间），因此处理程序可以忽略早于其已持有状态的事件，或将 Webhook 视为信号并从 API 读取当前状态。
 
 在常见情况下，使用默认收件箱时，传入的 Webhook **每个 Webhook ID 和接收者只运行一次**（在处理程序和收件箱写入之间崩溃，或两个实例竞争两个副本时也是如此），并且它们的 `processInTransaction()` **恰好运行一次**。
 
 #### 生产检查清单
 
-- 将端点和交付物保留在应用程序的数据库中，在数据库服务器上：注册 `PostgresWebhookStore` 或 `MySqlWebhookStore`，并将出库的存储放在其旁边（[Keep webhooks in your database](/http/webhooks#keep-webhooks-in-your-database)）。生产守卫拒绝在内存中启动；`allowInMemoryStorage` 适用于您可以承受丢失待处理交付物的进程。
-- 在新版本启动前，使用 `npx @nestjs/webhooks migrate` 和 `npx @nestjs/outbox migrate` 或您的迁移工具应用两个存储的迁移，并在 CI 中使用 `status` 进行检查。使用 `NODE_ENV=production` 时，存储在启动时不会迁移：模式落后时会失败，而不是迁移。
+- 将端点和交付物保留在应用程序的数据库中，在数据库服务器上：注册 `PostgresWebhookStore` 或 `MySqlWebhookStore`，并将外置箱的存储放在旁边（[Keep webhooks in your database](/http/webhooks#keep-webhooks-in-your-database)）。生产守卫拒绝在内存中启动；`allowInMemoryStorage` 适用于您可以承受丢失待处理交付物的进程。
+- 在新版本启动前，使用 `npx @nestjs/webhooks migrate` 和 `npx @nestjs/outbox migrate` 或您的迁移工具应用两个存储的迁移，并在 CI 中使用 `status` 检查它们。使用 `NODE_ENV=production` 时，存储不会在启动时迁移：落后的模式会失败。
 - 在 PostgreSQL 上，将数据库的默认隔离级别保持在 READ COMMITTED：存储拒绝更严格的级别。在 MySQL 上，当 MySQL 发生死锁（错误 1213）时，重新运行事务：它已回滚，连同它分发的消息和记录的 Webhook 一起。
-- 忽略 `delivery.allowHttp` 和 `delivery.allowPrivateNetworks`。合作伙伴的 URL 是不受信任的输入，传输器自行解析它并固定了它检查的地址。使用 `allowedAddresses` 来指定您实际交付的唯一私有范围，并对 `destination-blocked` 事件发出警报：客户将 Webhook 指向您的元数据服务值得关注。
-- 在几个实例中运行工作者（`WEBHOOKS_WORKER`），而不是在每个 API pod 中运行：每个声明都是一个短事务，租约防止它们重复发送同一交付物。
+- 移除 `delivery.allowHttp` 和 `delivery.allowPrivateNetworks`。合作伙伴的 URL 是不受信任的输入，传输器自行解析它并固定了它检查的地址。使用 `allowedAddresses` 来指定您真正交付的那个私有范围，并对 `destination-blocked` 事件发出警报：客户将 Webhook 指向您的元数据服务值得关注。
+- 在几个实例中运行工作者（`WEBHOOKS_WORKER`），而不是在每个 API pod 中运行：每个声明都是一个短事务，租约防止它们重复发送相同的交付物。
 - 从 `deliveries.stats()` 警报 `lagMs` 和 `failed`，以及 `endpoint-disabled`：通过电子邮件告知合作伙伴其端点已关闭以及原因。
-- 对有效载荷进行版本控制。合作伙伴可能会保留其处理程序多年，而 `retry()` 会重新发送发送时的正文。向类型的 `data` 添加字段，绝不重命名或删除任何字段。对于破坏性变更，添加一个新类型，在 `eventTypes` 中添加 `order.shipped.v2`，并在同一事务中分发两者（`dispatch()` 接受数组），同时合作伙伴迁移其订阅；订阅了 `*` 的端点会收到两者。然后停止分发旧类型。旧消息的重放直到日志被修剪仍带有旧的形状。
-- 向合作伙伴提供交付日志和重放。这在他们开工单之前回答了“是否发送了？”
-- 轮换密钥时有重叠，绝不使用 `overlap: 0`，除非密钥泄露，并且使用 `WEBHOOKS_ENCRYPTION_KEYS` 在静止状态下密封它们。将密钥保存在密钥管理器中。
+- 对有效载荷进行版本控制。合作伙伴可能会保留其处理程序多年，而 `retry()` 会重新发送分发时的原始主体。向类型的 `data` 添加字段，绝不重命名或删除。对于破坏性变更，添加一个新类型，在 `eventTypes` 中使用 `order.shipped.v2`，并在同一事务中分发两者（`dispatch()` 接受一个数组），同时合作伙伴迁移其订阅；订阅了 `*` 的端点会收到两者。然后停止分发旧类型。旧消息的重放会保留旧的形状，直到日志被修剪。
+- 向合作伙伴提供交付日志和重放。这在他们打开工单之前就能回答“是否发送了？”
+- 带有重叠地轮换密钥，绝不使用 `overlap: 0`，除非密钥泄露，并使用 `WEBHOOKS_ENCRYPTION_KEYS` 在静态存储中密封它们。将密钥保存在密钥管理器中。
 - 修剪日志。从 [cron job](/techniques/task-scheduling#声明式-cron-任务) 中使用 `deliveries.prune('30d')`；没有东西会为您调度它。
 - 对于传入的 Webhook，保留 `rawBody: true`，并将接收者的密钥保存在环境变量中。在提供者轮换期间列出旧密钥和新密钥。
-- 保持提供者处理程序简短且本身是幂等的（事务内的状态检查），即使有 `processInTransaction()`：收件箱防止重复交付，检查防止提供者为同一事实发送两个不同的事件。
-- 使用 `OutboxInbox.prune()` 在长于任何提供者重试计划的窗口上修剪收件箱（Stripe 重试三天，GitHub 完全不重试）。对于 GitHub，该窗口也是捕获重放请求的时间，去重基于正文（[Other senders](/http/webhooks#other-senders)）。
+- 保持提供者处理程序简短且自身是幂等的（事务内的状态检查），即使有 `processInTransaction()`：收件箱防止重复交付，检查防止提供者为同一事实发送两个不同事件。
+- 使用 `OutboxInbox.prune()` 在比任何提供者重试计划更长的窗口上修剪收件箱（Stripe 重试三天，GitHub 完全不重试）。对于 GitHub，该窗口也是捕获重放请求的时间，去重基于主体（[Other senders](/http/webhooks#other-senders)）。
 - 调用 `app.enableShutdownHooks()`，以便部署可以完成正在进行的尝试并释放其余部分。
 - 对于您自己的存储，在 CI 中使用 `concurrent: true` 运行契约套件，针对您在生产中运行的数据库版本。
 
 #### 存储契约
 
-`PostgresWebhookStore` 和 `MySqlWebhookStore` 实现了该包的两个契约，`WebhookEndpointStore` 和 `WebhookDeliveryStore`。对于另一个数据库，在您自己的提供者中实现它们。两个接口中每个方法的 JSDoc 都会说明其规则和它防止的竞态条件。
+`PostgresWebhookStore` 和 `MySqlWebhookStore` 实现了该包的两个契约，`WebhookEndpointStore` 和 `WebhookDeliveryStore`。对于其他数据库，在您自己的提供者中实现它们。两个接口中每个方法的 JSDoc 都会说明其规则以及它防止的竞态条件。
 
-**注册。** 存储是一个普通的单例提供者，在其构造函数中调用可注入的 `WebhooksStorage` 上的 `registerSource()`，命名它实现的契约：`endpoints`、`deliveries` 或两者来自一个类。注册表会一次性检查形状，除非通过 `replace: true`，否则拒绝第二次注册，并在 `WebhooksModule` 初始化时锁定，记录正在使用的存储。如果没有注册任何内容，模块使用 `InMemoryWebhookStore`，它在重启时会丢失端点和待处理交付物，并且无法在实例之间共享它们。使用 `NODE_ENV=production` 时，启动会失败，除非 `allowInMemoryStorage: true` 接受这一点。
+**注册。** 存储是一个普通的单例提供者，在其构造函数中调用可注入的 `WebhooksStorage` 上的 `registerSource()`，命名其实现的契约：`endpoints`、`deliveries` 或两者都来自一个类。注册表会一次性检查形状，除非通过 `replace: true`，否则拒绝第二次注册，并在 `WebhooksModule` 初始化时锁定，记录正在使用的存储。如果没有注册任何内容，模块使用 `InMemoryWebhookStore`，它在重启时会丢失端点和待处理交付物，并且无法在实例之间共享它们。使用 `NODE_ENV=production` 时，启动会失败，除非 `allowInMemoryStorage: true` 接受这一点。
 
-**无事务句柄。** 与出库的 `add()` 不同，此处没有方法接受您的事务：出库将消息从您的事务中取出，而 Webhook 存储在自己的连接上运行。
+**无事务句柄。** 与外置箱的 `add()` 不同，此处没有方法会接收您的事务：外置箱将消息带出您的事务，而 Webhook 存储在自己的连接上运行。
 
 **方法。** 标记为原子的方法是一个条件语句或一个带有行锁的事务，绝不是先读取后写入；它们是契约套件进行竞态检查的对象。
 
-| 方法 | 功能描述 | 原子性 |
+| 方法 | 功能 | 原子性 |
 | --- | --- | --- |
 | `createEndpoint`, `getEndpoint`, `listEndpoints`, `updateEndpoint`, `deleteEndpoint` | 端点的生命周期；`list` 按租户最新优先 | 否 |
-| `findSubscribedEndpoints(tenant, type)` | 订阅了该类型的完全启用端点（或 `*`）：扇出查询 | 否，但套件检查它绝不会返回其他租户的 |
-| `addEndpointSecret(id, secret, expireOthersAt, now)` | 轮换：新密钥优先，其他密钥过期 | 是：行被锁定，因此两次轮换都会生效 |
-| `recordEndpointFailure(id, failure)` | 首次失败时设置 `failingSince`；一旦端点失败足够长时间就禁用它，并报告一次 | 是：行被锁定 |
+| `findSubscribedEndpoints(tenant, type)` | 订阅了该类型的完全启用端点（或 `*`）：扇出查询 | 否，但套件检查它绝不会返回另一个租户的 |
+| `addEndpointSecret(id, secret, expireOthersAt, now)` | 轮换：新密钥优先，其他密钥过期 | 是：行被锁定，因此两次轮换都会落地 |
+| `recordEndpointFailure(id, failure)` | 首次失败时设置 `failingSince`；一旦端点失败足够长的时间就禁用它，并报告一次 | 是：行被锁定 |
 | `recordEndpointSuccess(id)` | 清除 `failingSince` | 否 |
 | `createDeliveries(message, deliveries)` | 扇出：消息如果不存在则添加，每个交付物如果其 `(messageId, endpointId)` 不存在则添加 | 是：对该对的唯一键，例如 PostgreSQL 上的 `ON CONFLICT DO NOTHING` |
 | `claimDeliveries(request)` | 租用逾期交付物，最逾期优先，附带其消息 | 是：`FOR UPDATE SKIP LOCKED`，然后是租约 |
 | `recordDeliveryAttempt(id, owner, update)` | 尝试的结果和日志行，如果 `owner` 仍持有租约 | 是：由租约所有者围栏保护 |
-| `releaseDeliveries(ids, owner, nextAttemptAt)` | 释放租约，在被请求时推迟 | 是：被围栏保护 |
+| `releaseDeliveries(ids, owner, nextAttemptAt)` | 释放租约，按请求推迟 | 是：被围栏保护 |
 | `getDelivery`, `getMessage`, `listDeliveries`, `listDeliveryAttempts`, `deliveryStats` | 读取；`list` 按租户、端点、消息、状态和类型最新优先 | 否 |
-| `retryDeliveries(filter, now)` | 尚未租用的匹配项的新一轮 | 是：一个带有租约的 `UPDATE` 在其 `WHERE` 中 |
+| `retryDeliveries(filter, now)` | 对于未被租用的匹配项的新一轮 | 是：一个带有租约的 `UPDATE` 在其 `WHERE` 中 |
 | `pruneDeliveries(before)` | 超过 `before` 的已完成交付物、其日志以及未交付的消息 | 否，但绝不会有待处理的交付物 |
 
-使用 `@nestjs/webhooks/testing` 中的 `webhookEndpointStoreContract()` 和 `webhookDeliveryStoreContract()` 进行测试。每个案例都使用您传入的函数从空表中获取一个存储。教程中的测试针对 `PostgresWebhookStore` 及以上使用 Drizzle 运行两个套件，就像您针对自己的那样：
+使用 `webhookEndpointStoreContract()` 和 `webhookDeliveryStoreContract()` 从 `@nestjs/webhooks/testing` 进行测试。每个案例都使用您传入的函数从空表中获取一个存储。教程中的测试针对 `PostgresWebhookStore` 及 Drizzle 运行两个套件，就像您针对自己的存储一样：
 
 ```typescript title="test/drizzle-webhook.store.e2e-spec.ts"
 /** A store on emptied tables, built the way Nest builds it: with the database and a registry. */
@@ -1740,36 +1740,36 @@ describe('the delivery contract', () => {
 
 ```
 
-使用 `concurrent: true`，套件会竞态轮换和单个端点的失败，工作者并排声明，单个消息的扇出，一个陈旧的工作者对抗接管，以及一个声明的重试。在 PGlite 上，使用一个连接，它们以序列化的方式通过；在服务器上，通过多个连接的连接池运行它们，没有正确锁的存储会使它们失败。该包自身的测试针对手写的 Drizzle 存储运行套件，以此证明针对接口编写的存储能够通过这些测试。
+使用 `concurrent: true`，套件会竞态检查一个端点的轮换和失败，工作者并排声明，一个消息的扇出，一个陈旧的工作者对抗接管，以及一个声明的重试。在 PGlite 上，使用一个连接，它们以序列化的方式通过；在服务器上，通过多个连接的连接池运行它们，没有正确锁的存储会使它们失败。该包自身的测试针对手写的 Drizzle 存储运行套件，这是证明针对接口编写的存储通过测试的证明。
 
 #### 参考
 
 ##### 模块选项
 
-`WebhooksModule.forRoot()` 接受这些选项。`forRootAsync()` 在顶层接受 `outgoing`、`transport`（作为类）、`imports` 和 `isGlobal`，紧邻 `useFactory`、`useClass` 或 `useExisting`，工厂返回其余部分。参见 [Register the modules](/http/webhooks#register-the-modules)。
+`WebhooksModule.forRoot()` 接受这些选项。`forRootAsync()` 在顶层接受 `outgoing`、`transport` (作为类)、`imports` 和 `isGlobal`，紧邻 `useFactory`、`useClass` 或 `useExisting`，工厂返回其余部分。参见 [Register the modules](/http/webhooks#register-the-modules)。
 
 | 选项 | 默认值 | 描述 |
 | --- | --- | --- |
-| `eventTypes` | any type | 此应用程序发送的消息类型。`dispatch()` 和新端点仅接受这些（端点也接受 `*`）。 |
+| `eventTypes` | any type | 此应用程序发送的消息类型。`dispatch()` 和新的端点仅接受这些类型（端点也接受 `*`）。 |
 | `retry` | 10 attempts | `attempts`（包括第一次）、`backoff` 和 `retryIf(error, attempt, delivery)`。一个数字设置 `attempts`，而 `false` 表示单次尝试。 |
 | `retry.backoff` | 参见描述 | `delay`（`'5s'`）、`factor` (4)、`maxDelay`（`'1d'`，也是 `Retry-After` 的上限）、`jitter`：`'equal'`、`'full'` 或 `'none'`（`'equal'`）。或者一个返回持续时间的尝试、错误和递送的函数。 |
-| `disableEndpointAfter` | `'5d'` | 禁用在如此长时间内每次尝试都失败的端点，而没有成功。`false` 从不禁用端点。 |
-| `secretRotationOverlap` | `'24h'` | 轮换出的密钥与新密钥相邻的签名时间长度。 |
+| `disableEndpointAfter` | `'5d'` | 禁用在任何尝试中均未成功且持续了该时间长度的端点。`false` 从不禁用端点。 |
+| `secretRotationOverlap` | `'24h'` | 轮换出密钥在旁边继续签名的时长。 |
 | `delivery.timeout` | `'15s'` | 单次尝试：DNS、连接、TLS、请求和响应。短于 `worker.lease`。 |
 | `delivery.allowHttp` | `false` | 接受 `http://` 端点 URL。用于开发。 |
 | `delivery.allowPrivateNetworks` | `false` | 递送到环回、私有、共享地址和唯一本地范围。用于开发。链路本地和云元数据地址保持阻止。 |
-| `delivery.allowedAddresses` | none | CIDR 范围，例如 `10.20.0.0/16`，即使它们将被阻止也会递送。 |
+| `delivery.allowedAddresses` | none | CIDR 范围，例如 `10.20.0.0/16`，尽管会被阻止也会递送。 |
 | `delivery.maxResponseSize` | 4096 | 读取并保留在日志中的响应体字节数。 |
 | `delivery.userAgent` | `NestJS-Webhooks/1.0` | `User-Agent` 头部。 |
 | `worker.enabled` | `true` | 在此进程中递送。在仅分派的实例中为 `false`。 |
-| `worker.pollInterval` | `'1s'` | 空闲时的轮询间隔等待时间。一次轮询 `notify()` 个。 |
+| `worker.pollInterval` | `'1s'` | 空闲时的轮询等待时间。`notify()` 一次性轮询。 |
 | `worker.batchSize` | 50 | 每个轮询声明的递送次数。 |
 | `worker.concurrency` | 10 | 并行递送到端点的数量。一个端点的递送一次一个。 |
-| `worker.lease` | `'1m'` | 声明的独占时间长度。长于 `delivery.timeout`。 |
-| `encryption` | off | 在静止时密封端点密钥。`keys` 列出 32 字节的 `Buffer` 或至少 32 个字符的字符串，按最新到旧排序：第一个密钥加密，每个密钥解密。 |
-| `receivers` | none | 此应用程序接受的发送者的 Webhook，由 `@VerifyWebhook()` 使用的名称（参见下表）。 |
+| `worker.lease` | `'1m'` | 声明的独占时长。长于 `delivery.timeout`。 |
+| `encryption` | off | 在静止状态下密封端点密钥。`keys` 列出 32 字节的 `Buffer` 或至少 32 个字符的字符串，按最新到旧排序：第一个密钥加密，每个密钥解密。 |
+| `receivers` | none | 此应用程序接受的发送者的 Webhook，由名称 `@VerifyWebhook()` 使用（参见下表）。 |
 | `transport` | `HttpWebhookTransport` | 顶层的 `WebhookTransport` 类，或来自异步工厂的实例。 |
-| `allowInMemoryStorage` | `false` | 允许生产应用程序在未注册存储的情况下启动。 |
+| `allowInMemoryStorage` | `false` | 允许生产应用程序在没有注册存储的情况下启动。 |
 | `outgoing` | `true` | 仅顶层。在仅接收 Webhook 的服务中为 `false`：没有端点、递送、工作者或存储。 |
 | `imports` | none | 仅顶层。传输类注入的模块的导出。 |
 | `isGlobal` | `true` | 仅顶层。全局注册模块。 |
@@ -1780,7 +1780,7 @@ describe('the delivery contract', () => {
 
 | 选项 | 适用对象 | 默认值 | 描述 |
 | --- | --- | --- | --- |
-| `scheme` | all | required | `'standard'`、`'stripe'`、`'github'` 或扩展 `WebhookSignatureScheme` 的类的实例 |
+| `scheme` | all | required | `'standard'`、`'stripe'`、`'github'` 或继承自 `WebhookSignatureScheme` 的类的实例 |
 | `secret` | all | required | 一个密钥，或在发送者轮换期间的数组。尝试每一个。 |
 | `tolerance` | `standard`, `stripe`, custom | `'5m'` | 签名时间戳与当前时间之间允许的最大距离，任一方向 |
 | `header` | `stripe` | `'stripe-signature'` | 签名头部，用于复制 Stripe 方案的发送者 |
@@ -1790,51 +1790,51 @@ describe('the delivery contract', () => {
 
 ##### PostgreSQL 和 MySQL 存储
 
-`new PostgresWebhookStore(options, webhooksStorage)` 来自 `@nestjs/webhooks/postgres`，`new MySqlWebhookStore(options, webhooksStorage)` 来自 `@nestjs/webhooks/mysql`，接受这些选项。出库的 `PostgresOutboxStore` 和 `MySqlOutboxStore` 接受相同选项，默认 `schema` 为 `'nest_outbox'`：
+`new PostgresWebhookStore(options, webhooksStorage)`（来自 `@nestjs/webhooks/postgres`）和 `new MySqlWebhookStore(options, webhooksStorage)`（来自 `@nestjs/webhooks/mysql`）接受这些选项。出件箱的 `PostgresOutboxStore` 和 `MySqlOutboxStore` 采用相同设置，默认 `schema` 为 `'nest_outbox'`：
 
 | 选项 | 默认值 | 含义 |
 | --- | --- | --- |
 | `executor` | Required | 存储如何连接到数据库：PostgreSQL 上的 `fromDrizzle(db)`、`fromTypeOrm(dataSource)`、`fromPrisma(prisma, options)`、`fromKysely(db)` 和 `fromPg(pool)`，或 MySQL 上的 `fromMysql2(pool)`，从存储自身的子路径导入：其他方言的执行器不编译 |
-| `schema` | `'nest_webhooks'` | 在 PostgreSQL 上，其表的模式，由其第一个 `nest_webhooks_endpoints` 创建：字母、数字和下划线，不以数字开头，最多 63 个字符。在 MySQL 上，连接数据库中的表前缀（`migrate`...）：小写字母、数字和下划线，不以数字开头，最多 40 个字符 |
-| `true` | `true`，除非使用 `NODE_ENV=production` | 在应用程序启动时应用待定迁移。使用 `false` 时，如果模式落后，启动将因 `WebhookSchemaError` 而失败 |
+| `schema` | `'nest_webhooks'` | 在 PostgreSQL 上，其表的模式，由其第一个 `nest_webhooks_endpoints` 创建：字母、数字和下划线，不以数字开头，最多 63 个字符。在 MySQL 上，连接数据库中的表前缀（`nest_webhooks_endpoints`...）：小写字母、数字和下划线，不以数字开头，最多 40 个字符 |
+| `migrate` | `true`，但不是 `NODE_ENV=production` | 在应用程序启动时应用待处理的 `false`。使用 `false` 时，如果模式落后，启动将因 `WebhookSchemaError` 而失败 |
 
-每个执行器接受您的数据库客户端以及其自身的事务对象，然后由 `dispatch()` 和 `processInTransaction()` 使用：
+每个执行器接受您的数据库客户端以及其自身的事务对象，然后由 `dispatch()` 和 `processInTransaction()` 接收：
 
-| 执行器 | 接受 | 事务对象 |
+| 执行器 | 接收 | 事务对象 |
 | --- | --- | --- |
 | `fromDrizzle(db)` | 一个 Drizzle 数据库：在 PostgreSQL 上，使用其驱动；在 MySQL 上，使用 `drizzle-orm/mysql2` 的 | `tx`，由 `db.transaction()` 传递其回调 |
-| `fromTypeOrm(dataSource)` | 一个 `DataSource` 类型为 `postgres` 或 `mysql` | `EntityManager`，由 `dataSource.transaction()` 传递其回调，或在 `startTransaction()` 后由 `QueryRunner` 提供 |
-| `fromPg(pool)` | 一个 node-postgres `Pool`，在 PostgreSQL 上 | 在 `BEGIN` 后从 `pool.connect()` 获取的客户端 |
-| `fromMysql2(pool)` | 一个 `mysql2/promise` 池，在 MySQL 上 | 在 `beginTransaction()` 后从 `pool.getConnection()` 获取的连接 |
-| `fromPrisma(prisma, options)` | 一个 Prisma 客户端，通过如 `@prisma/adapter-pg` 的驱动适配器，或在 MySQL 上使用 `@prisma/adapter-mariadb`。`maxWait`（默认 `'10s'`）和 `timeout`（默认 `'1m'`）限制了存储自身的事务 | 由 `prisma.$transaction()` 传递其回调的事务客户端 |
-| `fromKysely(db)` | 一个具有 PostgreSQL 或 MySQL 方言的 `Kysely` 实例 | 由 `db.transaction().execute()` 传递的事务 |
+| `fromTypeOrm(dataSource)` | 一个类型为 `postgres` 或 `mysql` 的 `DataSource` | `EntityManager`，由 `dataSource.transaction()` 传递其回调，或在 `startTransaction()` 之后的一个 `QueryRunner` |
+| `fromPg(pool)` | PostgreSQL 上的一个 node-postgres `Pool` | 在 `BEGIN` 之后，来自 `pool.connect()` 的客户端 |
+| `fromMysql2(pool)` | MySQL 上的一个 `mysql2/promise` 池 | 在 `beginTransaction()` 之后，来自 `pool.getConnection()` 的连接 |
+| `fromPrisma(prisma, options)` | 通过驱动适配器（如 `@prisma/adapter-pg`）的 Prisma 客户端，或 MySQL 上的 `@prisma/adapter-mariadb`。`maxWait`（默认 `'10s'`）和 `timeout`（默认 `'1m'`）限制了存储自身的事务 | `prisma.$transaction()` 传递其回调的事务客户端 |
+| `fromKysely(db)` | 一个具有 PostgreSQL 或 MySQL 方言的 `Kysely` 实例 | `db.transaction().execute()` 传递其回调的事务 |
 
-存储的 `migrate()` 方法会一次性应用待定迁移，无论 `migrate` 选项如何设置，并以已应用的版本解析。`PostgresWebhookStore.migrationSql()` 和 `MySqlWebhookStore.migrationSql()` 返回它们的 SQL，带有簿记信息。它们的选项是 `schema`、要迁移到的版本 `from`（默认 `0`，新数据库）和 `to`（默认：包所需的那个），以及 `statementBreakpoints`，它将 drizzle-kit 的 `--> statement-breakpoint` 放在语句之间。在 PostgreSQL 上，从版本 0 开始，SQL 以 `CREATE SCHEMA IF NOT EXISTS` 开始，需要数据库上的 CREATE 权限：如果有人为您创建了模式，则省略它。`MySqlWebhookStore.migrationStatements()` 返回 MySQL 的语句，每个语句占一行，按顺序执行，每个执行一次。`schemaVersion` 是包所需的版本。模式自身的版本是在其 `migrations` 表中应用的最高版本。
+存储的 `migrate()` 方法会一次性应用待处理的 `migrate` 选项所指示的迁移，并以已应用的版本解析。`PostgresWebhookStore.migrationSql()` 和 `MySqlWebhookStore.migrationSql()` 返回它们的 SQL，带有簿记信息。它们的选项是 `schema`、要迁移的版本 `from`（默认 `0`，新数据库）和 `to`（默认：包所需的那个），以及 `statementBreakpoints`，它将 drizzle-kit 的 `--> statement-breakpoint` 放在语句之间。在 PostgreSQL 上，从版本 0 开始，SQL 以 `CREATE SCHEMA IF NOT EXISTS` 开始，需要数据库的 CREATE 权限：如果有人为您创建了模式，则省略它。`MySqlWebhookStore.migrationStatements()` 以每行一个字符串的形式返回 MySQL 语句，按顺序，每次执行。`schemaVersion` 是包所需的版本。模式自身的版本是在其 `migrations` 表中应用的最大版本。
 
-命令行 `npx @nestjs/webhooks` 接受 `--url`（默认 `DATABASE_URL`），其方案选择存储：对于 `PostgresWebhookStore` 的模式是 `postgres://` 或 `postgresql://`，对于 `MySqlWebhookStore` 的表是 `mysql://`。它还接受 `--schema`（默认 `nest_webhooks`）。`npx @nestjs/outbox` 对出库的存储执行相同操作：
+命令行 `npx @nestjs/webhooks` 接受 `--url`（默认 `DATABASE_URL`），其方案选择存储：对于 `PostgresWebhookStore` 的模式是 `postgres://` 或 `postgresql://`，对于 `MySqlWebhookStore` 的表是 `mysql://`。它还接受 `--schema`（默认 `nest_webhooks`）。`npx @nestjs/outbox` 对出件箱的存储执行相同操作：
 
 | 命令 | 功能描述 |
 | --- | --- |
-| `migrate` | 应用待处理的迁移，与 `migrate: true` 在启动时执行的操作相同。需要安装 `pg` 或 `mysql2` |
+| `migrate` | 应用待定迁移，类似于启动时的行为。需要安装 `pg` 或 `mysql2` |
 | `status` | 打印模式的版本和包所需的版本，如果模式落后则以 1 退出 |
-| `sql` | 在没有数据库的情况下打印 `migrationSql()` 的 SQL，从 `--from` 到 `--to`：PostgreSQL 的，或带有 `--dialect mysql` 的 MySQL。`--statement-breakpoints` 为 drizzle-kit 分隔语句 |
+| `sql` | 在没有数据库的情况下打印 `migrationSql()` 的 SQL，从 `--from` 到 `--to`：PostgreSQL 的，或带有 `--dialect mysql` 的 MySQL。`--statement-breakpoints` 为 drizzle-kit 分离语句 |
 
 ##### 服务和装饰器
 
 - `Webhooks`: `dispatch(tx, message)` 接收一个消息或一个数组，包含 `type`、`data`、`tenant` 和一个可选的 `id`，对于未知类型、不可 JSON 序列化的数据或无效 ID 会抛出 `TypeError`。`notify()` 立即运行中继。
-- `WebhookEndpoints`: `create(input)`、`list(query)`、`get(id, scope)`、`update(id, changes, scope)`、`delete(id, scope)`、`getSecret(id, scope)` 和 `rotateSecret(id, options)`，其中 `options` 接收 `tenant`、`overlap` 和 `secret`。`create()` 也接收一个 `secret`，使用现有的 `whsec_…` 而不是生成的。参见 [Let partners subscribe](/http/webhooks#let-partners-subscribe)。
+- `WebhookEndpoints`: `create(input)`、`list(query)`、`get(id, scope)`、`update(id, changes, scope)`、`delete(id, scope)`、`getSecret(id, scope)` 和 `rotateSecret(id, options)`，其中 `options` 接收 `tenant`、`overlap` 和 `secret`。`create()` 也接收一个 `secret`，一个现有的 `whsec_…` 代替生成的。参见 [Let partners subscribe](/http/webhooks#let-partners-subscribe)。
 - `WebhookDeliveries`: `list(query)`、`get(id, scope)`、`retry(idOrFilter, scope)`、`stats()` 和 `prune(olderThan)`。参见 [Retries, the delivery log and replay](/http/webhooks#retries-the-delivery-log-and-replay)。
-- `WebhookWorker`: 交付者，在应用程序启动时启动，除非 `worker.enabled` 是 `false`。`start()`；`stop()`，停止声称，等待正在进行的尝试并释放尚未开始的交付；`running`；`notify()`，现在轮询而不是在下一个滴答时；`runOnce()`，声称一个批次并交付它，解析它 `claimed` 的数量、`delivered`、`retried`、`failed` 和 `released`，以及丢失租约的数量（`leaseLost`），并与停止的工作者协同工作，因为测试驱动了它；`stats()`，与 `WebhookDeliveries.stats()` 相同。
-- `WEBHOOKS_OUTBOX_TOPIC`: 消息分发所在的出库主题，`'nestjs.webhooks.message'`，到包的 `@OnOutboxMessage()` 处理程序，即扇出。一个其 `route` 从多个传输器中选择的出库，将此主题发送到 `local`。
+- `WebhookWorker`: 交付者，在应用程序启动时启动，除非 `worker.enabled` 是 `false`。`start()`；`stop()`，停止声明，等待正在进行的尝试并释放尚未开始的交付；`running`；`notify()`，现在轮询而不是在下一个滴答；`runOnce()`，声明一个批次并交付它，解析它 `claimed`、`delivered`、`retried`、`failed` 和 `released` 的数量，以及丢失租约的数量（`leaseLost`），并与停止的工作者协同工作，因为测试驱动了它；`stats()`，与 `WebhookDeliveries.stats()` 相同。
+- `WEBHOOKS_OUTBOX_TOPIC`: 消息分发所在的出件箱主题，`'nestjs.webhooks.message'`，到包的 `@OnOutboxMessage()` 处理程序，即扇出。其 `route` 从多个传输器中选择一个的出件箱将此主题发送到 `local`。
 - `WebhookVerifier`: `verify(receiver, request)` 从其 `headers` 和 `rawBody` 检查未通过 HTTP 路由到达的请求，例如存储在队列中的请求。
-- `@VerifyWebhook(receiver)` 在方法或控制器上验证和去重。`@IncomingWebhook()` 注入已验证的 webhook：`receiver`、`id`、`timestamp`、`payload`、`rawBody` 和 `processInTransaction()`。`@WebhookPayload()` 只注入有效载荷，并接受像 `@Body()` 这样的管道。
+- `@VerifyWebhook(receiver)` 在方法或控制器上进行验证和去重。`@IncomingWebhook()` 注入经过验证的 webhook：`receiver`、`id`、`timestamp`、`payload`、`rawBody` 和 `processInTransaction()`。`@WebhookPayload()` 仅注入有效载荷，并接受像 `@Body()` 这样的管道。
 
 ##### 传输器
 
-工作者通过 `WebhookTransport` 提供者发送。默认的 `HttpWebhookTransport` 由 `delivery` 选项构建：每个尝试的 `POST` 个 `node:http` 和 `node:https`，主机只解析一次，它解析到的每个地址都会被检查，套接字固定在已检查的地址上，不遵循重定向，环境中没有代理。其构造函数接收两个 `delivery` 不接收的选项：
+工作者通过 `WebhookTransport` 提供者发送。默认的 `HttpWebhookTransport` 是从 `delivery` 选项构建的：每个尝试一个 `POST` 超过 `node:http` 和 `node:https`，主机只解析一次，它解析到的每个地址都会被检查，套接字固定在已检查的地址上，不跟随重定向，没有环境代理。其构造函数接收两个 `delivery` 不接收的选项：
 
-- `ca`: 除了 Node 自身的，需要信任的证书颁发机构，用于私有 CA 后端的端点。它们被添加到 Node 的信任存储中，因此公共端点继续验证。
-- `lookup`: 将主机名解析为其拥有的每个地址，每个地址都是一个 `address` 及其 `family` (4 或 6)，替代系统解析器。它返回的每个地址仍然被检查，连接到第一个。
+- `ca`: 除了 Node 自身的，需要信任的证书颁发机构，用于私有 CA 后端的端点。它们被添加到 Node 的信任存储中，因此公共端点会继续验证。
+- `lookup`: 将主机名解析为其拥有的每个地址，每个地址都是一个 `address` 及其 `family`（4 或 6），替代系统解析器。它返回的每个地址仍然被检查，连接到第一个。
 
 要使用它们，将实例作为 `transport` 传递，具有与 `delivery` 相同的 `allowHttp`、`allowPrivateNetworks` 和 `allowedAddresses`：`delivery` 仍然决定 `WebhookEndpoints` 接受哪些 URL，以及传输器连接到哪里。
 
@@ -1849,19 +1849,19 @@ WebhooksModule.forRoot({
 
 ```
 
-您自己的传输器继承自 `WebhookTransport` 并实现 `send(request, options)`，其中 `options` 具有尝试的 `signal` 和其 `attempt` 编号。请求携带 `url`、签名的 `headers` 和 `body`，以及其端点、交付和消息的 ID。使用响应的 `statusCode`、`headers` 和其 `body` 的开始进行解析，无论状态如何，仅在没有响应时抛出；在 `delivery.timeout` 之后，当 `signal` 中止时停止。`NonRetryableWebhookError` 和 `WebhookDestinationBlockedError` 在不重试的情况下失败交付；任何其他错误都会重试。将类作为 `transport` 传递给 `forRoot()` 或 `forRootAsync()` 的顶层，Nest 会实例化它（对于它从模块注入的 `imports`），或者传递一个实例。它用自身执行的操作替换 SSRF 守卫：通过执行一个强制执行此类（例如 Smokescreen）的出站代理是编写它的原因；包装 `HttpWebhookTransport` 保留了守卫。
+您自己的传输器继承自 `WebhookTransport` 并实现 `send(request, options)`，其中 `options` 包含尝试的 `signal` 和其 `attempt` 编号。请求携带 `url`、签名的 `headers` 和 `body`，以及其端点、交付和消息的 ID。使用响应的 `statusCode`、`headers` 和其 `body` 的开始进行解析，无论状态如何，仅在没有响应时抛出；在 `signal` 中断后，在 `delivery.timeout` 后停止。`NonRetryableWebhookError` 和 `WebhookDestinationBlockedError` 在不重试的情况下失败交付；任何其他错误都会重试。将类作为 `transport` 传递给 `forRoot()` 或 `forRootAsync()` 的顶层，Nest 会实例化它（从其注入的模块中获取 `imports`），或者传递一个实例。它用自身执行的操作替换 SSRF 守卫：通过强制执行此类（例如 Smokescreen）的出站代理发送是编写一个守卫的原因；包装 `HttpWebhookTransport` 会保留守卫。
 
 对于测试，`InMemoryWebhookTransport` 记录而不是发送，不进行网络或地址检查（参见 [Testing](/http/webhooks#测试)）：
 
 - `sent`: 每个请求，按最旧的优先，作为 `SentWebhook`。`clear()` 清空它。
-- `respondWith(answer)`: 从现在开始端点如何响应，直到那时都是 200。一个状态（`503`），一个响应（`statusCode`，`headers`，例如 `retry-after`、`body`），或者一个请求和尝试编号的函数，返回其中之一并抛出以模拟无响应。
-- `filter(query)` 和 `single(query)`: 匹配 `type`、`url`（一个字符串或一个 `RegExp`）、`endpointId` 和 `messageId` 的请求，或一个 `SentWebhook` 的函数。除非恰好有一个匹配，否则 `single()` 抛出，列出已发送的内容。
+- `respondWith(answer)`: 从现在开始端点如何回答，直到那时都是 200。一个状态（`503`），一个响应（`statusCode`，`headers`，例如 `retry-after`、`body`），或者一个返回两者之一并抛出以模拟无响应的请求和尝试次数的函数。
+- `filter(query)` 和 `single(query)`: 匹配 `type`、`url`（一个字符串或一个 `RegExp`）、`endpointId` 和 `messageId` 的请求，或 `SentWebhook` 的函数。除非恰好有一个匹配，否则 `single()` 抛出，列出已发送的内容。
 
-一个 `SentWebhook` 具有其轮次内的 `request`、`attempt` 编号，请求的 `sentAt`、`url`、`type`、`messageId`、`endpointId`、`deliveryId`、`headers` 和 `body`，`data`（正文的 `data`，已解析），以及 `isSignedWith(secret)`，它将 `v1` 签名与端点的密钥进行检查。
+一个 `SentWebhook` 具有其轮次内的 `request`，其 `attempt` 编号，`sentAt`，请求的 `url`、`type`、`messageId`、`endpointId`、`deliveryId`、`headers` 和 `body`，`data`（已解析的体中的 `data`），以及 `isSignedWith(secret)`，它将一个 `v1` 签名与端点的密钥进行检查。
 
 ##### 事件
 
-`WebhooksEvents.events$` 发射每个事件，每个事件也发布到诊断通道 `nestjs:webhooks:<type>`。
+`WebhooksEvents.events$` 发射每个事件，每个事件也会在诊断通道 `nestjs:webhooks:<type>` 上发布。
 
 | 类型 | 有效载荷类型 | 除 `type` 外的字段 |
 | --- | --- | --- |
@@ -1872,11 +1872,11 @@ WebhooksModule.forRoot({
 | `destination-blocked` | `WebhooksDestinationBlockedEvent` | `endpointId`、`tenant`、`reason`、`address` |
 | `verification-failed` | `WebhooksVerificationFailedEvent` | `receiver`、`reason` |
 
-失败交付的 `reason` 是 `exhausted`、`rejected` (410 Gone，被阻止的目的地，`NonRetryableWebhookError` 或 `retryIf`)、`endpoint-disabled` 或 `endpoint-deleted`。验证失败的 `reason` 是 `missing-header`、`malformed-header`（webhook ID 超过 255 个字符），`invalid-signature`、`timestamp-out-of-tolerance` 或 `invalid-payload`。`WebhooksEvent` 是所有有效载荷类型的联合。
+失败交付的 `reason` 是 `exhausted`，`rejected`（410 Gone，被阻止的目的地，`NonRetryableWebhookError` 或 `retryIf`），`endpoint-disabled` 或 `endpoint-deleted`。验证失败的 `reason` 是 `missing-header`、`malformed-header`（webhook ID 超过 255 个字符），`invalid-signature`、`timestamp-out-of-tolerance` 或 `invalid-payload`。`WebhooksEvent` 是所有有效载荷类型的联合。
 
 ##### 错误
 
-除 `NonRetryableWebhookError` 外，所有错误都继承自 `WebhooksError`。带有 `status` 的错误是为合作伙伴 API 的异常过滤器准备的，如 [Let partners subscribe](/http/webhooks#let-partners-subscribe) 所示。
+除 `NonRetryableWebhookError` 之外的所有错误都继承自 `WebhooksError`。带有 `status` 的错误是为合作伙伴 API 的异常过滤器准备的，如 [Let partners subscribe](/http/webhooks#let-partners-subscribe) 所示。
 
 | 错误 | 状态 | 抛出条件 |
 | --- | --- | --- |
@@ -1885,9 +1885,9 @@ WebhooksModule.forRoot({
 | `WebhookDeliveryNotFoundError` | 404 | 交付不存在，或属于另一个租户 |
 | `WebhookVerificationError` | 401，或 `invalid-payload` 的 400 | `WebhookVerifier.verify()` 拒绝了请求。它具有 `receiver` 和 `reason`。 |
 | `WebhookDestinationBlockedError` | 无 | 端点的 URL 是或解析到被阻止的地址。交付在不重试的情况下失败。 |
-| `WebhookResponseError` | 无 | 端点响应不在 2xx 范围内。它具有 `statusCode`，以及来自 `Retry-After` 头的 `retryAfterMs`。 |
-| `WebhookDeliveryTimeoutError` | 无 | 在 `delivery.timeout` 内未收到响应 |
-| `NonRetryableWebhookError` | 无 | 自定义传输器将其抛出，以不重试地失败交付 |
-| `WebhookSchemaError` | 无 | 存储的 ⟦Schema⟧ 落后于包的 ⟦Migration⟧ 而 `migrate` 关闭，或应用失败（`cause`）：直到修复，启动和每次调用都会失败。它具有 `schema`、其 `version` 和 `requiredVersion`。来自 `@nestjs/webhooks/postgres` 和 `@nestjs/webhooks/mysql` |
+| `WebhookResponseError` | 无 | 端点响应不在 2xx 范围内。它具有 `statusCode`，以及来自 `retryAfterMs` 头的 `Retry-After`。 |
+| `WebhookDeliveryTimeoutError` | 无 | 在 `delivery.timeout` 内无响应 |
+| `NonRetryableWebhookError` | 无 | 自定义传输器抛出此错误，以不重试地失败交付 |
+| `WebhookSchemaError` | 无 | 存储的 ⟦Schema⟧ 落后于包的 ⟦Migration⟧，同时 `migrate` 关闭，或应用 ⟦Migration⟧ 失败（`cause`）：直到修复，启动和每次调用都会失败。它具有 `schema`，其 `version` 和 `requiredVersion`。来自 `@nestjs/webhooks/postgres` 和 `@nestjs/webhooks/mysql`。 |
 
-`@VerifyWebhook()` 以 401（对于非 JSON 的签名主体为 400）和通用消息来回答被拒绝的请求，原因发送到 `verification-failed` 事件。未保持原始主体的请求如果不是 JSON 或表单则返回 415，否则返回 500 并记录缺失的 `rawBody: true`。
+`@VerifyWebhook()` 以 401（对于非 JSON 的签名主体为 400）和通用消息来回答被拒绝的请求，原因发送到 `verification-failed` 事件。如果请求体未保持原始状态，则如果它不是 JSON 或表单则返回 415，否则返回 500 并记录缺失的 `rawBody: true`。
